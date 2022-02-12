@@ -1,5 +1,5 @@
 import argparse
-from typing import Optional, List
+from typing import List
 
 from tango import Step, JsonFormat
 from tango.integrations.torch.util import resolve_device

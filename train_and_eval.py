@@ -31,11 +31,11 @@ def main():
         workspace = LocalWorkspace(args.workspace)
 
     # TODO: dirkgr: Replace this with StepGraph.from_file() in the next version of Tango
-    #params = Params.from_file(args.training_config)
-    #for package_name in params.pop("include_package", []):
-    #    import_extra_module(package_name)
-    #step_graph = StepGraph(params.pop("steps", keep_as_dict=True))
-    step_graph = StepGraph.from_file(args.training_config)
+    params = Params.from_file(args.training_config)
+    for package_name in params.pop("include_package", []):
+        import_extra_module(package_name)
+    step_graph = StepGraph(params.pop("steps", keep_as_dict=True))
+    #step_graph = StepGraph.from_file(args.training_config)
 
     try:
         training_step = step_graph["trained_model"]

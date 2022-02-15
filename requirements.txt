@@ -1,2 +1,3 @@
-ai2-tango[fairscale]
+git+git://github.com/allenai/tango.git@StepGraphFromFile    # TODO: depend on Tango@main, and then on the latest release
+fairscale
 git+https://github.com/EleutherAI/lm-evaluation-harness.git@e18ef6e162e5b7f5d9582d998fa9c980703a3540

@@ -31,7 +31,9 @@ class LMEvalStep(Step):
 
         device = resolve_device()
 
-        if not isinstance(model, str):
+        if isinstance(model, str):
+            model_name = model
+        else:
             # Because lm_eval can't handle being passed a model directly, we hack it up.
             from lm_eval.models.gpt2 import HFLM
             hflm = HFLM(batch_size=batch_size, device=str(device))
@@ -40,6 +42,11 @@ class LMEvalStep(Step):
             hflm.gpt2.eval()
             # TODO: When we allow model types other than GPT2, we have to handle the tokenizer here.
             model = hflm
+
+            if isinstance(self.kwargs["model"], Step):
+                model_name = self.kwargs["model"].unique_id
+            else:
+                model_name = None       # We have nothing to go on ...
 
         result = simple_evaluate(
             model=model,
@@ -52,6 +59,11 @@ class LMEvalStep(Step):
             bootstrap_iters=bootstrap_iters,
             no_cache=True   # Caching in lm_eval is broken when you pass in a model, and Tango will cache anyways.
         )
+
+        # lm_eval just sticks the input model into the result, making it unserializable if we pass in a model
+        # instance instead of a huggingface model string. So we replace it.
+        result['config']['model'] = model_name
+
         return result
 
 

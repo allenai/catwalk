@@ -96,4 +96,3 @@ class HFAutoModelForEvaluation(ModelForEvaluation):
                         instance.id,
                         instance.answer.strip(),
                         answer)
-                break   # DEBUG

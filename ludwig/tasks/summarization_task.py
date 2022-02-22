@@ -1,5 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
+from typing import Sequence, Iterator
 
 from ludwig.models.model import ModelForEvaluation
 from ludwig.tasks.task import Task, Metrics
@@ -16,7 +17,13 @@ class SummarizationTask(Task, ABC):
         label: str
         predicted: str
 
-    def evaluate_model(self, model: ModelForEvaluation, **kwargs) -> Metrics:
-        results = model.do_summarization(self, **kwargs)
-        metrics = ...   # TODO
-        return metrics
+    def run_inference(
+        self,
+        model: ModelForEvaluation,
+        instances: Sequence[Instance],
+        **kwargs
+    ) -> Iterator['SummarizationTask.InstanceResult']:
+        return model.do_summarization(self, instances, **kwargs)
+
+    def calculate_metrics(self, results: Iterator['SummarizationTask.InstanceResult']) -> Metrics:
+        raise NotImplementedError

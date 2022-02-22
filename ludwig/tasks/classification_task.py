@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import List
+from typing import List, Sequence, Iterator
 
 from ludwig.models.model import ModelForEvaluation
 from ludwig.tasks.task import Task, Metrics
@@ -16,7 +16,13 @@ class ClassificationTask(Task, ABC):
     def labels(self) -> List[str]:
         raise NotImplementedError
 
-    def evaluate_model(self, model: ModelForEvaluation, **kwargs) -> Metrics:
-        results = model.do_classification(self, **kwargs)
-        metrics = ...
-        return metrics
+    def run_inference(
+        self,
+        model: ModelForEvaluation,
+        instances: Sequence[Instance],
+        **kwargs
+    ) -> Iterator['ClassificationTask.InstanceResult']:
+        return model.do_classification(self, instances, **kwargs)
+
+    def calculate_metrics(self, results: Iterator['ClassificationTask.InstanceResult']) -> Metrics:
+        raise NotImplementedError

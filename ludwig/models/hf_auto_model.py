@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Iterator
 
 import more_itertools
 import torch
@@ -12,7 +12,7 @@ from ludwig.utilities import get_best_spans
 
 @ModelForEvaluation.register("hf")
 class HFAutoModelForEvaluation(ModelForEvaluation):
-    VERSION = "002"
+    VERSION = "003"
 
     def __init__(self, model_name: str):
         self.model_name = model_name
@@ -20,13 +20,13 @@ class HFAutoModelForEvaluation(ModelForEvaluation):
     def do_multiple_choice(
         self,
         task: MCTask,
+        instances: Iterable[MCTask.Instance],
         *,
         batch_size: int = 32
-    ) -> Iterable[MCTask.InstanceResult]:
+    ) -> Iterator[MCTask.InstanceResult]:
         # There is no Huggingface pipeline for this.
         model = AutoModelForMultipleChoice.from_pretrained(self.model_name).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        instances = task.get_instances("validation")
         instances = Tqdm.tqdm(instances, desc="Processing instances")
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):
@@ -56,13 +56,13 @@ class HFAutoModelForEvaluation(ModelForEvaluation):
     def do_qa(
         self,
         task: QATask,
+        instances: Iterable[QATask.Instance],
         *,
         batch_size: int = 32
-    ) -> Iterable[QATask.InstanceResult]:
+    ) -> Iterator[QATask.InstanceResult]:
         # TODO: Replace this with Huggingface pipeline
         model = AutoModelForQuestionAnswering.from_pretrained(self.model_name).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        instances = task.get_instances("validation")
         instances = Tqdm.tqdm(instances, desc="Processing instances")
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):
@@ -93,6 +93,6 @@ class HFAutoModelForEvaluation(ModelForEvaluation):
                         end = token_offsets[span[1]][1]
                         answer = text[0][start:end]
                     yield QATask.InstanceResult(
-                        instance.id,
+                        instance,
                         instance.answer.strip(),
                         answer)

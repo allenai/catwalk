@@ -1,4 +1,7 @@
-ai2-tango[fairscale]
+#ai2-tango[fairscale]
+git+https://github.com/allenai/tango.git@RobustnessFixes
+fairscale
+
 git+https://github.com/EleutherAI/lm-evaluation-harness.git@e18ef6e162e5b7f5d9582d998fa9c980703a3540
 torchmetrics
 more_itertools

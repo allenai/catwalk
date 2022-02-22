@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from ludwig import EvalModelOnTaskStep
+from ludwig import RunModelOnTaskStep, CalculateMetricsStep
 
 
 def main():
@@ -24,12 +24,16 @@ def main():
         from tango import LocalWorkspace
         workspace = LocalWorkspace(args.workspace)
 
-    step = EvalModelOnTaskStep(
+    results = RunModelOnTaskStep(
         model=args.model,
         task=args.task,
-        batch_size=args.batch_size)
+        batch_size=args.batch_size,
+        limit=100)  # DEBUG
+    metrics = CalculateMetricsStep(
+        task=args.task,
+        results=results)
 
-    result = step.result(workspace)
+    result = metrics.result(workspace)
     print(json.dumps(result, indent=4, sort_keys=True))
 
 

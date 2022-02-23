@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Iterator, Dict, TypeVar, Sequence
+from typing import Iterator, Dict, TypeVar, Sequence, Any
 
 from tango.common.det_hash import DetHashWithVersion
 from tango.common.registrable import Registrable
@@ -15,6 +15,7 @@ class Task(ABC, Registrable, DetHashWithVersion):
     @dataclass
     class Instance:
         id: str
+        metadata: Dict[str, Any]
 
     @dataclass
     class InstanceResult:

@@ -14,8 +14,8 @@ from ludwig.utilities import get_best_spans
 class HFAutoModelForEvaluation(ModelForEvaluation):
     VERSION = "003"
 
-    def __init__(self, model_name: str):
-        self.model_name = model_name
+    def __init__(self, pretrained_model_name_or_path: str):
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
     def do_multiple_choice(
         self,
@@ -25,8 +25,8 @@ class HFAutoModelForEvaluation(ModelForEvaluation):
         batch_size: int = 32
     ) -> Iterator[MCTask.InstanceResult]:
         # There is no Huggingface pipeline for this.
-        model = AutoModelForMultipleChoice.from_pretrained(self.model_name).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        model = AutoModelForMultipleChoice.from_pretrained(self.pretrained_model_name_or_path).eval()
+        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
         instances = Tqdm.tqdm(instances, desc="Processing instances")
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):
@@ -61,8 +61,8 @@ class HFAutoModelForEvaluation(ModelForEvaluation):
         batch_size: int = 32
     ) -> Iterator[QATask.InstanceResult]:
         # TODO: Replace this with Huggingface pipeline
-        model = AutoModelForQuestionAnswering.from_pretrained(self.model_name).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        model = AutoModelForQuestionAnswering.from_pretrained(self.pretrained_model_name_or_path).eval()
+        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
         instances = Tqdm.tqdm(instances, desc="Processing instances")
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):

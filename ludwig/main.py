@@ -7,7 +7,7 @@ from ludwig import RunModelOnTaskStep, CalculateMetricsStep
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True)
-    parser.add_argument('--task', type=str, required=True)
+    parser.add_argument('--task', type=str, nargs="+")
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument(
         '-d',
@@ -24,17 +24,17 @@ def main():
         from tango import LocalWorkspace
         workspace = LocalWorkspace(args.workspace)
 
-    results = RunModelOnTaskStep(
-        model=args.model,
-        task=args.task,
-        batch_size=args.batch_size,
-        limit=100)  # DEBUG
-    metrics = CalculateMetricsStep(
-        task=args.task,
-        results=results)
+    for task in args.task:
+        results = RunModelOnTaskStep(
+            model=args.model,
+            task=task,
+            batch_size=args.batch_size)
+        metrics = CalculateMetricsStep(
+            task=task,
+            results=results)
 
-    result = metrics.result(workspace)
-    print(json.dumps(result, indent=4, sort_keys=True))
+        result = metrics.result(workspace)
+        print(json.dumps(result, indent=4, sort_keys=True))
 
 
 if __name__ == "__main__":

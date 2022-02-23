@@ -95,6 +95,7 @@ class MCTaskFromDataset(MCTask):
             answer_choices = [get_from_dict(instance, field) for field in self.answer_choices_fields]
         return MCTask.Instance(
             id=id,
+            metadata={},
             context=instance[self.context_field] if self.context_field else None,
             question=instance[self.question_field],
             answer_choices=answer_choices,

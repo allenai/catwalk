@@ -78,6 +78,7 @@ class QATaskFromDataset(QATask):
     def _instance_from_json(self, instance: Dict[str, Any]) -> QATask.Instance:
         return QATask.Instance(
             id=str(get_from_dict(instance, self.id_field)) if self.id_field else instance["__default_id"],
+            metadata={},
             context=get_from_dict(instance, self.context_field) if self.context_field else None,
             question=get_from_dict(instance, self.question_field),
             answer=get_from_dict(instance, self.answer_field))

@@ -15,7 +15,7 @@ from ludwig.utilities import get_from_dict
 class QATask(Task, ABC):
     @dataclass
     class Instance(Task.Instance):
-        context: str
+        context: Optional[str]
         question: str
         answer: Optional[str]   # If not given, the question is unanswerable / "not enough information"
 

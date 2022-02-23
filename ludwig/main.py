@@ -9,6 +9,7 @@ def main():
     parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--task', type=str, nargs="+")
     parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--limit', type=int)
     parser.add_argument(
         '-d',
         type=str,
@@ -24,11 +25,14 @@ def main():
         from tango import LocalWorkspace
         workspace = LocalWorkspace(args.workspace)
 
+    limit = args.limit if hasattr(args, "limit") else None
+
     for task in args.task:
         results = RunModelOnTaskStep(
             model=args.model,
             task=task,
-            batch_size=args.batch_size)
+            batch_size=args.batch_size,
+            limit=limit)
         metrics = CalculateMetricsStep(
             task=task,
             results=results)

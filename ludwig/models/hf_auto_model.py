@@ -6,7 +6,7 @@ from tango.common.tqdm import Tqdm
 from transformers import AutoModelForMultipleChoice, AutoTokenizer, AutoModelForQuestionAnswering
 
 from ludwig.models.model import ModelForEvaluation
-from ludwig.tasks import SummarizationTask, MCTask, QATask, ClassificationTask, PairClassificationTask
+from ludwig.tasks import GenerationTask, MCTask, QATask, ClassificationTask, PairClassificationTask
 from ludwig.utilities import get_best_spans
 
 

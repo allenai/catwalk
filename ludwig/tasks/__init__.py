@@ -1,6 +1,6 @@
 from ludwig.tasks.mc_task import MCTask, MCTaskFromDataset
 from ludwig.tasks.qa_task import QATask, QATaskFromDataset
-from ludwig.tasks.summarization_task import SummarizationTask
+from ludwig.tasks.generation_task import GenerationTask
 from ludwig.tasks.classification_task import ClassificationTask
 from ludwig.tasks.pair_classification_task import PairClassificationTask
 

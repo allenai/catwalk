@@ -9,16 +9,16 @@ if TYPE_CHECKING:
     from ludwig.tasks.mc_task import MCTask
     from ludwig.tasks.pair_classification_task import PairClassificationTask
     from ludwig.tasks.qa_task import QATask
-    from ludwig.tasks.summarization_task import SummarizationTask
+    from ludwig.tasks.generation_task import GenerationTask
 
 
 class ModelForEvaluation(ABC, Registrable, DetHashWithVersion):
-    def do_summarization(
+    def do_generation(
         self,
-        task: 'SummarizationTask',
-        instances: Iterable['SummarizationTask.Instance'],
+        task: 'GenerationTask',
+        instances: Iterable['GenerationTask.Instance'],
         **kwargs
-    ) -> Iterator['SummarizationTask.InstanceResult']:
+    ) -> Iterator['GenerationTask.InstanceResult']:
         raise NotImplementedError
 
     def do_multiple_choice(

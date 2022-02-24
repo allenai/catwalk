@@ -6,10 +6,10 @@ from ludwig.models.model import ModelForEvaluation
 from ludwig.tasks.task import Task, Metrics
 
 
-class SummarizationTask(Task, ABC):
+class GenerationTask(Task, ABC):
     @dataclass
     class Instance(Task.Instance):
-        input: str
+        prompt: str
         expected: str
 
     @dataclass
@@ -22,8 +22,8 @@ class SummarizationTask(Task, ABC):
         model: ModelForEvaluation,
         instances: Sequence[Instance],
         **kwargs
-    ) -> Iterator['SummarizationTask.InstanceResult']:
-        return model.do_summarization(self, instances, **kwargs)
+    ) -> Iterator['GenerationTask.InstanceResult']:
+        return model.do_generation(self, instances, **kwargs)
 
-    def calculate_metrics(self, results: Iterator['SummarizationTask.InstanceResult']) -> Metrics:
+    def calculate_metrics(self, results: Iterator['GenerationTask.InstanceResult']) -> Metrics:
         raise NotImplementedError

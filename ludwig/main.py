@@ -22,7 +22,7 @@ def main():
     if args.workspace is None:
         workspace = None
     else:
-        from tango import LocalWorkspace
+        from tango.workspaces import LocalWorkspace
         workspace = LocalWorkspace(args.workspace)
 
     limit = args.limit if hasattr(args, "limit") else None

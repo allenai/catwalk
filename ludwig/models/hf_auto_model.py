@@ -94,5 +94,4 @@ class HFAutoModelForEvaluation(ModelForEvaluation):
                         answer = text[0][start:end]
                     yield QATask.InstanceResult(
                         instance,
-                        instance.answer.strip(),
                         answer)

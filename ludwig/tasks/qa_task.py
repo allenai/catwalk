@@ -1,9 +1,8 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Iterator, Sequence, Dict, Any
+from typing import Optional, Iterator, Sequence, Dict, Any, List
 
 import datasets
-from torchmetrics.functional import squad
 
 from tango.common.sequences import MappedSequence
 
@@ -17,11 +16,10 @@ class QATask(Task, ABC):
     class Instance(Task.Instance):
         context: Optional[str]
         question: str
-        answer: Optional[str]   # If not given, the question is unanswerable / "not enough information"
+        answers: List[str]   # Could be empty if the question is unanswerable
 
     @dataclass
     class InstanceResult(Task.InstanceResult):
-        label: str
         predicted: str
 
     def run_inference(
@@ -33,29 +31,35 @@ class QATask(Task, ABC):
         return model.do_qa(self, instances, **kwargs)
 
     def calculate_metrics(self, results: Iterator['QATask.InstanceResult']) -> Metrics:
+        from datasets import load_metric
+        squad = load_metric("squad_v2")
+
         # Why is the squad metric so weird?
         preds = []
         target = []
         for result in results:
             preds.append({
-                "prediction_text": result.predicted or "",  # Hack to make the squad metric work with unanswerable questions.
-                "id": result.instance.id
+                "prediction_text": result.predicted or "",
+                "id": result.instance.id,
+                "no_answer_probability": 1 if result.predicted is None else 0
             })
             target.append({
                 "id": result.instance.id,
                 "answers": {
-                    "answer_start": None,
-                    "text": [result.label]
+                    "answer_start": [-1 for _ in result.instance.answers],
+                    "text": [answer for answer in result.instance.answers]
                 }
             })
 
         return {
             key: float(value)
-            for key, value in squad(preds, target).items()
+            for key, value in squad.compute(predictions=preds, references=target, no_answer_threshold=0.5).items()
         }
 
 
 class QATaskFromDataset(QATask):
+    VERSION = "002"
+
     def __init__(
         self,
         name: str,
@@ -76,12 +80,17 @@ class QATaskFromDataset(QATask):
         self.id_field = id_field
 
     def _instance_from_json(self, instance: Dict[str, Any]) -> QATask.Instance:
+        answers = get_from_dict(instance, self.answer_field)
+        if isinstance(answers, str):
+            answers = [answers]
+        else:
+            answers = list(set(answers))
         return QATask.Instance(
             id=str(get_from_dict(instance, self.id_field)) if self.id_field else instance["__default_id"],
             metadata={},
             context=get_from_dict(instance, self.context_field) if self.context_field else None,
             question=get_from_dict(instance, self.question_field),
-            answer=get_from_dict(instance, self.answer_field))
+            answers=answers)
 
     def get_instances(self, split: str) -> Sequence[QATask.Instance]:
         dataset = self.get_dataset(split)

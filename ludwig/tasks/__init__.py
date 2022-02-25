@@ -29,7 +29,7 @@ TASKS = {
         dataset="squad",
         context_field="context",
         question_field="question",
-        answer_field="answers.text.0",
+        answer_field="answers.text",
         id_field="id"
     ),
     "squad_v2": QATaskFromDataset(
@@ -37,7 +37,7 @@ TASKS = {
         dataset="squad_v2",
         context_field="context",
         question_field="question",
-        answer_field="answers.text.0",
+        answer_field="answers.text",
         id_field="id"
     )
     # TODO: Add more tasks

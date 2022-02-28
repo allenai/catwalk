@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from ludwig.tasks.pair_classification_task import PairClassificationTask
     from ludwig.tasks.qa_task import QATask
     from ludwig.tasks.generation_task import GenerationTask
+    from ludwig.tasks.perplexity_task import PerplexityTask
 
 
 class ModelForEvaluation(ABC, Registrable, DetHashWithVersion):
@@ -51,4 +52,12 @@ class ModelForEvaluation(ABC, Registrable, DetHashWithVersion):
         instances: Iterable['PairClassificationTask.Instance'],
         **kwargs
     ) -> Iterator['PairClassificationTask.InstanceResult']:
+        raise NotImplementedError
+
+    def do_perplexity(
+        self,
+        task: 'PerplexityTask',
+        instances: Iterable['PerplexityTask.Instance'],
+        **kwargs
+    ) -> Iterator['PerplexityTask.InstanceResult']:
         raise NotImplementedError

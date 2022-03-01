@@ -9,7 +9,7 @@ from torchmetrics.functional import precision_recall, accuracy, f1_score
 from tango.common.sequences import MappedSequence
 
 from ludwig.models.model import ModelForEvaluation
-from ludwig.tasks.task import Task, Metrics
+from ludwig.tasks.task import Task, Metrics, FromDatasetMixin
 from ludwig.utilities import get_from_dict
 
 
@@ -49,28 +49,34 @@ class MCTask(Task, ABC):
         }
 
 
-class MCTaskFromDataset(MCTask):
+class MCTaskFromDataset(FromDatasetMixin, MCTask):
+    VERSION = "001"
+
     def __init__(
         self,
         name: str,
-        dataset: str,
+        dataset_path: str,
+        dataset_name: Optional[str],
         *,
-        dataset_config: Optional[str] = None,
-        context_field: Optional[str],
+        number_of_choices: int,
+        context_field: Optional[str] = None,
         question_field: str,
         answer_choices_fields: Union[str, List[str]],
         correct_answer_index_field: str,
         id_field: Optional[str] = None,
-        number_of_choices: int
+        split_mappings: Optional[Dict[str, Union[str, List[str]]]] = None
     ):
-        super().__init__(name)
-        # We want this lazy, so it's a lambda.
-        self.get_dataset = lambda split: datasets.load_dataset(dataset, dataset_config, split=split)
+        MCTask.__init__(self, name)
+        FromDatasetMixin.__init__(
+            self,
+            dataset_path=dataset_path,
+            dataset_name=dataset_name,
+            id_field=id_field,
+            split_mappings=split_mappings)
         self.context_field = context_field
         self.question_field = question_field
         self.answer_choices_fields = answer_choices_fields
         self.correct_answer_index_field = correct_answer_index_field
-        self.id_field = id_field
         self.number_of_choices = number_of_choices
 
     @classmethod
@@ -101,8 +107,42 @@ class MCTaskFromDataset(MCTask):
             answer_choices=answer_choices,
             correct_answer_index=self._normalize_answers(instance[self.correct_answer_index_field]))
 
-    def get_instances(self, split: str) -> Sequence[MCTask.Instance]:
-        dataset = self.get_dataset(split)
-        if self.id_field is None:
-            dataset = dataset.add_column("__default_id", range(len(dataset)))
-        return MappedSequence(self._instance_from_json, dataset)
+
+class CBTTask(FromDatasetMixin, MCTask):
+    VERSION = "001"
+
+    def __init__(self, dataset_name: str):
+        MCTask.__init__(self, "cbt_" + dataset_name)
+        FromDatasetMixin.__init__(
+            self,
+            dataset_path="cbt",
+            dataset_name=dataset_name)
+        self.number_of_choices = 10
+
+    @classmethod
+    def detokenize(cls, text):
+        text = text.replace(" '", "'")
+        text = text.replace(" \n", "\n")
+        text = text.replace("\n ", "\n")
+        text = text.replace(" n't", "n't")
+        text = text.replace("`` ", '"')
+        text = text.replace("''", '"')
+        # punctuation
+        text = text.replace(" :", ":")
+        text = text.replace(" ;", ";")
+        text = text.replace(" !", "!")
+        text = text.replace(" ?", "?")
+        text = text.replace(" ,", ",")
+        text = text.replace(" .", ".")
+        return text
+
+    def _instance_from_json(self, instance: Dict[str, Any]) -> MCTask.Instance:
+        context = self.detokenize(" ".join(instance["sentences"]))
+        answer_choices = instance["options"]
+        return MCTask.Instance(
+            id=instance["__default_id"],
+            metadata={},
+            context=context,
+            question=instance["question"],
+            answer_choices=answer_choices,
+            correct_answer_index=answer_choices.index(instance["answer"]))

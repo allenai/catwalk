@@ -1,44 +1,99 @@
-from ludwig.tasks.mc_task import MCTask, MCTaskFromDataset
+import datasets
+
+from ludwig.tasks.mc_task import MCTask, MCTaskFromDataset, CBTTask
 from ludwig.tasks.qa_task import QATask, QATaskFromDataset
 from ludwig.tasks.generation_task import GenerationTask
 from ludwig.tasks.classification_task import ClassificationTask
-from ludwig.tasks.pair_classification_task import PairClassificationTask
+from ludwig.tasks.pair_classification_task import PairClassificationTask, PairClassificationTaskFromDataset, \
+    BlimpTask
 
-TASKS = {
-    "piqa": MCTaskFromDataset(
+TASKS = [
+    MCTaskFromDataset(
         "piqa",
-        dataset="piqa",
+        dataset_path="piqa",
+        dataset_name=None,
         number_of_choices=2,
         context_field=None,
         question_field="goal",
         answer_choices_fields=["sol1", "sol2"],
         correct_answer_index_field="label"
     ),
-    "openbookqa": MCTaskFromDataset(
+    MCTaskFromDataset(
         "openbookqa",
-        dataset="openbookqa",
-        dataset_config="main",
+        dataset_path="openbookqa",
+        dataset_name="main",
         number_of_choices=4,
         context_field=None,
         question_field="question_stem",
         answer_choices_fields="choices.text",
         correct_answer_index_field="answerKey"
     ),
-    "squad": QATaskFromDataset(
+    MCTaskFromDataset(
+        "arc_easy",
+        dataset_path="ai2_arc",
+        dataset_name="ARC-Easy",
+        question_field="question",
+        answer_choices_fields="choices.text",
+        correct_answer_index_field="answerKey",
+        number_of_choices=4
+    ),
+    QATaskFromDataset(
         "squad",
-        dataset="squad",
+        dataset_path="squad",
+        dataset_name=None,
         context_field="context",
         question_field="question",
         answer_field="answers.text",
         id_field="id"
     ),
-    "squad_v2": QATaskFromDataset(
+    QATaskFromDataset(
         "squad_v2",
-        dataset="squad_v2",
+        dataset_path="squad_v2",
+        dataset_name=None,
         context_field="context",
         question_field="question",
         answer_field="answers.text",
         id_field="id"
+    ),
+    PairClassificationTaskFromDataset(
+        "anli",
+        dataset_path="anli",
+        dataset_name=None,
+        text1_field="premise",
+        text2_field="hypothesis",
+        label_field="label",
+        labels=["entailment", "contradiction", "neutral"],  # could be ["True", "Neither", "False"]?
+        id_field="uid",
+        split_mappings={
+            "test": ["test_r1", "test_r2", "test_r3"],
+            "validation": ["dev_r1", "dev_r2", "dev_r3"],
+            "train": ["train_r1", "train_r2", "train_r3"],
+        }
+    ),
+    CBTTask("CN"),
+    CBTTask("NE"),
+    QATaskFromDataset(
+        "drop",
+        dataset_path="drop",
+        dataset_name=None,
+        context_field="passage",
+        question_field="question",
+        answer_field="answers_spans.spans",
+        id_field="query_id"
     )
+
     # TODO: Add more tasks
+]
+
+# Blimp tasks
+TASKS.extend(BlimpTask(config_name) for config_name in datasets.get_dataset_config_names('blimp'))
+
+# convert to dictionary
+TASKS = {
+    task.name : task for task in TASKS
 }
+
+# Missing from Eleuther:
+# Arithmetic, because it's not using HF datasets
+# asdiv, because it's not using HF datasets
+# coqa: Theirs is not using datasets because the datasets code is unstable.

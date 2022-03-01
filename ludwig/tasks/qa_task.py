@@ -1,13 +1,9 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Iterator, Sequence, Dict, Any, List
-
-import datasets
-
-from tango.common.sequences import MappedSequence
+from typing import Optional, Iterator, Sequence, Dict, Any, List, Union
 
 from ludwig.models.model import ModelForEvaluation
-from ludwig.tasks.task import Task, Metrics
+from ludwig.tasks.task import Task, Metrics, FromDatasetMixin
 from ludwig.utilities import get_from_dict
 
 
@@ -57,43 +53,42 @@ class QATask(Task, ABC):
         }
 
 
-class QATaskFromDataset(QATask):
+class QATaskFromDataset(FromDatasetMixin, QATask):
     VERSION = "002"
 
     def __init__(
         self,
         name: str,
-        dataset: str,
+        dataset_path: str,
+        dataset_name: Optional[str],
         *,
-        dataset_config: Optional[str] = None,
         context_field: Optional[str],
         question_field: str,
         answer_field: str,
         id_field: Optional[str] = None,
+        split_mappings: Optional[Dict[str, Union[str, List[str]]]] = None
     ):
-        super().__init__(name)
-        # We want this lazy, so it's a lambda.
-        self.get_dataset = lambda split: datasets.load_dataset(dataset, dataset_config, split=split)
+        QATask.__init__(self, name)
+        FromDatasetMixin.__init__(
+            self,
+            dataset_path=dataset_path,
+            dataset_name=dataset_name,
+            id_field=id_field,
+            split_mappings=split_mappings)
+
         self.context_field = context_field
         self.question_field = question_field
         self.answer_field = answer_field
-        self.id_field = id_field
 
     def _instance_from_json(self, instance: Dict[str, Any]) -> QATask.Instance:
         answers = get_from_dict(instance, self.answer_field)
         if isinstance(answers, str):
             answers = [answers]
         else:
-            answers = list(set(answers))
+            answers = answers
         return QATask.Instance(
             id=str(get_from_dict(instance, self.id_field)) if self.id_field else instance["__default_id"],
             metadata={},
             context=get_from_dict(instance, self.context_field) if self.context_field else None,
             question=get_from_dict(instance, self.question_field),
             answers=answers)
-
-    def get_instances(self, split: str) -> Sequence[QATask.Instance]:
-        dataset = self.get_dataset(split)
-        if self.id_field is None:
-            dataset = dataset.add_column("__default_id", range(len(dataset)))
-        return MappedSequence(self._instance_from_json, dataset)

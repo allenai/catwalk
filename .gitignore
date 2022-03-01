@@ -3,7 +3,7 @@
 /.idea/
 
 # Python
-/__pycache__/
+__pycache__/
 
 # Eleuther Evaluation Harness creates this directory
 /lm_cache/

@@ -10,3 +10,6 @@ __pycache__/
 
 # Tango Workspace for debugging
 /workspace/
+
+# vim detritus
+*~

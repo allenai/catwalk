@@ -5,9 +5,9 @@ from typing import List, Sequence, Iterator, Optional, Dict, Any, Union
 import datasets
 from tango.common.sequences import MappedSequence, ConcatenatedSequence
 
-from ai2_lm_eval.models.model import ModelForEvaluation
-from ai2_lm_eval.tasks.task import Task, Metrics, FromDatasetMixin
-from ai2_lm_eval.utilities import get_from_dict
+from catwalk.models.model import ModelForEvaluation
+from catwalk.tasks.task import Task, Metrics, FromDatasetMixin
+from catwalk.utilities import get_from_dict
 
 
 class PairClassificationTask(Task, ABC):

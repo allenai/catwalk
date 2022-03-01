@@ -6,9 +6,9 @@ import datasets
 
 from tango.common.sequences import MappedSequence
 
-from ai2_lm_eval.models.model import ModelForEvaluation
-from ai2_lm_eval.tasks.task import Task, Metrics
-from ai2_lm_eval.utilities import get_from_dict
+from catwalk.models.model import ModelForEvaluation
+from catwalk.tasks.task import Task, Metrics
+from catwalk.utilities import get_from_dict
 
 
 class PerplexityTask(Task, ABC):

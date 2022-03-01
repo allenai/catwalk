@@ -5,12 +5,12 @@ from tango.common.registrable import Registrable
 from tango.common.det_hash import DetHashWithVersion
 
 if TYPE_CHECKING:
-    from ai2_lm_eval.tasks.classification_task import ClassificationTask
-    from ai2_lm_eval.tasks.mc_task import MCTask
-    from ai2_lm_eval.tasks.pair_classification_task import PairClassificationTask
-    from ai2_lm_eval.tasks.qa_task import QATask
-    from ai2_lm_eval.tasks.generation_task import GenerationTask
-    from ai2_lm_eval.tasks.perplexity_task import PerplexityTask
+    from catwalk.tasks.classification_task import ClassificationTask
+    from catwalk.tasks.mc_task import MCTask
+    from catwalk.tasks.pair_classification_task import PairClassificationTask
+    from catwalk.tasks.qa_task import QATask
+    from catwalk.tasks.generation_task import GenerationTask
+    from catwalk.tasks.perplexity_task import PerplexityTask
 
 
 class ModelForEvaluation(ABC, Registrable, DetHashWithVersion):

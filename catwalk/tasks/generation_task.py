@@ -2,8 +2,8 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Sequence, Iterator
 
-from ai2_lm_eval.models.model import ModelForEvaluation
-from ai2_lm_eval.tasks.task import Task, Metrics
+from catwalk.models.model import ModelForEvaluation
+from catwalk.tasks.task import Task, Metrics
 
 
 class GenerationTask(Task, ABC):

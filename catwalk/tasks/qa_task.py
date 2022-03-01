@@ -2,9 +2,9 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Iterator, Sequence, Dict, Any, List, Union
 
-from ai2_lm_eval.models.model import ModelForEvaluation
-from ai2_lm_eval.tasks.task import Task, Metrics, FromDatasetMixin
-from ai2_lm_eval.utilities import get_from_dict
+from catwalk.models.model import ModelForEvaluation
+from catwalk.tasks.task import Task, Metrics, FromDatasetMixin
+from catwalk.utilities import get_from_dict
 
 
 class QATask(Task, ABC):

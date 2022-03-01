@@ -1,5 +1,5 @@
-from ai2_lm_eval.models.model import ModelForEvaluation
-from ai2_lm_eval.models.hf_auto_model import HFAutoModelForEvaluation
+from catwalk.models.model import ModelForEvaluation
+from catwalk.models.hf_auto_model import HFAutoModelForEvaluation
 
 MODELS = {
     "bert-base-uncased": HFAutoModelForEvaluation("bert-base-uncased"),

@@ -5,9 +5,9 @@ from tango.format import JsonFormat
 from tango.format import SqliteSequenceFormat
 from tango.common.sequences import SqliteSparseSequence
 
-from ai2_lm_eval.models import ModelForEvaluation, MODELS
-from ai2_lm_eval.tasks import TASKS
-from ai2_lm_eval.tasks.task import Task, Metrics
+from catwalk.models import ModelForEvaluation, MODELS
+from catwalk.tasks import TASKS
+from catwalk.tasks.task import Task, Metrics
 
 
 @Step.register("run_model_on_task")

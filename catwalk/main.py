@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from ai2_lm_eval import RunModelOnTaskStep, CalculateMetricsStep
+from catwalk import RunModelOnTaskStep, CalculateMetricsStep
 
 
 def main():

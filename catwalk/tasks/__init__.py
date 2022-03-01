@@ -1,10 +1,10 @@
 import datasets
 
-from ai2_lm_eval.tasks.mc_task import MCTask, MCTaskFromDataset, CBTTask
-from ai2_lm_eval.tasks.qa_task import QATask, QATaskFromDataset
-from ai2_lm_eval.tasks.generation_task import GenerationTask
-from ai2_lm_eval.tasks.classification_task import ClassificationTask
-from ai2_lm_eval.tasks.pair_classification_task import PairClassificationTask, PairClassificationTaskFromDataset, \
+from catwalk.tasks.mc_task import MCTask, MCTaskFromDataset, CBTTask
+from catwalk.tasks.qa_task import QATask, QATaskFromDataset
+from catwalk.tasks.generation_task import GenerationTask
+from catwalk.tasks.classification_task import ClassificationTask
+from catwalk.tasks.pair_classification_task import PairClassificationTask, PairClassificationTaskFromDataset, \
     BlimpTask
 
 TASKS = [

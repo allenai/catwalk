@@ -2,15 +2,25 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, List, Union, Any, Iterator, Sequence, Dict
 
-import datasets
 import torch
 from torchmetrics.functional import precision_recall, accuracy, f1_score
-
-from tango.common.sequences import MappedSequence
 
 from catwalk.models.model import ModelForEvaluation
 from catwalk.tasks.task import Task, Metrics, FromDatasetMixin
 from catwalk.utilities import get_from_dict
+
+
+def _mc_default_metrics(results: Iterator['MCTask.InstanceResult']) -> Metrics:
+    logits_and_targets = [(r.logits, r.label) for r in results]
+    logits = torch.stack([l for l, _ in logits_and_targets])
+    targets = torch.tensor([t for _, t in logits_and_targets], dtype=torch.int32)
+    p, r = precision_recall(logits, targets)
+    return {
+        "accuracy": float(accuracy(logits, targets)),
+        "f1": float(f1_score(logits, targets)),
+        "precision": float(p),
+        "recall": float(r),
+    }
 
 
 class MCTask(Task, ABC):
@@ -36,17 +46,7 @@ class MCTask(Task, ABC):
     ) -> Iterator['MCTask.InstanceResult']:
         return model.do_multiple_choice(self, instances, **kwargs)
 
-    def calculate_metrics(self, results: Iterator['MCTask.InstanceResult']) -> Metrics:
-        logits_and_targets = [(r.logits, r.label) for r in results]
-        logits = torch.stack([l for l, _ in logits_and_targets])
-        targets = torch.tensor([t for _, t in logits_and_targets], dtype=torch.int32)
-        p, r = precision_recall(logits, targets)
-        return {
-            "accuracy": float(accuracy(logits, targets)),
-            "f1": float(f1_score(logits, targets)),
-            "precision": float(p),
-            "recall": float(r),
-        }
+    calculate_metrics = _mc_default_metrics
 
 
 class MCTaskFromDataset(FromDatasetMixin, MCTask):

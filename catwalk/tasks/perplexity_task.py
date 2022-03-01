@@ -14,7 +14,7 @@ from catwalk.utilities import get_from_dict
 class PerplexityTask(Task, ABC):
     @dataclass
     class Instance(Task.Instance):
-        text: str
+        text: str   # TODO: Calculating perplexity only makes sense if you keep the tokenization the same.
 
     @dataclass
     class InstanceResult(Task.InstanceResult):
@@ -27,6 +27,3 @@ class PerplexityTask(Task, ABC):
         **kwargs
     ) -> Iterator['PerplexityTask.InstanceResult']:
         return model.do_perplexity(self, instances, **kwargs)
-
-    def calculate_metrics(self, results: Iterator['PerplexityTask.InstanceResult']) -> Metrics:
-        raise NotImplementedError

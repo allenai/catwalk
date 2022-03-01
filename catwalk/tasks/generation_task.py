@@ -24,6 +24,3 @@ class GenerationTask(Task, ABC):
         **kwargs
     ) -> Iterator['GenerationTask.InstanceResult']:
         return model.do_generation(self, instances, **kwargs)
-
-    def calculate_metrics(self, results: Iterator['GenerationTask.InstanceResult']) -> Metrics:
-        raise NotImplementedError

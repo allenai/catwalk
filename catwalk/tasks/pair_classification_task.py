@@ -2,11 +2,8 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import List, Sequence, Iterator, Optional, Dict, Any, Union
 
-import datasets
-from tango.common.sequences import MappedSequence, ConcatenatedSequence
-
 from catwalk.models.model import ModelForEvaluation
-from catwalk.tasks.task import Task, Metrics, FromDatasetMixin
+from catwalk.tasks.task import Task, FromDatasetMixin
 from catwalk.utilities import get_from_dict
 
 
@@ -28,9 +25,6 @@ class PairClassificationTask(Task, ABC):
         **kwargs
     ) -> Iterator['PairClassificationTask.InstanceResult']:
         return model.do_pair_classification(self, instances, **kwargs)
-
-    def calculate_metrics(self, results: Iterator['PairClassificationTask.InstanceResult']) -> Metrics:
-        raise NotImplementedError
 
 
 class PairClassificationTaskFromDataset(FromDatasetMixin, PairClassificationTask):

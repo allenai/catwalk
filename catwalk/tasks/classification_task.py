@@ -23,6 +23,3 @@ class ClassificationTask(Task, ABC):
         **kwargs
     ) -> Iterator['ClassificationTask.InstanceResult']:
         return model.do_classification(self, instances, **kwargs)
-
-    def calculate_metrics(self, results: Iterator['ClassificationTask.InstanceResult']) -> Metrics:
-        raise NotImplementedError

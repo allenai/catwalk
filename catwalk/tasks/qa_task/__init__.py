@@ -7,6 +7,33 @@ from catwalk.tasks.task import Task, Metrics, FromDatasetMixin
 from catwalk.utilities import get_from_dict
 
 
+def _squad_metric_fn(results: Iterator['QATask.InstanceResult']) -> Metrics:
+    from datasets import load_metric
+    squad = load_metric("squad_v2")
+
+    # Why is the squad metric so weird?
+    preds = []
+    target = []
+    for result in results:
+        preds.append({
+            "prediction_text": result.predicted or "",
+            "id": result.instance.id,
+            "no_answer_probability": 1 if result.predicted is None else 0
+        })
+        target.append({
+            "id": result.instance.id,
+            "answers": {
+                "answer_start": [-1 for _ in result.instance.answers],
+                "text": [answer for answer in result.instance.answers]
+            }
+        })
+
+    return {
+        key: float(value)
+        for key, value in squad.compute(predictions=preds, references=target, no_answer_threshold=0.5).items()
+    }
+
+
 class QATask(Task, ABC):
     @dataclass
     class Instance(Task.Instance):
@@ -26,31 +53,7 @@ class QATask(Task, ABC):
     ) -> Iterator['QATask.InstanceResult']:
         return model.do_qa(self, instances, **kwargs)
 
-    def calculate_metrics(self, results: Iterator['QATask.InstanceResult']) -> Metrics:
-        from datasets import load_metric
-        squad = load_metric("squad_v2")
-
-        # Why is the squad metric so weird?
-        preds = []
-        target = []
-        for result in results:
-            preds.append({
-                "prediction_text": result.predicted or "",
-                "id": result.instance.id,
-                "no_answer_probability": 1 if result.predicted is None else 0
-            })
-            target.append({
-                "id": result.instance.id,
-                "answers": {
-                    "answer_start": [-1 for _ in result.instance.answers],
-                    "text": [answer for answer in result.instance.answers]
-                }
-            })
-
-        return {
-            key: float(value)
-            for key, value in squad.compute(predictions=preds, references=target, no_answer_threshold=0.5).items()
-        }
+    calculate_metrics = _squad_metric_fn
 
 
 class QATaskFromDataset(FromDatasetMixin, QATask):
@@ -66,6 +69,7 @@ class QATaskFromDataset(FromDatasetMixin, QATask):
         question_field: str,
         answer_field: str,
         id_field: Optional[str] = None,
+        metric_fn: Task.MetricFn = _squad_metric_fn,
         split_mappings: Optional[Dict[str, Union[str, List[str]]]] = None
     ):
         QATask.__init__(self, name)
@@ -79,6 +83,7 @@ class QATaskFromDataset(FromDatasetMixin, QATask):
         self.context_field = context_field
         self.question_field = question_field
         self.answer_field = answer_field
+        self.calculate_metrics = metric_fn
 
     def _instance_from_json(self, instance: Dict[str, Any]) -> QATask.Instance:
         answers = get_from_dict(instance, self.answer_field)

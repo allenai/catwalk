@@ -6,6 +6,7 @@ from catwalk.tasks.generation_task import GenerationTask
 from catwalk.tasks.classification_task import ClassificationTask
 from catwalk.tasks.pair_classification_task import PairClassificationTask, PairClassificationTaskFromDataset, \
     BlimpTask
+from catwalk.tasks.qa_task.drop_metric import drop_metric_fn
 
 TASKS = [
     MCTaskFromDataset(
@@ -79,7 +80,8 @@ TASKS = [
         context_field="passage",
         question_field="question",
         answer_field="answers_spans.spans",
-        id_field="query_id"
+        id_field="query_id",
+        metric_fn=drop_metric_fn
     )
 
     # TODO: Add more tasks

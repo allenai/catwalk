@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Iterator, Dict, TypeVar, Sequence, Any, Optional, Union, List
+from typing import Iterator, Dict, TypeVar, Sequence, Any, Optional, Union, List, Callable
 
 import datasets
 from tango.common.det_hash import DetHashWithVersion
@@ -49,10 +49,8 @@ class Task(ABC, Registrable, DetHashWithVersion):
         """This method runs inference on a model to produce results given instances."""
         raise NotImplementedError
 
-    @abstractmethod
-    def calculate_metrics(self, results: Iterator[InstanceResult]) -> Metrics:
-        """This method calculates metrics from the given results."""
-        raise NotImplementedError
+    MetricFn = Callable[[Iterator[InstanceResult]], Metrics]
+    calculate_metrics: MetricFn = NotImplemented
 
     def evaluate_model(self, model: ModelForEvaluation, **kwargs) -> Metrics:
         """This method evaluates a task on the test set end-to-end."""

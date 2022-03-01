@@ -2,9 +2,9 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Iterator, Sequence, Dict, Any, List, Union
 
-from ludwig.models.model import ModelForEvaluation
-from ludwig.tasks.task import Task, Metrics, FromDatasetMixin
-from ludwig.utilities import get_from_dict
+from ai2_lm_eval.models.model import ModelForEvaluation
+from ai2_lm_eval.tasks.task import Task, Metrics, FromDatasetMixin
+from ai2_lm_eval.utilities import get_from_dict
 
 
 class QATask(Task, ABC):

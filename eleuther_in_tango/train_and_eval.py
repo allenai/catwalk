@@ -1,12 +1,10 @@
 import argparse
 
 from tango import StepGraph
-from tango.common import Params
 from tango.common.exceptions import ConfigurationError
 from tango.common.logging import initialize_logging
-from tango.common.util import import_extra_module
 
-from lm_eval_step import LMEvalStep
+from eleuther_in_tango.lm_eval_step import LMEvalStep
 
 
 def main():

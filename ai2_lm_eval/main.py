@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from ludwig import RunModelOnTaskStep, CalculateMetricsStep
+from ai2_lm_eval import RunModelOnTaskStep, CalculateMetricsStep
 
 
 def main():

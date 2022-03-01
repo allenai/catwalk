@@ -2,8 +2,8 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import List, Sequence, Iterator
 
-from ludwig.models.model import ModelForEvaluation
-from ludwig.tasks.task import Task, Metrics
+from ai2_lm_eval.models.model import ModelForEvaluation
+from ai2_lm_eval.tasks.task import Task, Metrics
 
 
 class ClassificationTask(Task, ABC):

@@ -8,9 +8,9 @@ from torchmetrics.functional import precision_recall, accuracy, f1_score
 
 from tango.common.sequences import MappedSequence
 
-from ludwig.models.model import ModelForEvaluation
-from ludwig.tasks.task import Task, Metrics, FromDatasetMixin
-from ludwig.utilities import get_from_dict
+from ai2_lm_eval.models.model import ModelForEvaluation
+from ai2_lm_eval.tasks.task import Task, Metrics, FromDatasetMixin
+from ai2_lm_eval.utilities import get_from_dict
 
 
 class MCTask(Task, ABC):

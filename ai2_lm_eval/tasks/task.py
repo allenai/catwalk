@@ -7,7 +7,7 @@ from tango.common.det_hash import DetHashWithVersion
 from tango.common.registrable import Registrable
 from tango.common.sequences import MappedSequence, ConcatenatedSequence
 
-from ludwig.models.model import ModelForEvaluation
+from ai2_lm_eval.models.model import ModelForEvaluation
 
 Metrics = Dict[str, float]
 InstanceT = TypeVar('InstanceT')

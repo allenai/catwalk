@@ -5,9 +5,9 @@ import torch
 from tango.common.tqdm import Tqdm
 from transformers import AutoModelForMultipleChoice, AutoTokenizer, AutoModelForQuestionAnswering
 
-from ludwig.models.model import ModelForEvaluation
-from ludwig.tasks import GenerationTask, MCTask, QATask, ClassificationTask, PairClassificationTask
-from ludwig.utilities import get_best_spans
+from ai2_lm_eval.models.model import ModelForEvaluation
+from ai2_lm_eval.tasks import GenerationTask, MCTask, QATask, ClassificationTask, PairClassificationTask
+from ai2_lm_eval.utilities import get_best_spans
 
 
 @ModelForEvaluation.register("hf")

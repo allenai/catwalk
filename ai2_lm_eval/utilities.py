@@ -4,6 +4,7 @@ import torch
 
 
 def get_best_spans(span_start_logits: torch.Tensor, span_end_logits: torch.Tensor) -> torch.Tensor:
+    # TODO: There is a function like this in huggingface. We don't need to have our own.
     if span_start_logits.dim() != 2 or span_end_logits.dim() != 2:
         raise ValueError("Input shapes must be (batch_size, passage_length)")
     batch_size, passage_length = span_start_logits.size()

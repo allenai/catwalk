@@ -1,5 +1,5 @@
-from ludwig.models.model import ModelForEvaluation
-from ludwig.models.hf_auto_model import HFAutoModelForEvaluation
+from ai2_lm_eval.models.model import ModelForEvaluation
+from ai2_lm_eval.models.hf_auto_model import HFAutoModelForEvaluation
 
 MODELS = {
     "bert-base-uncased": HFAutoModelForEvaluation("bert-base-uncased"),

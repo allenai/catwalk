@@ -6,3 +6,4 @@ torchmetrics
 more_itertools
 scipy    # Just for the DROP metric
 numpy
+spacy

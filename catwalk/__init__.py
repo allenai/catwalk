@@ -1,4 +1,4 @@
-from typing import Union, Sequence, Optional
+from typing import Union, Sequence, Optional, Dict, Any
 
 from tango import Step
 from tango.format import JsonFormat
@@ -15,6 +15,13 @@ class RunModelOnTaskStep(Step):
     VERSION = "002"
     FORMAT = SqliteSequenceFormat
     SKIP_ID_ARGUMENTS = {"batch_size"}
+
+    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(kwargs["model"], str):
+            kwargs["model"] = MODELS[kwargs["model"]]
+        if isinstance(kwargs["task"], str):
+            kwargs["task"] = TASKS[kwargs["task"]]
+        return kwargs
 
     def run(
         self,
@@ -43,6 +50,11 @@ class RunModelOnTaskStep(Step):
 class CalculateMetricsStep(Step):
     VERSION = "001"
     FORMAT = JsonFormat
+
+    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(kwargs["task"], str):
+            kwargs["task"] = TASKS[kwargs["task"]]
+        return kwargs
 
     def run(
         self,

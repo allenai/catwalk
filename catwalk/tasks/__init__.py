@@ -1,6 +1,7 @@
 import datasets
 
 from catwalk.tasks.mc_task import MCTask, MCTaskFromDataset, CBTTask
+from catwalk.tasks.perplexity_task import WikitextTask
 from catwalk.tasks.qa_task import QATask, QATaskFromDataset
 from catwalk.tasks.generation_task import GenerationTask
 from catwalk.tasks.classification_task import ClassificationTask
@@ -82,7 +83,8 @@ TASKS = [
         answer_field="answers_spans.spans",
         id_field="query_id",
         metric_fn=drop_metric_fn
-    )
+    ),
+    WikitextTask("wikitext", "wikitext-2-raw-v1")
 
     # TODO: Add more tasks
 ]

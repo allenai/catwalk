@@ -1,3 +1,4 @@
+from catwalk.models.gpt_model import GPTModel
 from catwalk.models.model import ModelForEvaluation
 from catwalk.models.hf_auto_model import HFAutoModelForEvaluation
 
@@ -8,5 +9,6 @@ MODELS = {
     "bert-large-cased": HFAutoModelForEvaluation("bert-large-cased"),
     "roberta-base": HFAutoModelForEvaluation("roberta-base"),
     "roberta-large": HFAutoModelForEvaluation("roberta-large"),
-    "deepset/roberta-base-squad2": HFAutoModelForEvaluation('deepset/roberta-base-squad2')
+    "deepset/roberta-base-squad2": HFAutoModelForEvaluation('deepset/roberta-base-squad2'),
+    "gpt2": GPTModel("gpt2")
 }

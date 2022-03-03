@@ -1,12 +1,10 @@
 import argparse
 
 from tango import StepGraph
-from tango.common import Params
 from tango.common.exceptions import ConfigurationError
 from tango.common.logging import initialize_logging
-from tango.common.util import import_extra_module
 
-from lm_eval_step import LMEvalStep
+from eleuther_in_tango.lm_eval_step import LMEvalStep
 
 
 def main():
@@ -30,12 +28,7 @@ def main():
         from tango import LocalWorkspace
         workspace = LocalWorkspace(args.workspace)
 
-    # TODO: dirkgr: Replace this with StepGraph.from_file() in the next version of Tango
-    params = Params.from_file(args.training_config)
-    for package_name in params.pop("include_package", []):
-        import_extra_module(package_name)
-    step_graph = StepGraph(params.pop("steps", keep_as_dict=True))
-    #step_graph = StepGraph.from_file(args.training_config)
+    step_graph = StepGraph.from_file(args.training_config)
 
     try:
         training_step = step_graph["trained_model"]

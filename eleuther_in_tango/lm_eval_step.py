@@ -1,9 +1,9 @@
 import argparse
-from typing import Optional, List, Union
+from typing import List, Union
 
 from tango import Step, JsonFormat
 from tango.integrations.torch.util import resolve_device
-from transformers import GPT2LMHeadModel, AutoModelForCausalLM
+from transformers import GPT2LMHeadModel
 
 
 class LMEvalStep(Step):
@@ -43,6 +43,8 @@ class LMEvalStep(Step):
             # TODO: When we allow model types other than GPT2, we have to handle the tokenizer here.
             model = hflm
 
+            # If the model we are using came from a step, it has a nice and unique name.
+            # If it didn't come from a step, we have nothing to go on.
             if isinstance(self.kwargs["model"], Step):
                 model_name = self.kwargs["model"].unique_id
             else:

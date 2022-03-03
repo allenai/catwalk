@@ -3,10 +3,13 @@
 /.idea/
 
 # Python
-/__pycache__/
+__pycache__/
 
 # Eleuther Evaluation Harness creates this directory
 /lm_cache/
 
 # Tango Workspace for debugging
 /workspace/
+
+# vim detritus
+*~

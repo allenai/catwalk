@@ -2,11 +2,11 @@ from typing import Union, Dict, Any, Optional
 
 from tango import Step, JsonFormat
 
-from catwalk2.model import IzModel, MODELS
-from catwalk2.task import TASKS, IzTask
+from catwalk2.model import Model, MODELS
+from catwalk2.task import TASKS, Task
 
 
-@Step.register("iz::predict")
+@Step.register("catwalk::predict")
 class PredictStep(Step):
     VERSION = "001"
     SKIP_ID_ARGUMENTS = {"batch_size"}
@@ -20,8 +20,8 @@ class PredictStep(Step):
 
     def run(
         self,
-        model: Union[str, IzModel],
-        task: Union[str, IzTask],
+        model: Union[str, Model],
+        task: Union[str, Task],
         batch_size: int = 32,
         limit: Optional[int] = None
     ) -> Any:
@@ -31,7 +31,7 @@ class PredictStep(Step):
         return model.predict(task)
 
 
-@Step.register("iz::calculate_metrics")
+@Step.register("catwalk::calculate_metrics")
 class CalculateMetricsStep(Step):
     VERSION = "001"
     FORMAT = JsonFormat
@@ -45,8 +45,8 @@ class CalculateMetricsStep(Step):
 
     def run(
         self,
-        model: Union[str, IzModel],
-        task: Union[str, IzTask],
+        model: Union[str, Model],
+        task: Union[str, Task],
         predictions: Any
     ) -> Dict[str, float]:
         return model.calculate_metrics(task, predictions)

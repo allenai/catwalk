@@ -11,23 +11,23 @@ from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from catwalk2.task import IzTask
+from catwalk2.task import Task
 
 
-class IzModel(Registrable, ABC):
-    def predict(self, task: IzTask, **kwargs) -> Any:
+class Model(Registrable, ABC):
+    def predict(self, task: Task, **kwargs) -> Any:
         raise NotImplementedError()
 
-    def calculate_metrics(self, task: IzTask, predictions: Any) -> Dict[str, float]:
+    def calculate_metrics(self, task: Task, predictions: Any) -> Dict[str, float]:
         raise NotImplementedError()
 
 
-@IzModel.register("iz::gpt")
-class GPTModel(IzModel):
+@Model.register("catwalk::gpt")
+class GPTModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
-    def predict(self, task: IzTask, *, batch_size: int = 32) -> Iterator[Tuple[str, float]]:
+    def predict(self, task: Task, *, batch_size: int = 32) -> Iterator[Tuple[str, float]]:
         model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 
@@ -149,7 +149,7 @@ class GPTModel(IzModel):
             last_text = text
         yield last_text, float(summed_logprobs)
 
-    def calculate_metrics(self, task: IzTask, predictions: Iterator[Tuple[str, float]]) -> Dict[str, float]:
+    def calculate_metrics(self, task: Task, predictions: Iterator[Tuple[str, float]]) -> Dict[str, float]:
         from spacy.lang.en import English
         tokenizer = English().tokenizer
 

@@ -12,12 +12,12 @@ from tango.common import Registrable
 from catwalk2 import crossfit
 
 
-class IzTask(Registrable, ABC):
+class Task(Registrable, ABC):
     def get_split(self, split: str) -> Iterable[Dict[str, Any]]:
         raise NotImplementedError
 
 
-class DatasetsTask(IzTask):
+class DatasetsTask(Task):
     def __init__(
         self,
         dataset_path: str,
@@ -34,7 +34,7 @@ class DatasetsTask(IzTask):
         return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
 
 
-class CrossfitTask(IzTask):
+class CrossfitTask(Task):
     def __init__(self, name: str):
         self.name = name
 
@@ -72,8 +72,6 @@ class CrossfitTask(IzTask):
                 result[current_field] = value
             yield result
 
-
-Task = Callable[[str], Iterable[Dict[str, Any]]]
 
 TASKS = {
     "wikitext": DatasetsTask("wikitext", "wikitext-2-raw-v1")

@@ -99,3 +99,9 @@ class FromDatasetMixin(ABC):
             return sequences[0]
         else:
             return ConcatenatedSequence(*sequences)
+
+
+class FromCrossfitMixin(ABC):
+    def __init__(self, crossfit_task: str):
+        from catwalk.tasks import crossfit
+        self.crossfit_task = crossfit.TASKS[crossfit_task]

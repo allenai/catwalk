@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Sequence, Iterator, Optional, Dict, Any, Union
 
 from catwalk.models.model import ModelForEvaluation
-from catwalk.tasks.task import Task, FromDatasetMixin
+from catwalk.tasks.task import Task, FromDatasetMixin, FromCrossfitMixin
 from catwalk.utilities import get_from_dict
 
 
@@ -69,6 +69,51 @@ class PairClassificationTaskFromDataset(FromDatasetMixin, PairClassificationTask
             text1=get_from_dict(instance, self.text1_field),
             text2=get_from_dict(instance, self.text2_field),
             label=label)
+
+
+class PairClassificationTaskFromCrossfit(PairClassificationTask):
+    VERSION = "001"
+
+    def __init__(
+        self,
+        name: str,
+        crossfit_task: Optional[str] = None,
+        text1_field: str = "premise",
+        text2_field: str = "hypothesis",
+        label_field: str = "target",
+    ):
+        PairClassificationTask.__init__(self, name)
+
+        if crossfit_task is None:
+            crossfit_task = name
+        from catwalk.tasks import crossfit
+        from catwalk.tasks.crossfit import FewshotGymClassificationDataset
+        self.crossfit_task: FewshotGymClassificationDataset = crossfit.TASKS[crossfit_task]
+        assert isinstance(self.crossfit_task, FewshotGymClassificationDataset)
+
+        self.text1_field = text1_field
+        self.text2_field = text2_field
+        self.label_field = label_field
+
+    @property
+    def labels(self) -> List[str]:
+        result = [None] * len(self.crossfit_task.label)
+        for index, name in self.crossfit_task.label.items():
+            result[index] = name
+        return result
+
+    def get_instances(self, split: str) -> Sequence[PairClassificationTask.Instance]:
+        from catwalk.tasks.crossfit import get_data_as_dicts
+        result = []
+        for i, d in enumerate(get_data_as_dicts(self.crossfit_task, split, [self.text1_field, self.text2_field])):
+            result.append(PairClassificationTask.Instance(
+                id=str(i),
+                metadata=d,
+                text1=d[self.text1_field],
+                text2=d[self.text2_field],
+                label=d[self.label_field]
+            ))
+        return result
 
 
 class BlimpTask(FromDatasetMixin, PairClassificationTask):

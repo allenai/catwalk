@@ -6,7 +6,7 @@ from catwalk.tasks.qa_task import QATask, QATaskFromDataset
 from catwalk.tasks.generation_task import GenerationTask
 from catwalk.tasks.classification_task import ClassificationTask
 from catwalk.tasks.pair_classification_task import PairClassificationTask, PairClassificationTaskFromDataset, \
-    BlimpTask
+    BlimpTask, PairClassificationTaskFromCrossfit
 from catwalk.tasks.qa_task.drop_metric import drop_metric_fn
 
 TASKS = [
@@ -84,7 +84,16 @@ TASKS = [
         id_field="query_id",
         metric_fn=drop_metric_fn
     ),
-    WikitextTask("wikitext", "wikitext-2-raw-v1")
+    WikitextTask("wikitext", "wikitext-2-raw-v1"),
+    PairClassificationTaskFromCrossfit(
+        "amazon_polarity",
+        text1_field="title",
+        text2_field="content"
+    ),
+    PairClassificationTaskFromCrossfit(
+        "glue_qnli",
+        text1_field="question",
+        text2_field="sentence")
 
     # TODO: Add more tasks
 ]

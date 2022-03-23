@@ -13,3 +13,6 @@ __pycache__/
 
 # vim detritus
 *~
+
+# Eleuther detritus
+/data/

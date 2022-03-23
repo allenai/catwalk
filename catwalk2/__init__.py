@@ -2,6 +2,7 @@ from typing import Union, Dict, Any, Optional, Sequence
 
 from tango import Step, JsonFormat, SqliteDictFormat
 from tango.common.sequences import SqliteSparseSequence
+from tango.format import SqliteSequenceFormat
 
 from catwalk2.model import Model, MODELS
 from catwalk2.task import TASKS, Task
@@ -11,7 +12,7 @@ from catwalk2.task import TASKS, Task
 class PredictStep(Step):
     VERSION = "001"
     SKIP_ID_ARGUMENTS = {"batch_size"}
-    FORMAT = SqliteDictFormat
+    FORMAT = SqliteSequenceFormat
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -59,6 +60,6 @@ class CalculateMetricsStep(Step):
         self,
         model: Union[str, Model],
         task: Union[str, Task],
-        predictions: Any
+        predictions: Sequence[Any]
     ) -> Dict[str, float]:
         return model.calculate_metrics(task, predictions)

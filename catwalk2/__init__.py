@@ -1,65 +1,47 @@
-from typing import Union, Dict, Any, Optional, Sequence
-
-from tango import Step, JsonFormat, SqliteDictFormat
-from tango.common.sequences import SqliteSparseSequence
-from tango.format import SqliteSequenceFormat
-
-from catwalk2.model import Model, MODELS
-from catwalk2.task import TASKS, Task
+import argparse
+import json
 
 
-@Step.register("catwalk::predict")
-class PredictStep(Step):
-    VERSION = "001"
-    SKIP_ID_ARGUMENTS = {"batch_size"}
-    FORMAT = SqliteSequenceFormat
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, required=True)
+    parser.add_argument('--task', type=str, nargs="+")
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--limit', type=int)
+    parser.add_argument(
+        '-d',
+        type=str,
+        default=None,
+        metavar="workspace",
+        dest="workspace",
+        help="the Tango workspace with the cache")
+    args = parser.parse_args()
 
-    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["model"], str):
-            kwargs["model"] = MODELS[kwargs["model"]]
-        if isinstance(kwargs["task"], str):
-            kwargs["task"] = TASKS[kwargs["task"]]
-        return kwargs
+    if args.workspace is None:
+        workspace = None
+    else:
+        from tango.workspaces import LocalWorkspace
+        workspace = LocalWorkspace(args.workspace)
 
-    def run(
-        self,
-        model: Union[str, Model],
-        task: Union[str, Task],
-        split: str = "validation",
-        batch_size: int = 32,
-        limit: Optional[int] = None
-    ) -> Sequence[Any]:
-        if isinstance(model, str):
-            model = MODELS[model]
-        if isinstance(task, str):
-            task = TASKS[task]
+    limit = args.limit if hasattr(args, "limit") else None
 
-        results = SqliteSparseSequence(self.work_dir_for_run / "result.sqlite")
-        instances = task.get_split(split)
-        if limit is not None:
-            instances = instances[:limit]
-        instances = instances[len(results):]
-        for result in model.predict(task, instances, batch_size=batch_size):
-            results.append(result)
-        return results
+    from catwalk2.steps import CalculateMetricsStep
+    from catwalk2.steps import PredictStep
+
+    for task in args.task:
+        predictions = PredictStep(
+            model=args.model,
+            task=task,
+            batch_size=args.batch_size,
+            limit=limit)
+        metrics = CalculateMetricsStep(
+            model=args.model,
+            task=task,
+            predictions=predictions)
+
+        result = metrics.result(workspace)
+        print(json.dumps(result, indent=4, sort_keys=True))
 
 
-@Step.register("catwalk::calculate_metrics")
-class CalculateMetricsStep(Step):
-    VERSION = "001"
-    FORMAT = JsonFormat
-
-    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["model"], str):
-            kwargs["model"] = MODELS[kwargs["model"]]
-        if isinstance(kwargs["task"], str):
-            kwargs["task"] = TASKS[kwargs["task"]]
-        return kwargs
-
-    def run(
-        self,
-        model: Union[str, Model],
-        task: Union[str, Task],
-        predictions: Sequence[Any]
-    ) -> Dict[str, float]:
-        return model.calculate_metrics(task, predictions)
+if __name__ == "__main__":
+    main()

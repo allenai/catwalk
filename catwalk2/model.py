@@ -2,7 +2,7 @@ import math
 import re
 from abc import ABC
 from dataclasses import dataclass
-from typing import Dict, Any, Iterator, Tuple
+from typing import Dict, Any, Iterator, Tuple, Sequence
 
 import more_itertools
 import torch
@@ -15,10 +15,10 @@ from catwalk2.task import Task
 
 
 class Model(Registrable, ABC):
-    def predict(self, task: Task, **kwargs) -> Any:
+    def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Any]:
         raise NotImplementedError()
 
-    def calculate_metrics(self, task: Task, predictions: Any) -> Dict[str, float]:
+    def calculate_metrics(self, task: Task, predictions: Iterator[Any]) -> Dict[str, float]:
         raise NotImplementedError()
 
 
@@ -27,7 +27,7 @@ class GPTModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
-    def predict(self, task: Task, *, batch_size: int = 32) -> Iterator[Tuple[str, float]]:
+    def predict(self, task: Task, instances: Sequence[Dict[str, Any]], *, batch_size: int = 32) -> Iterator[Tuple[str, float]]:
         model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 
@@ -135,7 +135,7 @@ class GPTModel(Model):
                 yield from batch_results
 
         texts = make_texts(Tqdm.tqdm(
-            task.get_split("validation"),
+            instances,
             desc="Calculating log probabilities"))
         model_instances = make_model_instances(texts)
         model_predictions = make_model_predictions(model_instances)

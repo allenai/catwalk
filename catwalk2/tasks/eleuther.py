@@ -3,9 +3,13 @@ import random
 from tempfile import NamedTemporaryFile
 from typing import Dict, Any, Optional, Union, Callable, Sequence
 
+import torchmetrics
 from tango.common import Tqdm
 from tango.common.sequences import SqliteSparseSequence, MappedSequence
+from torchmetrics import MeanMetric
 
+from catwalk2.metrics.entropy import EntropyMetric
+from catwalk2.metrics.perplexity import PerplexityMetric
 from catwalk2.task import Task
 from catwalk2.task import TaskType
 
@@ -47,15 +51,15 @@ class EleutherTask(Task, WithEleutherConversion):
         super().__init__(task_type, version_override=version_override)
 
         # TODO: Move this into Tango
-        self._params = { "eleuther_task": eleuther_task }
+        self._params = {"eleuther_task": eleuther_task}
         if random_seed is not None:
             self._params["random_seed"] = random_seed
         if version_override is not None:
             self._params["version_override"] = version_override
 
-        # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to make
-        # this lazy.
         if isinstance(eleuther_task, str):
+            # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to
+            # make this lazy.
             self.eleuther_task_fn = lambda: lm_eval.tasks.get_task(eleuther_task)()
         else:
             self.eleuther_task_fn = eleuther_task
@@ -188,3 +192,10 @@ class EleutherPerplexityTask(EleutherTask):
 
     def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
         return instance["text"]
+
+    def get_metrics(self) -> Dict[str, torchmetrics.Metric]:
+        return {
+            "word_perplexity": PerplexityMetric(),
+            "byte_perplexity": PerplexityMetric(),
+            "bits_per_byte": EntropyMetric(),
+        }

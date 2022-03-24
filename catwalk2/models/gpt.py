@@ -23,53 +23,6 @@ class GPTModel(Model):
         model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 
-        def wikitext_detokenizer(string: str) -> str:
-            # contractions
-            string = string.replace("s '", "s'")
-            string = re.sub(r"/' [0-9]/", r"/'[0-9]/", string)
-            # number separators
-            string = string.replace(" @-@ ", "-")
-            string = string.replace(" @,@ ", ",")
-            string = string.replace(" @.@ ", ".")
-            # punctuation
-            string = string.replace(" : ", ": ")
-            string = string.replace(" ; ", "; ")
-            string = string.replace(" . ", ". ")
-            string = string.replace(" ! ", "! ")
-            string = string.replace(" ? ", "? ")
-            string = string.replace(" , ", ", ")
-            # double brackets
-            string = re.sub(r"\(\s*([^\)]*?)\s*\)", r"(\1)", string)
-            string = re.sub(r"\[\s*([^\]]*?)\s*\]", r"[\1]", string)
-            string = re.sub(r"{\s*([^}]*?)\s*}", r"{\1}", string)
-            string = re.sub(r"\"\s*([^\"]*?)\s*\"", r'"\1"', string)
-            string = re.sub(r"'\s*([^']*?)\s*'", r"'\1'", string)
-            # miscellaneous
-            string = string.replace("= = = =", "====")
-            string = string.replace("= = =", "===")
-            string = string.replace("= =", "==")
-            string = string.replace(" " + chr(176) + " ", chr(176))
-            string = string.replace(" \n", "\n")
-            string = string.replace("\n ", "\n")
-            string = string.replace(" N ", " 1 ")
-            string = string.replace(" 's", "'s")
-
-            return string
-
-        def make_texts(ds_instances: Iterator[Dict[str, Any]]) -> Iterator[str]:
-            ret = []
-            for line in ds_instances:
-                # Stolen from Eleuther
-                line = line["text"]
-                rline = line.replace("= = =", "===").replace("= =", "==").strip()
-                if rline.startswith('= ') and rline.strip().endswith(' ='):
-                    s = '\n'.join(ret)
-                    if s.strip():
-                        yield wikitext_detokenizer(s)
-                    ret = []
-                ret.append(line)
-            yield wikitext_detokenizer('\n'.join(ret))
-
         @dataclass
         class ModelInstance:
             text: str
@@ -126,34 +79,31 @@ class GPTModel(Model):
                         batch_results.append((mi.text, logprobs))
                 yield from batch_results
 
-        texts = make_texts(Tqdm.tqdm(
-            instances,
-            desc="Calculating log probabilities"))
-        model_instances = make_model_instances(texts)
+        def group_model_predictions(model_predictions: Iterator[Tuple[str, torch.Tensor]]) -> Iterator[Tuple[str, float]]:
+            last_text = None
+            summed_logprobs = 0.0
+            for text, logprobs in model_predictions:
+                if last_text is not None and text != last_text:
+                    yield last_text, float(summed_logprobs)
+                    summed_logprobs = 0.0
+                summed_logprobs += logprobs.sum()
+                last_text = text
+            yield last_text, float(summed_logprobs)
+
+        model_instances = make_model_instances(
+            instance["text"] for instance in Tqdm.tqdm(
+                instances,
+                desc="Calculating log probabilities")
+        )
         model_predictions = make_model_predictions(model_instances)
-        last_text = None
-        summed_logprobs = 0.0
-        for text, logprobs in model_predictions:
-            if last_text is not None and text != last_text:
-                yield last_text, float(summed_logprobs)
-                summed_logprobs = 0.0
-            summed_logprobs += logprobs.sum()
-            last_text = text
-        yield last_text, float(summed_logprobs)
+        grouped_predictions = group_model_predictions(model_predictions)
 
-    def calculate_metrics(self, task: Task, predictions: Iterator[Tuple[str, float]]) -> Dict[str, float]:
         from spacy.lang.en import English
-        tokenizer = English().tokenizer
-
-        logprob_sum = 0.0
-        characters = 0
-        words = 0
-        for text, logprob in predictions:
-            logprob_sum += logprob
-            words += len(tokenizer(text))
-            characters += len(text)
-        return {
-            "word_perplexity": math.exp(-logprob_sum / words),
-            "byte_perplexity": math.exp(-logprob_sum / characters),        # bytes aren't characters, but this is what Eleuther calls it
-            "bits_per_byte": -(logprob_sum / characters) / math.log(2)
-        }
+        spacy_tokenizer = English().tokenizer
+        for text, logprob in grouped_predictions:
+            yield {
+                "text": text,
+                "word_perplexity": (logprob, len(spacy_tokenizer(text))),
+                "byte_perplexity": (logprob, len(text)),        # bytes aren't characters, but this is what Eleuther calls it
+                "bits_per_byte": (logprob, len(text))
+            }

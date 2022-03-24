@@ -3,8 +3,9 @@ from dataclasses import dataclass
 from typing import Optional, Sequence, Dict, Any, List, Union, Mapping
 
 import datasets
+from tango.common.sequences import MappedSequence
 
-from catwalk2.task import Task, TaskType
+from catwalk2.task import Task, InstanceFormat, InstanceConversion
 
 
 def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str) -> Any:
@@ -28,21 +29,25 @@ def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str) -> Any
 class HFDatasetsTask(Task):
     def __init__(
         self,
-        task_type: TaskType,
         dataset_path: str,
         dataset_name: Optional[str] = None,
         *,
         version_override: Optional[str] = None
     ):
-        super().__init__(task_type, version_override=version_override)
+        super().__init__(version_override=version_override)
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
+        self.add_instance_conversion(InstanceFormat.HF_DICT, lambda x: x)
 
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
-        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+        ds = datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+        # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
+        # to make them act like sequences.
+        ds = MappedSequence(lambda x: x, ds)
+        return ds
 
 
 @dataclass
@@ -53,37 +58,15 @@ class HFMCInstance:
     correct_answer_index: int
 
 
-class WithHFMCConversion(ABC):
-    def instance_as_hf_mc(self, instance: Dict[str, Any]) -> HFMCInstance:
-        raise NotImplementedError
-
-
-class TaskWithHFMCConversion(Task, WithHFMCConversion):
-    def __init__(
-        self,
-        inner_task: Task,
-        *,
-        context_field: Optional[str] = None,
-        question_field: str,
-        answer_choices_fields: Union[str, List[str]],
-        correct_answer_index_field: str,
-        id_field: Optional[str] = None,
-        version_override: Optional[str] = None
-    ):
-        assert inner_task.task_type == TaskType.MULTIPLE_CHOICE
-        super().__init__(inner_task.task_type, version_override=version_override)
-        self.inner_task = inner_task
-        self.context_field = context_field
-        self.question_field = question_field
-        self.answer_choices_fields = answer_choices_fields
-        self.correct_answer_index_field = correct_answer_index_field
-        self.id_field = id_field
-
-    def __getattr__(self, item):
-        return getattr(self.inner_task, item)
-
-    @classmethod
-    def _normalize_answers(cls, answer: Any) -> int:
+def hfmc_conversion(
+    *,
+    context_field: Optional[str] = None,
+    question_field: str,
+    answer_choices_fields: Union[str, List[str]],
+    correct_answer_index_field: str,
+    id_field: Optional[str] = None,
+) -> InstanceConversion:
+    def normalize_answers(answer: Any) -> int:
         if isinstance(answer, int):
             return answer
         if isinstance(answer, str):
@@ -96,19 +79,21 @@ class TaskWithHFMCConversion(Task, WithHFMCConversion):
                 else:
                     raise
 
-    def instance_as_hf_mc(self, instance: Dict[str, Any]) -> HFMCInstance:
-        if isinstance(self.answer_choices_fields, str):
-            answer_choices = get_from_dict(instance, self.answer_choices_fields)
+    def convert(instance: Dict[str, Any]) -> HFMCInstance:
+        if isinstance(answer_choices_fields, str):
+            answer_choices = get_from_dict(instance, answer_choices_fields)
         else:
-            answer_choices = [get_from_dict(instance, field) for field in self.answer_choices_fields]
+            answer_choices = [get_from_dict(instance, field) for field in answer_choices_fields]
         answer_choices = [a.strip() for a in answer_choices]
 
-        question = get_from_dict(instance, self.question_field).strip()
-        if self.context_field is not None:
-            question = get_from_dict(instance, self.context_field).strip() + " " + question
+        question = get_from_dict(instance, question_field).strip()
+        if context_field is not None:
+            question = get_from_dict(instance, context_field).strip() + " " + question
 
         return HFMCInstance(
-            id=str(get_from_dict(instance, self.id_field)) if self.id_field else None,
+            id=str(get_from_dict(instance, id_field)) if id_field else None,
             question=question,
             answer_choices=answer_choices,
-            correct_answer_index=self._normalize_answers(instance[self.correct_answer_index_field]))
+            correct_answer_index=normalize_answers(instance[correct_answer_index_field]))
+
+    return convert

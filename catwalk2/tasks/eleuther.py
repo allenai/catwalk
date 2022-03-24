@@ -1,36 +1,19 @@
-from abc import ABC
 import random
 from tempfile import NamedTemporaryFile
 from typing import Dict, Any, Optional, Union, Callable, Sequence
 
-import torchmetrics
 from tango.common import Tqdm
 from tango.common.sequences import SqliteSparseSequence, MappedSequence
-from torchmetrics import MeanMetric
 
-from catwalk2.metrics.entropy import EntropyMetric
-from catwalk2.metrics.perplexity import PerplexityMetric
-from catwalk2.task import Task
-from catwalk2.task import TaskType
+from catwalk2.task import Task, InstanceFormat, PERPLEXITY_METRICS
 
 import lm_eval.tasks
 from lm_eval.base import Task as EAITask, PerplexityTask as EAIPerplexityTask
 from lm_eval.tasks.common import HFTask as EAIHFTask
 
 
-class WithEleutherConversion(ABC):
-    def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
-        raise NotImplementedError
-
-    def instance_to_eleuther_context(self, instance: Dict[str, Any], num_fewshot: int) -> str:
-        raise NotImplementedError
-
-    def instance_as_eleuther_requests(self, instance: Dict[str, Any], num_fewshot: int = 0):
-        raise NotImplementedError
-
-
 @Task.register("eleuther")
-class EleutherTask(Task, WithEleutherConversion):
+class EleutherTask(Task):
     """
     This is a generic Eleuther task adapter.
 
@@ -42,13 +25,12 @@ class EleutherTask(Task, WithEleutherConversion):
 
     def __init__(
         self,
-        task_type: TaskType,
         eleuther_task: Optional[Union[str, Callable[[], EAITask]]] = None,
         *,
         random_seed: Optional[int] = None,
         version_override: Optional[str] = None
     ):
-        super().__init__(task_type, version_override=version_override)
+        super().__init__(version_override=version_override)
 
         # TODO: Move this into Tango
         self._params = {"eleuther_task": eleuther_task}
@@ -70,6 +52,10 @@ class EleutherTask(Task, WithEleutherConversion):
         if random_seed is None:
             random_seed = 57885161 + 43112609    # What could be more perfect than the sum of two perfect numbers?
         self.random = random.Random(random_seed)
+
+        self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, self.instance_as_eleuther_doc)
+        self.add_instance_conversion(InstanceFormat.ELEUTHER_CONTEXT, self.instance_to_eleuther_context)
+        self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
 
     def __getstate__(self):
         result = self.__dict__.copy()
@@ -129,13 +115,12 @@ class EleutherHFTask(EleutherTask):
 
     def __init__(
         self,
-        task_type: TaskType,
         eleuther_task: Optional[Union[str, Callable[[], EAIHFTask]]] = None,
         *,
         random_seed: Optional[int] = None,
         version_override: Optional[str] = None
     ):
-        super().__init__(task_type, eleuther_task, random_seed=random_seed, version_override=version_override)
+        super().__init__(eleuther_task, random_seed=random_seed, version_override=version_override)
 
     @property
     def inner_task(self) -> EAIHFTask:
@@ -147,7 +132,11 @@ class EleutherHFTask(EleutherTask):
         return split in self.inner_task.data
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
-        return self.inner_task.data[split]
+        ds = self.inner_task.data[split]
+        # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
+        # to make them act like sequences.
+        ds = MappedSequence(lambda x: x, ds)
+        return ds
 
     def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
         return self.inner_task._convert_standard(instance)
@@ -167,10 +156,11 @@ class EleutherPerplexityTask(EleutherTask):
         version_override: Optional[str] = None
     ):
         super().__init__(
-            TaskType.PERPLEXITY,
             eleuther_task,
             random_seed=random_seed,
             version_override=version_override)
+
+        self.add_metrics(PERPLEXITY_METRICS)
 
     @property
     def inner_task(self) -> EAIPerplexityTask:
@@ -192,10 +182,3 @@ class EleutherPerplexityTask(EleutherTask):
 
     def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
         return instance["text"]
-
-    def get_metrics(self) -> Dict[str, torchmetrics.Metric]:
-        return {
-            "word_perplexity": PerplexityMetric(),
-            "byte_perplexity": PerplexityMetric(),
-            "bits_per_byte": EntropyMetric(),
-        }

@@ -13,7 +13,7 @@ class EntropyMetric(BaseAggregator):
         compute_on_step: Optional[bool] = None,
         **kwargs: Dict[str, Any],
     ):
-        super().__init__("entropy", [], nan_strategy, compute_on_step, **kwargs)
+        super().__init__("sum", [], nan_strategy, compute_on_step, **kwargs)
         self.base = base
         self.add_state("loglikelihood", default=torch.tensor(0.0, dtype=torch.float), dist_reduce_fx="sum")
         self.add_state("characters", default=torch.tensor(0, dtype=torch.int), dist_reduce_fx="sum")
@@ -24,7 +24,8 @@ class EntropyMetric(BaseAggregator):
         characters: Union[int, torch.Tensor]
     ) -> None:  # type: ignore
         loglikelihood = self._cast_and_nan_check_input(loglikelihood)
-        characters = self._cast_and_nan_check_input(characters)
+        if not isinstance(characters, torch.Tensor):
+            characters = torch.tensor(characters)
         self.loglikelihood += loglikelihood.sum()
         self.characters += characters.sum()
 

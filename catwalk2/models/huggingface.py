@@ -3,29 +3,32 @@ from typing import Any, Iterator, Dict, Sequence
 import more_itertools
 import torch
 from tango.common import Tqdm
+from tango.common.sequences import MappedSequence
 from transformers import AutoModelForMultipleChoice, AutoTokenizer
 
-from catwalk2.model import Model, TaskTypeModel, UnsupportedTaskError
-from catwalk2.task import Task
-from catwalk2.tasks import TaskWithHFMCConversion
+from catwalk2.model import Model, UnsupportedTaskError
+from catwalk2.task import Task, InstanceFormat
 
 
 @Model.register("hf")
-class HFAutoModel(TaskTypeModel):
+class HFAutoModel(Model):
     VERSION = "001"
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
-    def predict_multiple_choice(
+    def predict(
         self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        if not isinstance(task, TaskWithHFMCConversion):
+        if not task.has_instance_conversion(InstanceFormat.HF_MC):
             raise UnsupportedTaskError(self, task)
+        instances = MappedSequence(
+            lambda instance: task.convert_instance(instance, InstanceFormat.HF_MC),
+            instances)
 
         # There is no Huggingface pipeline for this.
         model = AutoModelForMultipleChoice.from_pretrained(self.pretrained_model_name_or_path).eval()
@@ -37,7 +40,6 @@ class HFAutoModel(TaskTypeModel):
                 texts = []
                 labels = []
                 for instance in batch:
-                    instance = task.instance_as_hf_mc(instance)
                     if number_of_choices is None:
                         number_of_choices = len(instance.answer_choices)
                     else:
@@ -59,7 +61,6 @@ class HFAutoModel(TaskTypeModel):
                     **{key: tensor.view(len(batch), number_of_choices, -1) for key, tensor in tensors.items()})
                 for instance, logits in zip(batch, results.logits.detach().cpu()):
                     yield {
-                        "id": instance.id,
                         "correct_answer_index": instance.correct_answer_index,
                         "logits": logits,
                         "acc": (logits, instance.correct_answer_index),

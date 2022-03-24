@@ -11,7 +11,7 @@ class PerplexityMetric(BaseAggregator):
         compute_on_step: Optional[bool] = None,
         **kwargs: Dict[str, Any],
     ):
-        super().__init__("perplexity", [], nan_strategy, compute_on_step, **kwargs)
+        super().__init__("sum", [], nan_strategy, compute_on_step, **kwargs)
         self.add_state("loglikelihood", default=torch.tensor(0.0, dtype=torch.float), dist_reduce_fx="sum")
         self.add_state("num_tokens", default=torch.tensor(0, dtype=torch.int), dist_reduce_fx="sum")
 
@@ -21,7 +21,8 @@ class PerplexityMetric(BaseAggregator):
         num_tokens: Union[int, torch.Tensor]
     ) -> None:  # type: ignore
         loglikelihood = self._cast_and_nan_check_input(loglikelihood)
-        num_tokens = self._cast_and_nan_check_input(num_tokens)
+        if not isinstance(num_tokens, torch.Tensor):
+            num_tokens = torch.tensor(num_tokens)
         self.loglikelihood += loglikelihood.sum()
         self.num_tokens += num_tokens.sum()
 

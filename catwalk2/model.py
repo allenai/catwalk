@@ -1,9 +1,10 @@
 from abc import ABC
-from typing import Sequence, Dict, Any, Iterator
+from typing import Sequence, Dict, Any, Iterator, Tuple, List
 
-from tango.common import Registrable
+import torch
+from tango.common import Registrable, Tqdm
 
-from catwalk2.task import Task, TaskType
+from catwalk2.task import Task
 
 
 class Model(Registrable, ABC):
@@ -11,16 +12,40 @@ class Model(Registrable, ABC):
         raise NotImplementedError()
 
     def calculate_metrics(self, task: Task, predictions: Iterator[Dict[str, Any]]) -> Dict[str, float]:
-        metrics = task.get_metrics()
-        for prediction in predictions:
+        # Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
+        # into tensors.
+        def tensor_args(args: Tuple[Any]) -> Tuple[Any]:
+            fixed_args: List[Any] = []
+            for arg in args:
+                if isinstance(arg, (float, int)):
+                    fixed_args.append(torch.tensor(arg))
+                else:
+                    fixed_args.append(arg)
+            return tuple(fixed_args)
+
+        # Further, torchmetrics can't handle single-instance calls when given tensors. It always needs the first
+        # dimension of the tensors to be the instance dimension. So we add one.
+        def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any]:
+            fixed_args: List[Any] = []
+            for arg in args:
+                if isinstance(arg, torch.Tensor):
+                    fixed_args.append(arg.unsqueeze(0))
+                else:
+                    fixed_args.append(arg)
+            return tuple(fixed_args)
+
+        metrics = task.make_metrics()
+        for prediction in Tqdm.tqdm(predictions, desc="Calculating metrics"):
             for metric_name, metric_args in prediction.items():
                 try:
                     metric = metrics[metric_name]
                 except KeyError:
                     continue
+                metric_args = tensor_args(metric_args)
+                metric_args = unsqueeze_args(metric_args)
                 metric.update(*metric_args)
         return {
-            metric_name: metric.compute()
+            metric_name: float(metric.compute())
             for metric_name, metric in metrics.items()
         }
 
@@ -32,46 +57,3 @@ class UnsupportedTaskError(Exception):
         super().__init__(f"Model {model} does not support task {task}.")
         self.model = model
         self.task = task
-
-
-class TaskTypeModel(Model, ABC):
-    """
-    Helper class in case you want to run a different method for each task type.
-    """
-
-    # TODO: Maybe we can remove this and, in the model, just check whether the instances are convertable into the
-    # right format.
-
-    def predict(
-        self,
-        task: Task,
-        instances: Sequence[Dict[str, Any]],
-        **kwargs,
-    ) -> Iterator[Any]:
-        if task.task_type == TaskType.MULTIPLE_CHOICE:
-            return self.predict_multiple_choice(task, instances, **kwargs)
-        elif task.task_type == TaskType.QA:
-            return self.predict_qa(task, instances, **kwargs)
-        elif task.task_type == TaskType.PERPLEXITY:
-            return self.predict_perplexity(task, instances, **kwargs)
-        elif task.task_type == TaskType.CLASSIFICATION:
-            return self.predict_classification(task, instances, **kwargs)
-        elif task.task_type == TaskType.GENERATION:
-            return self.predict_generation(task, instances, **kwargs)
-        else:
-            raise UnsupportedTaskError(self, task)
-
-    def predict_multiple_choice(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Any]:
-        raise UnsupportedTaskError(self, task)
-
-    def predict_qa(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Any]:
-        raise UnsupportedTaskError(self, task)
-
-    def predict_perplexity(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Any]:
-        raise UnsupportedTaskError(self, task)
-
-    def predict_classification(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Any]:
-        raise UnsupportedTaskError(self, task)
-
-    def predict_generation(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Any]:
-        raise UnsupportedTaskError(self, task)

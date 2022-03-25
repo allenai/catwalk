@@ -8,9 +8,6 @@ from tango.common import Registrable
 from catwalk2.metrics.entropy import EntropyMetric
 from catwalk2.metrics.perplexity import PerplexityMetric
 
-if TYPE_CHECKING:
-    from catwalk2.tasks import TaskWithHFMCConversion
-
 
 MC_METRICS = {
     "acc": torchmetrics.Accuracy,

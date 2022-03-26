@@ -32,13 +32,6 @@ class EleutherTask(Task):
     ):
         super().__init__(version_override=version_override)
 
-        # TODO: Move this into Tango
-        self._params = {"eleuther_task": eleuther_task}
-        if random_seed is not None:
-            self._params["random_seed"] = random_seed
-        if version_override is not None:
-            self._params["version_override"] = version_override
-
         if isinstance(eleuther_task, str):
             # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to
             # make this lazy.
@@ -59,11 +52,8 @@ class EleutherTask(Task):
 
     def __getstate__(self):
         result = self.__dict__.copy()
-        result["eleuther_task"] = None
+        result["eleuther_task"] = None  # We just cache this, so it doesn't need to be serialized.
         return result
-
-    def _to_params(self) -> Dict[str, Any]:
-        return self._params
 
     @property
     def inner_task(self) -> EAITask:

@@ -46,6 +46,13 @@ class Task(Registrable, ABC):
         self.metrics: Dict[str, Callable[[], torchmetrics.Metric]] = {}
         self.instance_conversions: Dict[InstanceFormat, InstanceConversion] = {}
 
+    def det_hash_object(self) -> Any:
+        # It sucks that we need this. We have to fix this in Tango.
+        if hasattr(self, "__getstate__"):
+            return self.__getstate__()
+        else:
+            return self.__dict__
+
     def has_split(self, split: str) -> bool:
         raise NotImplementedError
 

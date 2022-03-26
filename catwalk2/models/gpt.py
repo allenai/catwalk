@@ -17,7 +17,13 @@ class GPTModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
-    def predict(self, task: Task, instances: Sequence[Dict[str, Any]], *, batch_size: int = 32) -> Iterator[Tuple[str, float]]:
+    def predict(
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        *,
+        batch_size: int = 32
+    ) -> Iterator[Dict[str, Any]]:
         model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 

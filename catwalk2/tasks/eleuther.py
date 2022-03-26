@@ -52,7 +52,7 @@ class EleutherTask(Task):
 
     def __getstate__(self):
         result = self.__dict__.copy()
-        result["eleuther_task"] = None
+        result["eleuther_task"] = None  # We just cache this, so it doesn't need to be serialized.
         return result
 
     @property

@@ -59,5 +59,5 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests", "test_fixtures", "test_fixtures.*"],
     ),
     install_requires=parse_requirements_file("requirements.txt"),
-    python_requires=">=3.8.0",
+    python_requires=">=3.9.0",
 )

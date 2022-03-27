@@ -16,3 +16,6 @@ __pycache__/
 
 # Eleuther detritus
 /data/
+
+#PyTest
+/.pytest_cache/

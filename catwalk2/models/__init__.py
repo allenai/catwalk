@@ -10,5 +10,10 @@ MODELS = {
     "t5-large": T5Model("t5-large"),
     "t5-small": T5Model("t5-small"),
     "t5-3b": T5Model("t5-3b"),
-    "t5-11b": T5Model("t5-11b")
+    "t5-11b": T5Model("t5-11b"),
+    "t5-large-lm-adapt": T5Model("google/t5-large-lm-adapt"),
+    "t5-small-lm-adapt": T5Model("google/t5-small-lm-adapt"),
+    "t5-base-lm-adapt": T5Model("google/t5-base-lm-adapt"),
+    "t5-xl-lm-adapt": T5Model("google/t5-xl-lm-adapt"),
+    "t5-xxl-lm-adapt": T5Model("google/t5-xxl-lm-adapt"),
 }

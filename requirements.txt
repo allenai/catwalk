@@ -8,3 +8,4 @@ scipy    # Just for the DROP metric
 numpy
 spacy
 wget
+lm-eval

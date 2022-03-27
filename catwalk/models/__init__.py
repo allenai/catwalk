@@ -1,14 +1,19 @@
-from catwalk.models.gpt_model import GPTModel
-from catwalk.models.model import ModelForEvaluation
-from catwalk.models.hf_auto_model import HFAutoModelForEvaluation
+from catwalk.models.gpt import GPTModel
+from catwalk.models.huggingface import HFAutoModel
+from catwalk.models.t5 import T5Model
 
 MODELS = {
-    "bert-base-uncased": HFAutoModelForEvaluation("bert-base-uncased"),
-    "bert-base-cased": HFAutoModelForEvaluation("bert-base-cased"),
-    "bert-large-uncased": HFAutoModelForEvaluation("bert-large-uncased"),
-    "bert-large-cased": HFAutoModelForEvaluation("bert-large-cased"),
-    "roberta-base": HFAutoModelForEvaluation("roberta-base"),
-    "roberta-large": HFAutoModelForEvaluation("roberta-large"),
-    "deepset/roberta-base-squad2": HFAutoModelForEvaluation('deepset/roberta-base-squad2'),
-    "gpt2": GPTModel("gpt2")
+    "gpt2": GPTModel("gpt2"),
+    "bert-base-uncased": HFAutoModel("bert-base-uncased"),
+    "bert-base-cased": HFAutoModel("bert-base-cased"),
+    "t5-base": T5Model("t5-base"),
+    "t5-large": T5Model("t5-large"),
+    "t5-small": T5Model("t5-small"),
+    "t5-3b": T5Model("t5-3b"),
+    "t5-11b": T5Model("t5-11b"),
+    "t5-large-lm-adapt": T5Model("google/t5-large-lm-adapt"),
+    "t5-small-lm-adapt": T5Model("google/t5-small-lm-adapt"),
+    "t5-base-lm-adapt": T5Model("google/t5-base-lm-adapt"),
+    "t5-xl-lm-adapt": T5Model("google/t5-xl-lm-adapt"),
+    "t5-xxl-lm-adapt": T5Model("google/t5-xxl-lm-adapt"),
 }

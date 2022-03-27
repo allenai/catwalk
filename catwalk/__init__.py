@@ -1,66 +1,47 @@
-from typing import Union, Sequence, Optional, Dict, Any
-
-from tango import Step
-from tango.format import JsonFormat
-from tango.format import SqliteSequenceFormat
-from tango.common.sequences import SqliteSparseSequence
-
-from catwalk.models import ModelForEvaluation, MODELS
-from catwalk.tasks import TASKS
-from catwalk.tasks.task import Task, Metrics
+import argparse
+import json
 
 
-@Step.register("run_model_on_task")
-class RunModelOnTaskStep(Step):
-    VERSION = "002"
-    FORMAT = SqliteSequenceFormat
-    SKIP_ID_ARGUMENTS = {"batch_size"}
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, required=True)
+    parser.add_argument('--task', type=str, nargs="+")
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--limit', type=int)
+    parser.add_argument(
+        '-d',
+        type=str,
+        default=None,
+        metavar="workspace",
+        dest="workspace",
+        help="the Tango workspace with the cache")
+    args = parser.parse_args()
 
-    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["model"], str):
-            kwargs["model"] = MODELS[kwargs["model"]]
-        if isinstance(kwargs["task"], str):
-            kwargs["task"] = TASKS[kwargs["task"]]
-        return kwargs
+    if args.workspace is None:
+        workspace = None
+    else:
+        from tango.workspaces import LocalWorkspace
+        workspace = LocalWorkspace(args.workspace)
 
-    def run(
-        self,
-        model: Union[str, ModelForEvaluation],
-        task: Union[str, Task],
-        split: str = "validation",
-        batch_size: int = 32,
-        limit: Optional[int] = None
-    ) -> Sequence[Task.InstanceResult]:
-        if isinstance(model, str):
-            model = MODELS[model]
-        if isinstance(task, str):
-            task = TASKS[task]
+    limit = args.limit if hasattr(args, "limit") else None
 
-        results = SqliteSparseSequence(self.work_dir_for_run / "result.sqlite")
-        instances = task.get_instances(split)
-        if limit is not None:
-            instances = instances[:limit]
-        instances = instances[len(results):]
-        for result in task.run_inference(model, instances, batch_size=batch_size):
-            results.append(result)
-        return results
+    from catwalk.steps import CalculateMetricsStep
+    from catwalk.steps import PredictStep
+
+    for task in args.task:
+        predictions = PredictStep(
+            model=args.model,
+            task=task,
+            batch_size=args.batch_size,
+            limit=limit)
+        metrics = CalculateMetricsStep(
+            model=args.model,
+            task=task,
+            predictions=predictions)
+
+        result = metrics.result(workspace)
+        print(json.dumps(result, indent=4, sort_keys=True))
 
 
-@Step.register("calculate_metrics")
-class CalculateMetricsStep(Step):
-    VERSION = "001"
-    FORMAT = JsonFormat
-
-    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["task"], str):
-            kwargs["task"] = TASKS[kwargs["task"]]
-        return kwargs
-
-    def run(
-        self,
-        task: Union[str, Task],
-        results: Sequence[Task.InstanceResult]
-    ) -> Metrics:
-        if isinstance(task, str):
-            task = TASKS[task]
-        return task.calculate_metrics(results)
+if __name__ == "__main__":
+    main()

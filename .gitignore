@@ -4,18 +4,17 @@
 
 # Python
 __pycache__/
+/catwalk.egg-info/
 
 # Eleuther Evaluation Harness creates this directory
 /lm_cache/
+/data/
 
 # Tango Workspace for debugging
 /workspace/
 
 # vim detritus
 *~
-
-# Eleuther detritus
-/data/
 
 #PyTest
 /.pytest_cache/

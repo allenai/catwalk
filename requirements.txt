@@ -1,6 +1,5 @@
-#ai2-tango[fairscale]
+#ai2-tango[all]
 git+https://github.com/allenai/tango.git@main
-fairscale
 
 torchmetrics
 more_itertools

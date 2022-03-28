@@ -10,7 +10,7 @@ from catwalk.model import Model, UnsupportedTaskError
 from catwalk.task import Task, InstanceFormat
 
 
-@Model.register("hf")
+@Model.register("catwalk::hf")
 class HFAutoModel(Model):
     VERSION = "001"
 

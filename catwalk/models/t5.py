@@ -1,10 +1,11 @@
-from typing import Sequence, Dict, Any, Iterator
+from abc import ABC
+from typing import Sequence, Dict, Any, Iterator, Optional
 
 import more_itertools
 import torch
 from tango.common import Tqdm
 from tango.common.sequences import MappedSequence
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
 from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model, UnsupportedTaskError
@@ -13,10 +14,12 @@ _true_tensor = torch.tensor([True])
 _false_tensor = torch.tensor([False])
 
 
-@Model.register("catwalk::t5")
-class T5Model(Model):
-    def __init__(self, pretrained_model_name_or_path: str):
-        self.pretrained_model_name_or_path = pretrained_model_name_or_path
+class T5Model(Model, ABC):
+    def get_model(self) -> T5ForConditionalGeneration:
+        raise NotImplementedError
+
+    def get_tokenizer(self) -> T5TokenizerFast:
+        raise NotImplementedError
 
     def predict(
         self,
@@ -29,8 +32,8 @@ class T5Model(Model):
             raise UnsupportedTaskError(self, task)
         prompts = MappedSequence(task.instance_conversions[InstanceFormat.T5_PROMPT], instances)
 
-        model = AutoModelForSeq2SeqLM.from_pretrained(self.pretrained_model_name_or_path).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        model = self.get_model().eval()
+        tokenizer = self.get_tokenizer()
 
         def strip_special_tokens(t: torch.Tensor) -> torch.Tensor:
             # amazing that torch has no capability for this
@@ -60,3 +63,35 @@ class T5Model(Model):
                         "bleu": ([prediction], [[target]]),
                         "rouge": ([prediction], [[target]])
                     }
+
+
+@Model.register("catwalk::t5_from_pretrained")
+class T5ModelFromPretrained(T5Model):
+    def __init__(self, pretrained_model_name_or_path: str):
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
+
+    def get_model(self) -> T5ForConditionalGeneration:
+        return AutoModelForSeq2SeqLM.from_pretrained(self.pretrained_model_name_or_path)
+
+    def get_tokenizer(self) -> T5TokenizerFast:
+        return AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+
+
+@Model.register("catwalk::t5_from_model")
+class T5ModelFromModel(T5Model):
+    def __init__(
+        self,
+        model: T5ForConditionalGeneration,
+        tokenizer: Optional[T5TokenizerFast] = None
+    ):
+        self.model = model
+        self.tokenizer = tokenizer
+
+    def get_model(self) -> T5ForConditionalGeneration:
+        return self.model
+
+    def get_tokenizer(self) -> T5TokenizerFast:
+        if self.tokenizer is None:
+            return AutoTokenizer.from_pretrained(self.get_model().name_or_path)
+        else:
+            return self.tokenizer

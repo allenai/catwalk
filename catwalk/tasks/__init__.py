@@ -28,7 +28,7 @@ TASKS = {
         t5_prompt_conversion(
             task_name="rte",
             label_map={0: "entailment", 1: "not_entailment"},
-            use_fields=["sentence1", "sentence2"]
+            use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
 }

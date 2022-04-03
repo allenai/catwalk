@@ -1,6 +1,6 @@
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS
 from catwalk.tasks.eleuther import EleutherPerplexityTask, EleutherHFTask
-from catwalk.tasks.huggingface import hfmc_conversion
+from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS = {
@@ -22,5 +22,13 @@ TASKS = {
             label_map={0: "entailment", 1: "not_entailment"},
             use_fields=["sentence1", "sentence2"]
         )
-    ).add_metrics(ENTAILMENT_METRICS)
+    ).add_metrics(ENTAILMENT_METRICS),
+    "superglue::rte": HFDatasetsTask("super_glue", "rte").add_instance_conversion(
+        InstanceFormat.T5_PROMPT,
+        t5_prompt_conversion(
+            task_name="rte",
+            label_map={0: "entailment", 1: "not_entailment"},
+            use_fields=["sentence1", "sentence2"]
+        )
+    ).add_metrics(ENTAILMENT_METRICS),
 }

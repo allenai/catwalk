@@ -16,6 +16,10 @@ MC_METRICS = {
     "recall": torchmetrics.Recall
 }
 
+ENTAILMENT_METRICS = {
+    "acc": torchmetrics.Accuracy,
+}
+
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
     "byte_perplexity": PerplexityMetric,
@@ -29,6 +33,7 @@ class InstanceFormat(Enum):
     ELEUTHER_CONTEXT = 4
     ELEUTHER_REQUESTS = 5
     HF_MC = 2
+    T5_PROMPT = 6
 
 
 InstanceConversion = Callable[[Dict[str, Any], ...], Any]

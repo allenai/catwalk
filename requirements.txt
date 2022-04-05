@@ -1,9 +1,8 @@
-ai2-tango[fairscale]
-#git+https://github.com/allenai/tango.git@main
-fairscale
+#ai2-tango[all]
+git+https://github.com/allenai/tango.git@main
 
 torchmetrics
 more_itertools
-scipy    # Just for the DROP metric
-numpy
 spacy
+wget
+lm-eval

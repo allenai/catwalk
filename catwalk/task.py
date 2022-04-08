@@ -20,12 +20,22 @@ ENTAILMENT_METRICS = {
     "acc": torchmetrics.Accuracy,
 }
 
+CLASSIFICATION_METRICS = {
+    "acc": torchmetrics.Accuracy,
+    "f1": torchmetrics.F1,
+    "precision": torchmetrics.Precision,
+    "recall": torchmetrics.Recall
+}
+
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
     "byte_perplexity": PerplexityMetric,
     "bits_per_byte": EntropyMetric,
 }
 
+QA_METRICS = {
+    "acc": torchmetrics.Accuracy,
+}
 
 class InstanceFormat(Enum):
     HF_DICT = 1

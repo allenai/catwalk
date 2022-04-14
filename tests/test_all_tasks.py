@@ -15,7 +15,7 @@ def test_task(task_name: str, split: str):
         return
     for conversion in task.instance_conversions.values():
         signature = inspect.signature(conversion)
-        for instance in split:
+        for instance in split[:10]:
             args = (instance,)
             if "num_fewshot" in signature.parameters:
                 kwargs = {"num_fewshot": 0}

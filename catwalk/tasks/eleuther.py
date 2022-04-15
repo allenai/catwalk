@@ -25,7 +25,7 @@ class EleutherTask(Task):
 
     def __init__(
         self,
-        eleuther_task: Optional[Union[str, Callable[[], EAITask]]] = None,
+        eleuther_task: Union[str, Callable[[], EAITask]],
         *,
         random_seed: Optional[int] = None,
         version_override: Optional[str] = None

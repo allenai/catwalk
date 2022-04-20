@@ -58,6 +58,7 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests", "test_fixtures", "test_fixtures.*"],
     ),
+    package_data={"catwalk": ["py.typed"]},
     install_requires=parse_requirements_file("requirements.txt"),
     extras_require={"dev": parse_requirements_file("dev-requirements.txt")},
     python_requires=">=3.9.0",

@@ -11,7 +11,7 @@ from catwalk.metrics.perplexity import PerplexityMetric
 
 MC_METRICS = {
     "acc": torchmetrics.Accuracy,
-    "f1": torchmetrics.F1,
+    "f1": torchmetrics.F1Score,
     "precision": torchmetrics.Precision,
     "recall": torchmetrics.Recall
 }
@@ -22,7 +22,7 @@ ENTAILMENT_METRICS = {
 
 CLASSIFICATION_METRICS = {
     "acc": torchmetrics.Accuracy,
-    "f1": torchmetrics.F1,
+    "f1": torchmetrics.F1Score,
     "precision": torchmetrics.Precision,
     "recall": torchmetrics.Recall
 }

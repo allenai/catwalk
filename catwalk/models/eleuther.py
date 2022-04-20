@@ -5,6 +5,7 @@ import more_itertools
 import torch
 from lm_eval.base import Request
 from tango.common import Tqdm
+from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel
@@ -27,7 +28,8 @@ class EleutherModel(Model):
         batch_size: int = 32,
         max_instances_in_memory: int = 16 * 1024
     ) -> Iterator[Dict[str, Any]]:
-        model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).eval()
+        device = resolve_device()
+        model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).to(device).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):

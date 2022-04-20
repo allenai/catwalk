@@ -1,8 +1,12 @@
 import argparse
 import json
 
+from tango.common.logging import initialize_logging
+
 
 def main():
+    initialize_logging()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--task', type=str, nargs="+")

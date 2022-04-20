@@ -1,7 +1,7 @@
 #ai2-tango[all]
 git+https://github.com/allenai/tango.git@main
 
-torchmetrics
+torchmetrics==0.8.0
 more_itertools
 spacy
 wget

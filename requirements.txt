@@ -7,4 +7,4 @@ spacy
 wget
 #lm-eval
 #git+https://github.com/EleutherAI/lm-evaluation-harness.git
-git+https://github.com/dirkgr/lm-evaluation-harness.git@7ab6470159a69404c80d31a2a824b0fee46009f8
+git+https://github.com/dirkgr/lm-evaluation-harness.git@aeb7e846628da1e2dbecb0340edeaef433b487d4

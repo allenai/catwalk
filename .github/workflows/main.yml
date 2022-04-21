@@ -60,7 +60,7 @@ jobs:
           ${{ matrix.task.run }}
       - name: Upload package distribution files
         if: matrix.task.name == 'Build'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: package
           path: dist

@@ -5,4 +5,6 @@ torchmetrics==0.8.0
 more_itertools
 spacy
 wget
-lm-eval
+#lm-eval
+#git+https://github.com/EleutherAI/lm-evaluation-harness.git
+git+https://github.com/dirkgr/lm-evaluation-harness.git@7ab6470159a69404c80d31a2a824b0fee46009f8

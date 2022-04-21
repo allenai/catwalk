@@ -21,7 +21,7 @@ class T5Model(Model, ABC):
     def get_tokenizer(self) -> T5TokenizerFast:
         raise NotImplementedError
 
-    def predict(
+    def predict(  # type: ignore
         self,
         task: Task,
         instances: Sequence[Dict[str, Any]],

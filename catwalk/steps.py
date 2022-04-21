@@ -64,4 +64,9 @@ class CalculateMetricsStep(Step):
         task: Union[str, Task],
         predictions: Sequence[Any]
     ) -> Dict[str, float]:
+        if isinstance(model, str):
+            model = MODELS[model]
+        if isinstance(task, str):
+            task = TASKS[task]
+
         return model.calculate_metrics(task, predictions)

@@ -14,7 +14,7 @@ class Model(Registrable, ABC):
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
         # Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
         # into tensors.
-        def tensor_args(args: Tuple[Any]) -> Tuple[Any]:
+        def tensor_args(args: Tuple[Any]) -> Tuple[Any, ...]:
             fixed_args: List[Any] = []
             for arg in args:
                 if isinstance(arg, (float, int)):
@@ -25,7 +25,7 @@ class Model(Registrable, ABC):
 
         # Further, torchmetrics can't handle single-instance calls when given tensors. It always needs the first
         # dimension of the tensors to be the instance dimension. So we add one.
-        def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any]:
+        def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any, ...]:
             fixed_args: List[Any] = []
             for arg in args:
                 if isinstance(arg, torch.Tensor):

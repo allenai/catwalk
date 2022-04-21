@@ -84,11 +84,11 @@ class EleutherTask(Task):
     def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
         return instance
 
-    def instance_to_eleuther_context(self, instance: Dict[str, Any], num_fewshot: int) -> str:
+    def instance_to_eleuther_context(self, instance: Dict[str, Any], *, num_fewshot: int = 0) -> str:
         return self.inner_task.fewshot_context(self.instance_as_eleuther_doc(instance), num_fewshot, rnd=random)
 
-    def instance_as_eleuther_requests(self, instance: Dict[str, Any], num_fewshot: int = 0):
-        context = self.instance_to_eleuther_context(instance, num_fewshot)
+    def instance_as_eleuther_requests(self, instance: Dict[str, Any], *, num_fewshot: int = 0):
+        context = self.instance_to_eleuther_context(instance, num_fewshot=num_fewshot)
         return self.inner_task.construct_requests(self.instance_as_eleuther_doc(instance), context)
 
 
@@ -105,7 +105,7 @@ class EleutherHFTask(EleutherTask):
 
     def __init__(
         self,
-        eleuther_task: Optional[Union[str, Callable[[], EAIHFTask]]] = None,
+        eleuther_task: Union[str, Callable[[], EAIHFTask]],
         *,
         random_seed: Optional[int] = None,
         version_override: Optional[str] = None
@@ -131,7 +131,7 @@ class EleutherHFTask(EleutherTask):
     def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
         return self.inner_task._convert_standard(instance)
 
-    def instance_to_eleuther_context(self, instance: Dict[str, Any], num_fewshot: int) -> str:
+    def instance_to_eleuther_context(self, instance: Dict[str, Any], *, num_fewshot: int = 0) -> str:
         doc = self.instance_as_eleuther_doc(instance)
         return self.inner_task.fewshot_context(doc, num_fewshot, rnd=random)
 
@@ -140,7 +140,7 @@ class EleutherHFTask(EleutherTask):
 class EleutherPerplexityTask(EleutherTask):
     def __init__(
         self,
-        eleuther_task: Optional[Union[str, Callable[[], EAIPerplexityTask]]] = None,
+        eleuther_task: Union[str, Callable[[], EAIPerplexityTask]],
         *,
         random_seed: Optional[int] = None,
         version_override: Optional[str] = None

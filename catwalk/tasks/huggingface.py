@@ -78,6 +78,7 @@ def hfmc_conversion(
                     return ord(answer[0]) - ord('a')
                 else:
                     raise
+        raise TypeError
 
     def convert(instance: Dict[str, Any]) -> HFMCInstance:
         if isinstance(answer_choices_fields, str):

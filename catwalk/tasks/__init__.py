@@ -1,9 +1,11 @@
-from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, CLASSIFICATION_METRICS, QA_METRICS
+from typing import Dict
+
+from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, CLASSIFICATION_METRICS, QA_METRICS, Task
 from catwalk.tasks.eleuther import EleutherPerplexityTask, EleutherHFTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
-TASKS = {
+TASKS: Dict[str, Task] = {
     "wikitext": EleutherPerplexityTask("wikitext"),
     "piqa": EleutherHFTask("piqa").add_instance_conversion(
         InstanceFormat.HF_MC,

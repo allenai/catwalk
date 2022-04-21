@@ -33,7 +33,7 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherTask("cola"),
+    "cola": EleutherTask("cola").add_metrics(CLASSIFICATION_METRICS),
     "mnli": EleutherTask("mnli").add_metrics(ENTAILMENT_METRICS),
     "mnli_mismatched": EleutherTask("mnli_mismatched").add_metrics(ENTAILMENT_METRICS),
     "mrpc": EleutherTask("mrpc").add_metrics(ENTAILMENT_METRICS),
@@ -42,33 +42,32 @@ TASKS: Dict[str, Task] = {
     "sst": EleutherTask("sst").add_metrics(CLASSIFICATION_METRICS),
     "wnli": EleutherTask("wnli").add_metrics(ENTAILMENT_METRICS),
     "boolq": EleutherTask("boolq").add_metrics(CLASSIFICATION_METRICS),
-    "cb": EleutherTask("cb"),
+    "cb": EleutherTask("cb").add_metrics(ENTAILMENT_METRICS),
     "copa": EleutherTask("copa").add_metrics(CLASSIFICATION_METRICS),
     "multirc": EleutherTask("multirc").add_metrics(CLASSIFICATION_METRICS),
-    "record": EleutherTask("record"),
+    #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
     "wic": EleutherTask("wic").add_metrics(ENTAILMENT_METRICS),
     "wsc": EleutherTask("wsc").add_metrics(MC_METRICS),
-    #"coqa": EleutherTask("coqa"),    # not an HF Task
-    #"drop": EleutherTask("drop"),    # not an HF Task
-    # Lambada is not an HF Task
-    #"lambada": EleutherTask("lambada"),
-    #"lambada_cloze": EleutherTask("lambada_cloze"),
-    #"lambada_mt_en": EleutherTask("lambada_mt_en"),
-    #"lambada_mt_fr": EleutherTask("lambada_mt_fr"),
-    #"lambada_mt_de": EleutherTask("lambada_mt_de"),
-    #"lambada_mt_it": EleutherTask("lambada_mt_it"),
-    #"lambada_mt_es": EleutherTask("lambada_mt_es"),
+    #"coqa": EleutherTask("coqa"),  # currently broken in the datasets library
+    "drop": EleutherTask("drop").add_metrics(QA_METRICS),
+    "lambada": EleutherTask("lambada"),
+    "lambada_cloze": EleutherTask("lambada_cloze"),
+    "lambada_mt_en": EleutherTask("lambada_mt_en"),
+    "lambada_mt_fr": EleutherTask("lambada_mt_fr"),
+    "lambada_mt_de": EleutherTask("lambada_mt_de"),
+    "lambada_mt_it": EleutherTask("lambada_mt_it"),
+    "lambada_mt_es": EleutherTask("lambada_mt_es"),
     "prost": EleutherTask("prost").add_metrics(MC_METRICS),
     "mc_taco": EleutherTask("mc_taco").add_metrics(CLASSIFICATION_METRICS),
-    #"pubmedqa": EleutherTask("pubmedqa"),  # out of date in the hardcoded datasets version, need to wait for an update
-    #"sciq": EleutherTask("sciq"),    # not an HF Task
-    #"qa4mre_2011": EleutherTask("qa4mre_2011"),    # not an HF Task
-    #"qa4mre_2012": EleutherTask("qa4mre_2012"),    # not an HF Task
-    #"qa4mre_2013": EleutherTask("qa4mre_2013"),    # not an HF Task
-    #"triviaqa": EleutherTask("triviaqa"),    # not an HF Task
+    #"pubmedqa": EleutherTask("pubmedqa"),  # currently broken in the datasets library
+    "sciq": EleutherTask("sciq").add_metrics(MC_METRICS),
+    "qa4mre_2011": EleutherTask("qa4mre_2011").add_metrics(MC_METRICS),
+    "qa4mre_2012": EleutherTask("qa4mre_2012").add_metrics(MC_METRICS),
+    "qa4mre_2013": EleutherTask("qa4mre_2013").add_metrics(MC_METRICS),
+    "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
     "arc_easy": EleutherTask("arc_easy").add_metrics(MC_METRICS),
     "arc_challenge": EleutherTask("arc_challenge").add_metrics(MC_METRICS),
-    #"logiqa": EleutherTask("logiqa"),        # not an HF Task
+    "logiqa": EleutherTask("logiqa").add_metrics(MC_METRICS),
     "hellaswag": EleutherTask("hellaswag").add_metrics(MC_METRICS),
     "openbookqa": EleutherTask("openbookqa").add_metrics(MC_METRICS),
     "race": EleutherTask("race").add_metrics(MC_METRICS),
@@ -77,44 +76,44 @@ TASKS: Dict[str, Task] = {
     "headqa_en": EleutherTask("headqa_en").add_metrics(MC_METRICS),
     "mathqa": EleutherTask("mathqa").add_metrics(MC_METRICS),
     "webqs": EleutherTask("webqs").add_metrics(QA_METRICS),
-    "wsc273": EleutherTask("wsc273"),
+    "wsc273": EleutherTask("wsc273").add_metrics(ENTAILMENT_METRICS),
     "winogrande": EleutherTask("winogrande").add_metrics(MC_METRICS),
     "anli_r1": EleutherTask("anli_r1").add_metrics(ENTAILMENT_METRICS),
     "anli_r2": EleutherTask("anli_r2").add_metrics(ENTAILMENT_METRICS),
     "anli_r3": EleutherTask("anli_r3").add_metrics(ENTAILMENT_METRICS),
-    #"ethics_cm": EleutherTask("ethics_cm"),    # not an HF Task
-    #"ethics_deontology": EleutherTask("ethics_deontology"),    # not an HF Task
-    #"ethics_justice": EleutherTask("ethics_justice"),    # not an HF Task
-    #"ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original"),    # not an HF Task
-    #"ethics_utilitarianism": EleutherTask("ethics_utilitarianism"),    # not an HF Task
-    #"ethics_virtue": EleutherTask("ethics_virtue"),    # not an HF Task
-    #"truthfulqa_mc": EleutherTask("truthfulqa_mc"),    # not an HF Task
-    #"truthfulqa_gen": EleutherTask("truthfulqa_gen"),    # not an HF Task
-    #"mutual": EleutherTask("mutual"),    # not an HF Task
-    #"mutual_plus": EleutherTask("mutual_plus"),    # not an HF Task
-    #"math_algebra": EleutherTask("math_algebra"),    # not an HF Task
-    #"math_counting_and_prob": EleutherTask("math_counting_and_prob"),    # not an HF Task
-    #"math_geometry": EleutherTask("math_geometry"),    # not an HF Task
-    #"math_intermediate_algebra": EleutherTask("math_intermediate_algebra"),    # not an HF Task
-    #"math_num_theory": EleutherTask("math_num_theory"),    # not an HF Task
-    #"math_prealgebra": EleutherTask("math_prealgebra"),    # not an HF Task
-    #"math_precalc": EleutherTask("math_precalc"),    # not an HF Task
-    #"math_asdiv": EleutherTask("math_asdiv"),    # not an HF Task
-    #"arithmetic_2da": EleutherTask("arithmetic_2da"),    # not an HF Task
-    #"arithmetic_2ds": EleutherTask("arithmetic_2ds"),    # not an HF Task
-    #"arithmetic_3da": EleutherTask("arithmetic_3da"),    # not an HF Task
-    #"arithmetic_3ds": EleutherTask("arithmetic_3ds"),    # not an HF Task
-    #"arithmetic_4da": EleutherTask("arithmetic_4da"),    # not an HF Task
-    #"arithmetic_4ds": EleutherTask("arithmetic_4ds"),    # not an HF Task
-    #"arithmetic_5da": EleutherTask("arithmetic_5da"),    # not an HF Task
-    #"arithmetic_5ds": EleutherTask("arithmetic_5ds"),    # not an HF Task
-    #"arithmetic_2dm": EleutherTask("arithmetic_2dm"),    # not an HF Task
-    #"arithmetic_1dc": EleutherTask("arithmetic_1dc"),    # not an HF Task
-    #"iwslt17-en-ar": EleutherTask("iwslt17-en-ar"),    # not an HF Task
-    #"iwslt17-ar-en": EleutherTask("iwslt17-ar-en"),    # not an HF Task
-    #"anagrams1": EleutherTask("anagrams1"),    # not an HF Task
-    #"anagrams2": EleutherTask("anagrams2"),    # not an HF Task
-    #"cycle_letters": EleutherTask("cycle_letters"),    # not an HF Task
-    #"random_insertion": EleutherTask("random_insertion"),    # not an HF Task
-    #"reversed_words": EleutherTask("reversed_words"),    # not an HF Task
+    "ethics_cm": EleutherTask("ethics_cm").add_metrics(CLASSIFICATION_METRICS),
+    "ethics_deontology": EleutherTask("ethics_deontology").add_metrics(CLASSIFICATION_METRICS),
+    "ethics_justice": EleutherTask("ethics_justice").add_metrics(CLASSIFICATION_METRICS),
+    "ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original").add_metrics(CLASSIFICATION_METRICS),
+    "ethics_utilitarianism": EleutherTask("ethics_utilitarianism").add_metrics(CLASSIFICATION_METRICS),
+    "ethics_virtue": EleutherTask("ethics_virtue").add_metrics(CLASSIFICATION_METRICS),
+    "truthfulqa_mc": EleutherTask("truthfulqa_mc"),
+    "truthfulqa_gen": EleutherTask("truthfulqa_gen"),
+    "mutual": EleutherTask("mutual"),
+    "mutual_plus": EleutherTask("mutual_plus"),
+    "math_algebra": EleutherTask("math_algebra").add_metrics(QA_METRICS),
+    "math_counting_and_prob": EleutherTask("math_counting_and_prob").add_metrics(QA_METRICS),
+    "math_geometry": EleutherTask("math_geometry").add_metrics(QA_METRICS),
+    "math_intermediate_algebra": EleutherTask("math_intermediate_algebra").add_metrics(QA_METRICS),
+    "math_num_theory": EleutherTask("math_num_theory").add_metrics(QA_METRICS),
+    "math_prealgebra": EleutherTask("math_prealgebra").add_metrics(QA_METRICS),
+    "math_precalc": EleutherTask("math_precalc").add_metrics(QA_METRICS),
+    "math_asdiv": EleutherTask("math_asdiv").add_metrics(QA_METRICS),
+    "arithmetic_2da": EleutherTask("arithmetic_2da").add_metrics(QA_METRICS),
+    "arithmetic_2ds": EleutherTask("arithmetic_2ds").add_metrics(QA_METRICS),
+    "arithmetic_3da": EleutherTask("arithmetic_3da").add_metrics(QA_METRICS),
+    "arithmetic_3ds": EleutherTask("arithmetic_3ds").add_metrics(QA_METRICS),
+    "arithmetic_4da": EleutherTask("arithmetic_4da").add_metrics(QA_METRICS),
+    "arithmetic_4ds": EleutherTask("arithmetic_4ds").add_metrics(QA_METRICS),
+    "arithmetic_5da": EleutherTask("arithmetic_5da").add_metrics(QA_METRICS),
+    "arithmetic_5ds": EleutherTask("arithmetic_5ds").add_metrics(QA_METRICS),
+    "arithmetic_2dm": EleutherTask("arithmetic_2dm").add_metrics(QA_METRICS),
+    "arithmetic_1dc": EleutherTask("arithmetic_1dc").add_metrics(QA_METRICS),
+    #"iwslt17-en-ar": EleutherTask("iwslt17-en-ar"),    # no support for translations tasks for now
+    #"iwslt17-ar-en": EleutherTask("iwslt17-ar-en"),    # no support for translations tasks for now
+    "anagrams1": EleutherTask("anagrams1").add_metrics(QA_METRICS),
+    "anagrams2": EleutherTask("anagrams2").add_metrics(QA_METRICS),
+    "cycle_letters": EleutherTask("cycle_letters").add_metrics(QA_METRICS),
+    "random_insertion": EleutherTask("random_insertion").add_metrics(QA_METRICS),
+    "reversed_words": EleutherTask("reversed_words").add_metrics(QA_METRICS),
 }

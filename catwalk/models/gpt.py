@@ -17,7 +17,7 @@ class GPTModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
-    def predict(
+    def predict(  # type: ignore
         self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
@@ -92,7 +92,8 @@ class GPTModel(Model):
                     summed_logprobs = 0.0
                 summed_logprobs += logprobs.sum()
                 last_text = text
-            yield last_text, float(summed_logprobs)
+            if last_text is not None:
+                yield last_text, float(summed_logprobs)
 
         model_instances = make_model_instances(
             instance["text"] for instance in Tqdm.tqdm(

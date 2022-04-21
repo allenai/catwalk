@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Dict, Sequence
+from typing import Any, Iterator, Dict, Sequence, Tuple, List
 
 import more_itertools
 import torch
@@ -17,7 +17,7 @@ class HFAutoModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
-    def predict(
+    def predict(  # type: ignore
         self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
@@ -37,7 +37,7 @@ class HFAutoModel(Model):
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):
                 number_of_choices = None
-                texts = []
+                texts: List[Tuple[str, str]] = []
                 labels = []
                 for instance in batch:
                     if number_of_choices is None:

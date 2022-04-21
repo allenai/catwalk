@@ -1,5 +1,5 @@
 import collections
-from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List
+from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple, Union
 
 import more_itertools
 import torch
@@ -20,7 +20,7 @@ class EleutherModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
-    def predict(
+    def predict(  # type: ignore
         self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
@@ -76,7 +76,7 @@ class EleutherModel(Model):
         for instance_index, instance in enumerate(instances):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
 
-            results_for_instance = []
+            results_for_instance: List = []
             for request_type, request_indices in instance_index_to_request_indices[instance_index].items():
                 results_for_instance.extend(results[request_type][i] for i in request_indices)
 
@@ -93,7 +93,7 @@ class EleutherModel(Model):
         tokenized_continuations = tokenizer([r.args[1] for r in requests])
 
         # transpose the token ids so we can access them one instance at a time
-        cc_pairs = []
+        cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]] = []
         assert tokenized_contexts.keys() == tokenized_continuations.keys()
         for field_name in tokenized_contexts.keys():
             contexts = tokenized_contexts[field_name]
@@ -154,7 +154,7 @@ class EleutherModel(Model):
 
                     instance_logits = torch.gather(instance_logits, 2, instance_continuation.unsqueeze(-1)).squeeze(-1)
 
-                    instance_result = (float(instance_logits.sum()), bool(max_equal))
+                    instance_result: Any = (float(instance_logits.sum()), bool(max_equal))
                     if requests[i].index is not None:
                         instance_result = instance_result[requests[i].index]
                     results[i] = instance_result

@@ -1,8 +1,9 @@
 from abc import ABC
 from enum import Enum
-from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable
+from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable, Mapping
 
 import torchmetrics
+from mypy_extensions import KwArg
 from tango.common import Registrable
 
 from catwalk.metrics.entropy import EntropyMetric
@@ -46,7 +47,7 @@ class InstanceFormat(Enum):
     T5_PROMPT = 6
 
 
-InstanceConversion = Callable[[Dict[str, Any], ...], Any]
+InstanceConversion = Union[Callable[[Dict[str, Any]], Any], Callable[[Dict[str, Any], KwArg()], Any]]
 
 
 class Task(Registrable, ABC):
@@ -88,14 +89,14 @@ class Task(Registrable, ABC):
     def add_metric(self, name: str, metric: Callable[[], torchmetrics.Metric]):
         if isinstance(metric, torchmetrics.Metric):
             # Users should not do this, but they will, so we try to handle it.
-            metric = metric.clone()
-            metric.reset()
-            self.metrics[name] = metric.clone()
+            metric_object = metric.clone()
+            metric_object.reset()
+            self.metrics[name] = metric_object.clone
         else:
             self.metrics[name] = metric
         return self
 
-    def add_metrics(self, metrics: Dict[str, Callable[[], torchmetrics.Metric]]):
+    def add_metrics(self, metrics: Mapping[str, Callable[[], torchmetrics.Metric]]):
         for name, metric_fn in metrics.items():
             self.add_metric(name, metric_fn)
         return self

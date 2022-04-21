@@ -1,1 +1,10 @@
-pytest
+pytest>=6.2.5
+mypy
+
+# Needed for packaging and uploading to PyPi
+twine>=1.11.0
+setuptools
+wheel
+
+# For parsing and comparing version numbers.
+packaging

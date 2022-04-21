@@ -1,4 +1,5 @@
 import inspect
+from typing import Sequence, Dict, Any
 
 import pytest
 
@@ -18,15 +19,14 @@ task_names.append(
 def test_task(task_name: str, split: str):
     task = catwalk.tasks.TASKS[task_name]
     try:
-        split = task.get_split(split)
+        instances = task.get_split(split)
     except KeyError:
         return
     for conversion in task.instance_conversions.values():
         signature = inspect.signature(conversion)
-        for instance in split[:10]:
-            args = (instance,)
+        for instance in instances[:10]:
             if "num_fewshot" in signature.parameters:
                 kwargs = {"num_fewshot": 0}
             else:
                 kwargs = {}
-            assert conversion(*args, **kwargs) is not None
+            assert conversion(instance, **kwargs) is not None

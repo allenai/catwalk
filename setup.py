@@ -18,6 +18,8 @@ def parse_requirements_file(path):
                 # there is no way to set up an equivalency between the `pip install` syntax and the `setup.py`
                 # syntax. So we just hard-code it here in the case of tango.
                 return f"ai2-tango[all] @ {req}"
+            elif m.group('name') == 'lm-evaluation-harness':
+                return f"lm-eval @ {req}"
             else:
                 return f"{m.group('name')} @ {req}"
 
@@ -58,6 +60,8 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests", "test_fixtures", "test_fixtures.*"],
     ),
+    package_data={"catwalk": ["py.typed"]},
     install_requires=parse_requirements_file("requirements.txt"),
+    extras_require={"dev": parse_requirements_file("dev-requirements.txt")},
     python_requires=">=3.9.0",
 )

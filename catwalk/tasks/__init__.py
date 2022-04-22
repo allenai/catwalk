@@ -1,7 +1,7 @@
 from typing import Dict
 
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, CLASSIFICATION_METRICS, QA_METRICS, Task
-from catwalk.tasks.eleuther import EleutherTask
+from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
@@ -70,7 +70,7 @@ TASKS: Dict[str, Task] = {
     "logiqa": EleutherTask("logiqa").add_metrics(MC_METRICS),
     "hellaswag": EleutherTask("hellaswag").add_metrics(MC_METRICS),
     "openbookqa": EleutherTask("openbookqa").add_metrics(MC_METRICS),
-    "race": EleutherTask("race").add_metrics(MC_METRICS),
+    "race": RaceEleutherTask().add_metrics(MC_METRICS),
     "headqa": EleutherTask("headqa").add_metrics(MC_METRICS),
     "headqa_es": EleutherTask("headqa_es").add_metrics(MC_METRICS),
     "headqa_en": EleutherTask("headqa_en").add_metrics(MC_METRICS),

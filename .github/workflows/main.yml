@@ -93,7 +93,7 @@ jobs:
           echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
       - name: Download package distribution files
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: package
           path: dist

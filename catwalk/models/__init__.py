@@ -9,6 +9,7 @@ from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 MODELS: Dict[str, Model] = {
     "gpt2": GPTModel("gpt2"),
     "eai::gpt2": EleutherModel("gpt2"),
+    "eai::tiny-gpt2": EleutherModel("sshleifer/tiny-gpt2"),
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),
     "t5-base": T5ModelFromPretrained("t5-base"),

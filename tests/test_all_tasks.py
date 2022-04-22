@@ -1,17 +1,11 @@
 import inspect
-from typing import Sequence, Dict, Any
 
 import pytest
 
 import catwalk.tasks
+import catwalk.models
 
 task_names = list(catwalk.tasks.TASKS.keys())
-
-task_names.remove("race")
-task_names.append(
-    pytest.param(
-        "race",
-        marks=pytest.mark.xfail(reason="This task is broken in the latest version of the Eleuther framework.")))
 
 
 @pytest.mark.parametrize("task_name", task_names)

@@ -71,3 +71,30 @@ class EleutherTask(Task):
     def instance_as_eleuther_requests(self, instance: Dict[str, Any], *, num_fewshot: int = 0):
         context = self.instance_to_eleuther_context(instance, num_fewshot=num_fewshot)
         return self.inner_task.construct_requests(self.instance_as_eleuther_doc(instance), context)
+
+
+@Task.register("eleuther::race")
+class RaceEleutherTask(EleutherTask):
+    """This task is different because there is no 1:1 correspondence between HF instances and EAI instances."""
+    def __init__(self, *, random_seed: Optional[int] = None, version_override: Optional[str] = None):
+        super().__init__("race", random_seed=random_seed, version_override=version_override)
+        del self.instance_conversions[InstanceFormat.HF_DICT]
+        self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, lambda x: x)
+
+    def has_split(self, split: str) -> bool:
+        if split == "train":
+            return self.inner_task.has_training_docs()
+        if split == "test":
+            return self.inner_task.has_test_docs()
+        if split == "validation":
+            return self.inner_task.has_validation_docs()
+        return False
+
+    def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
+        if split == "train":
+            return self.inner_task.training_docs()
+        if split == "test":
+            return self.inner_task.test_docs()
+        if split == "validation":
+            return self.inner_task.validation_docs()
+        raise KeyError(split)

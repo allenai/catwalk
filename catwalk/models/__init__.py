@@ -12,6 +12,8 @@ MODELS: Dict[str, Model] = {
     "eai::channel_gpt2": EleutherChannelModel("gpt2"),
     "eai::gptj": EleutherModel("EleutherAI/gpt-j-6B"),
     "eai::channel_gptj": EleutherChannelModel("EleutherAI/gpt-j-6B"),
+    "eai::gptneox": EleutherModel("EleutherAI/gpt-neox-20b"),
+    "eai::channel_gptneox": EleutherChannelModel("EleutherAI/gpt-neox-20b"),
     "eai::tiny-gpt2": EleutherModel("sshleifer/tiny-gpt2"),
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),

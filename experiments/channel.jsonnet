@@ -30,12 +30,18 @@ local task_names = [
     "wsc"
 ];
 
+local tasks_without_validation = [
+    "prost",
+    "webqs"
+];
+
 local task_steps = std.foldl(
     function(x, task_name) x + {
         ["predict_" + task_name]: {
             type: "catwalk::predict",
             model: "eai::gpt2",
-            task: task_name
+            task: task_name,
+            split: if std.member(tasks_without_validation, task_name) then "test" else "validation"
         },
         ["calculate_" + task_name]: {
             type: "catwalk::calculate_metrics",

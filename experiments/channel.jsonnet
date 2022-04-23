@@ -35,19 +35,20 @@ local tasks_without_validation = [
     "webqs"
 ];
 
-local task_steps = std.foldl(
+local task_steps(prefix, model_name) = std.foldl(
     function(x, task_name) x + {
-        ["predict_" + task_name]: {
+        [prefix + "_predict_" + task_name]: {
             type: "catwalk::predict",
-            model: "eai::gpt2",
+            model: model_name,
             task: task_name,
-            split: if std.member(tasks_without_validation, task_name) then "test" else "validation"
+            split: if std.member(tasks_without_validation, task_name) then "test" else "validation",
+            batch_size: 256
         },
-        ["calculate_" + task_name]: {
+        [prefix + "_calculate_" + task_name]: {
             type: "catwalk::calculate_metrics",
             model: "eai::gpt2",
             task: task_name,
-            predictions: {ref: "predict_" + task_name}
+            predictions: {ref: prefix + "_predict_" + task_name}
         }
     },
     task_names,
@@ -55,11 +56,19 @@ local task_steps = std.foldl(
 );
 
 {
-    steps: task_steps + {
-        print_results: {
+    steps: task_steps("direct", "eai::gpt2") + {
+        direct_print_results: {
             type: "print",
             input: std.map(
-                function(task_name) {ref: "calculate_" + task_name},
+                function(task_name) {ref: "direct_calculate_" + task_name},
+                task_names
+            )
+        }
+    } + task_steps("channel", "eai::channel_gpt2") + {
+        channel_print_results: {
+            type: "print",
+            input: std.map(
+                function(task_name) {ref: "channel_calculate_" + task_name},
                 task_names
             )
         }

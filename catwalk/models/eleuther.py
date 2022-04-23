@@ -15,7 +15,7 @@ from catwalk.model import Model
 from catwalk.tasks.eleuther import EleutherTask
 
 
-@Model.register("eleuther")
+@Model.register("eai")
 class EleutherModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -186,3 +186,19 @@ class EleutherModel(Model):
             key: fn([p[key] for p in predictions])
             for key, fn in task.inner_task.aggregation().items()
         }
+
+
+@Model.register("eai::channel")
+class EleutherChannelModel(EleutherModel):
+    def _run_loglikelihood(
+        self,
+        requests: Sequence[Request],
+        model: GPT2LMHeadModel,
+        tokenizer: GPT2Tokenizer,
+        batch_size: int = 32,
+    ) -> Sequence:
+        # We're just flipping context and continuation, the rest is the same.
+        new_requests = []
+        for r in requests:
+            new_requests.append(Request(r.request_type, r.args[::-1], r.index))
+        return super()._run_loglikelihood(new_requests, model, tokenizer, batch_size)

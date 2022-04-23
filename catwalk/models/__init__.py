@@ -1,7 +1,7 @@
 from typing import Dict
 
 from catwalk.model import Model
-from catwalk.models.eleuther import EleutherModel
+from catwalk.models.eleuther import EleutherModel, EleutherChannelModel
 from catwalk.models.gpt import GPTModel
 from catwalk.models.huggingface import HFAutoModel
 from catwalk.models.t5 import T5Model, T5ModelFromPretrained
@@ -9,6 +9,7 @@ from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 MODELS: Dict[str, Model] = {
     "gpt2": GPTModel("gpt2"),
     "eai::gpt2": EleutherModel("gpt2"),
+    "eai::channel_gpt2": EleutherChannelModel("gpt2"),
     "eai::tiny-gpt2": EleutherModel("sshleifer/tiny-gpt2"),
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),

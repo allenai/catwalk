@@ -1,7 +1,7 @@
 local task_names = [
     "arc_challenge",
     "arc_easy",
-    "boolq",
+#    "boolq",
     "copa",
     "headqa",
     "hellaswag",
@@ -18,7 +18,7 @@ local task_names = [
 #    "pubmedqa",
     "qnli",
     "qqp",
-    "race",
+#    "race",
     "rte",
     "sciq",
     "sst",
@@ -42,7 +42,7 @@ local task_steps(prefix, model_name) = std.foldl(
             model: model_name,
             task: task_name,
             split: if std.member(tasks_without_validation, task_name) then "test" else "validation",
-            batch_size: 256
+            batch_size: 64
         },
         [prefix + "_calculate_" + task_name]: {
             type: "catwalk::calculate_metrics",
@@ -59,17 +59,19 @@ local task_steps(prefix, model_name) = std.foldl(
     steps: task_steps("direct", "eai::gpt2") + {
         direct_print_results: {
             type: "print",
-            input: std.map(
-                function(task_name) {ref: "direct_calculate_" + task_name},
-                task_names
+            input: std.foldl(
+                function(x, task_name) x + { [task_name]: {ref: "direct_calculate_" + task_name} },
+                task_names,
+                {}
             )
         }
     } + task_steps("channel", "eai::channel_gpt2") + {
         channel_print_results: {
             type: "print",
-            input: std.map(
-                function(task_name) {ref: "channel_calculate_" + task_name},
-                task_names
+            input: std.foldl(
+                function(x, task_name) x + { [task_name]: {ref: "channel_calculate_" + task_name} },
+                task_names,
+                {}
             )
         }
     }

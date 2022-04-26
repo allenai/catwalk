@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--task', type=str, nargs="+")
-    parser.add_argument('--split', type=str, default="validation")
+    parser.add_argument('--split', type=str)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--limit', type=int)
     parser.add_argument(

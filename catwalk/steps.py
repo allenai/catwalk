@@ -21,13 +21,15 @@ class PredictStep(Step):
             kwargs["model"] = MODELS[kwargs["model"]]
         if isinstance(kwargs["task"], str):
             kwargs["task"] = TASKS[kwargs["task"]]
+        if kwargs["split"] is None:
+            kwargs["split"] = kwargs["task"].default_split
         return kwargs
 
     def run(
         self,
         model: Union[str, Model],
         task: Union[str, Task],
-        split: str = "validation",
+        split: Optional[str] = None,
         batch_size: int = 32,
         limit: Optional[int] = None
     ) -> Sequence[Any]:

@@ -70,6 +70,10 @@ class Task(Registrable, ABC):
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
         raise NotImplementedError
 
+    @property
+    def default_split(self) -> str:
+        return "test"
+
     def make_metrics(self) -> Dict[str, torchmetrics.Metric]:
         return {
             name: metric_fn()

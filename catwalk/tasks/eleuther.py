@@ -62,6 +62,16 @@ class EleutherTask(Task):
         ds = MappedSequence(lambda x: x, ds)
         return ds
 
+    @property
+    def default_split(self) -> str:
+        # In EAI, this is different than `has_split`.
+        if self.inner_task.has_test_docs():
+            return "test"
+        elif self.inner_task.has_validation_docs():
+            return "validation"
+        else:
+            raise RuntimeError("Task has neither test_docs nor validation_docs.")
+
     def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
         return self.inner_task._process_doc(instance)
 

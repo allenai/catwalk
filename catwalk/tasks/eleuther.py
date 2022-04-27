@@ -108,3 +108,33 @@ class RaceEleutherTask(EleutherTask):
         if split == "validation":
             return self.inner_task.validation_docs()
         raise KeyError(split)
+
+
+@Task.register("eleuther::pubmedqa")
+class PubmedqaEleutherTask(EleutherTask):
+    """This task is different because EAI relabels the datasets."""
+    def __init__(self, *, random_seed: Optional[int] = None, version_override: Optional[str] = None):
+        super().__init__("pubmedqa", random_seed=random_seed, version_override=version_override)
+
+    def has_split(self, split: str) -> bool:
+        if split == "train":
+            return self.inner_task.has_training_docs()
+        if split == "test":
+            return self.inner_task.has_test_docs()
+        if split == "validation":
+            return self.inner_task.has_validation_docs()
+        return False
+
+    def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
+        if split == "train":
+            result = self.inner_task.training_docs()
+        elif split == "test":
+            result = self.inner_task.test_docs()
+        elif split == "validation":
+            result = self.inner_task.validation_docs()
+        else:
+            raise KeyError(split)
+        # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
+        # to make them act like sequences.
+        return MappedSequence(lambda x: x, result)
+

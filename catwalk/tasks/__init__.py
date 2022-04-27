@@ -1,7 +1,7 @@
 from typing import Dict
 
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, CLASSIFICATION_METRICS, QA_METRICS, Task
-from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask
+from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
@@ -59,7 +59,7 @@ TASKS: Dict[str, Task] = {
     "lambada_mt_es": EleutherTask("lambada_mt_es"),
     "prost": EleutherTask("prost").add_metrics(MC_METRICS),
     "mc_taco": EleutherTask("mc_taco").add_metrics(CLASSIFICATION_METRICS),
-    #"pubmedqa": EleutherTask("pubmedqa"),  # currently broken in the datasets library
+    "pubmedqa": PubmedqaEleutherTask().add_metrics(CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq").add_metrics(MC_METRICS),
     "qa4mre_2011": EleutherTask("qa4mre_2011").add_metrics(MC_METRICS),
     "qa4mre_2012": EleutherTask("qa4mre_2012").add_metrics(MC_METRICS),

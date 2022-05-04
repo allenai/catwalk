@@ -1,15 +1,20 @@
 from typing import Dict
 
 from catwalk.model import Model
-from catwalk.models.eleuther import EleutherModel
+from catwalk.models.eleuther import EAIGPT, EAIT5
 from catwalk.models.gpt import GPTModel
 from catwalk.models.huggingface import HFAutoModel
 from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 
 MODELS: Dict[str, Model] = {
     "gpt2": GPTModel("gpt2"),
-    "eai::gpt2": EleutherModel("gpt2"),
-    "eai::tiny-gpt2": EleutherModel("sshleifer/tiny-gpt2"),
+    "eai::gpt2": EAIGPT("gpt2"),
+    "eai::tiny-gpt2": EAIGPT("sshleifer/tiny-gpt2"),
+    "eai::t5-small": EAIT5("t5-small"),
+    "eai::t5-base": EAIT5("t5-base"),
+    "eai::t5-large": EAIT5("t5-large"),
+    "eai::t5-3b": EAIT5("t5-3b"),
+    "eai::t5-11b": EAIT5("t5-11b"),
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),
     "t5-base": T5ModelFromPretrained("t5-base"),

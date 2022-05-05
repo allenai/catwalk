@@ -1,8 +1,8 @@
-from typing import Union, Dict, Any, Optional, Sequence
+from typing import Union, Dict, Any, Optional, Sequence, Iterable
 
 from tango import Step, JsonFormat
 from tango.common.sequences import SqliteSparseSequence
-from tango.format import SqliteSequenceFormat
+from tango.format import SqliteSequenceFormat, TextFormat
 
 from catwalk.task import Task
 from catwalk.tasks import TASKS
@@ -74,3 +74,19 @@ class CalculateMetricsStep(Step):
             task = TASKS[task]
 
         return model.calculate_metrics(task, predictions)
+
+
+@Step.register("catwalk::tabulate_metrics")
+class TabulateMetricsStep(Step):
+    VERSION = "001"
+    FORMAT = TextFormat
+
+    def run(self, metrics: Dict[str, Dict[str, float]], format: str = "text") -> Iterable[str]:
+        if format == "text":
+            for task_name, task_metrics in metrics.items():
+                for metric_name, metric_value in task_metrics.items():
+                    yield f"{task_name}\t{metric_name}\t{metric_value}"
+        elif format == "latex":
+            raise NotImplementedError()
+        else:
+            raise AttributeError("At the moment, only the 'text' format is supported.")

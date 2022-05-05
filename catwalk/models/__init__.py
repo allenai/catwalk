@@ -30,6 +30,7 @@ MODELS: Dict[str, Model] = {
     "eai::t5-large-lm-adapt": EAIT5("google/t5-large-lm-adapt"),
     "eai::t5-xl-lm-adapt": EAIT5("google/t5-xl-lm-adapt"),
     "eai::t5-xxl-lm-adapt": EAIT5("google/t5-xxl-lm-adapt"),
+    "eai::t5-very-small-random": EAIT5("stas/t5-very-small-random"),
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),
     "t5-base": T5ModelFromPretrained("t5-base"),

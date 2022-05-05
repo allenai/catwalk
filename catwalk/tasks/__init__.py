@@ -124,7 +124,7 @@ TASK_SETS = {
         "arc_easy",
         "boolq",
         "copa",
-        "headqa_en",
+        #"headqa_en",       # Headqa is broken as of 2022-05-05
         "hellaswag",
         "lambada",
         "logiqa",

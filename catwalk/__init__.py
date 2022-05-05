@@ -16,7 +16,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--limit', type=int)
     parser.add_argument(
-        '-d',
+        '-d', '-w',
         type=str,
         default=None,
         metavar="workspace",
@@ -41,7 +41,7 @@ def main():
             tasks |= TASK_SETS[task]
         except KeyError:
             tasks.add(task)
-        
+
     for task in tasks:
         predictions = PredictStep(
             model=args.model,

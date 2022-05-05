@@ -3,6 +3,8 @@ import json
 
 from tango.common.logging import initialize_logging
 
+from catwalk.tasks import TASK_SETS
+
 
 def main():
     initialize_logging()
@@ -33,7 +35,14 @@ def main():
     from catwalk.steps import CalculateMetricsStep
     from catwalk.steps import PredictStep
 
+    tasks = set()
     for task in args.task:
+        try:
+            tasks |= TASK_SETS[task]
+        except KeyError:
+            tasks.add(task)
+        
+    for task in tasks:
         predictions = PredictStep(
             model=args.model,
             task=task,

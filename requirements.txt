@@ -6,5 +6,5 @@ more_itertools
 spacy
 wget
 #lm-eval
-#git+https://github.com/EleutherAI/lm-evaluation-harness.git
-git+https://github.com/dirkgr/lm-evaluation-harness.git@aeb7e846628da1e2dbecb0340edeaef433b487d4
+git+https://github.com/EleutherAI/lm-evaluation-harness.git
+datasets>=2.1.0

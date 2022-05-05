@@ -124,7 +124,7 @@ TASK_SETS = {
         "arc_easy",
         "boolq",
         "copa",
-        "headqa",
+        "headqa_en",
         "hellaswag",
         "lambada",
         "logiqa",

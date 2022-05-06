@@ -29,9 +29,11 @@ jobs:
       matrix:
         python: ['3.9', '3.10']
         task:
+          # The cache file below is created with this command: tar -cpzf cache_huggingface.tar.gz -C ~/.cache huggingface/
           - name: Test
             run: |
-              pytest -n 8 -v --color=yes tests/
+              curl "https://storage.googleapis.com/allennlp-public-data/cache_huggingface.tar.gz" | tar -xzpC ~/.cache
+              pytest -v --color=yes tests/
         include:
           - python: '3.10'
             task:

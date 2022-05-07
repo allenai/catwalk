@@ -1,5 +1,3 @@
-import gc
-
 import pytest
 
 from catwalk.steps import PredictStep, CalculateMetricsStep
@@ -45,4 +43,3 @@ def test_task_eval(task_name: str, model_name: str):
     metrics_step = CalculateMetricsStep(model=model_name, task=task_name, predictions=predict_step)
     result = metrics_step.result()
     assert result is not None
-    gc.collect()    # This every run of this test loads a model. We have to force Python to release the memory.

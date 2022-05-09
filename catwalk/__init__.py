@@ -1,6 +1,6 @@
 import argparse
-import json
 
+from tango import Workspace
 from tango.common.logging import initialize_logging
 
 from catwalk.steps import TabulateMetricsStep
@@ -28,8 +28,7 @@ def main():
     if args.workspace is None:
         workspace = None
     else:
-        from tango.workspaces import LocalWorkspace
-        workspace = LocalWorkspace(args.workspace)
+        workspace = Workspace.from_url(args.workspace)
 
     limit = args.limit if hasattr(args, "limit") else None
 
@@ -58,7 +57,8 @@ def main():
         metric_task_dict[task] = metrics
 
     table_step = TabulateMetricsStep(metrics=metric_task_dict)
-    print("\n".join(table_step.result(workspace)))
+    table_step_result = table_step.result(workspace)
+    print("\n".join(table_step_result))
 
 
 if __name__ == "__main__":

@@ -191,7 +191,7 @@ class EAIGPT(Model):
 
 @Model.register("eai::t5")
 class EAIT5(Model):
-    VERSION = "002lac"
+    VERSION = "003gat"
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -311,7 +311,7 @@ class EAIT5(Model):
                     greedy_tokens = instance_logits.argmax(dim=-1)
                     max_equal = (greedy_tokens == decoder_input_ids).all()
 
-                    instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(0)) ## TODO: check this
+                    instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1))
                     instance_result: Any = (float(instance_logits.sum()), bool(max_equal))
                     if requests[i].index is not None:
                         instance_result = instance_result[requests[i].index]

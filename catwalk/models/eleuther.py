@@ -191,6 +191,8 @@ class EAIGPT(Model):
 
 @Model.register("eai::t5")
 class EAIT5(Model):
+    VERSION = "002lac"
+
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
@@ -273,10 +275,9 @@ class EAIT5(Model):
         del encoder_inputs
 
         with tokenizer.as_target_tokenizer():
-            decoder_inputs = tokenizer([r.args[1] for r in requests])
-        for field_name, decoder_input in decoder_inputs.items():
-            for i, input_as_list in enumerate(decoder_input):
-                model_inputs[i]["decoder_" + field_name] = torch.tensor(input_as_list, dtype=torch.long)
+            decoder_inputs = tokenizer([r.args[1] for r in requests], return_attention_mask=False)
+        for i, input_as_list in enumerate(decoder_inputs['input_ids']):
+            model_inputs[i]["labels"] = torch.tensor(input_as_list, dtype=torch.long)
         del decoder_inputs
 
         # find out the order to process sequences in

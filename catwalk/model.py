@@ -3,11 +3,12 @@ from typing import Sequence, Dict, Any, Iterator, Tuple, List
 
 import torch
 from tango.common import Registrable, Tqdm
+from tango.common.det_hash import DetHashWithVersion
 
 from catwalk.task import Task
 
 
-class Model(Registrable, ABC):
+class Model(Registrable, DetHashWithVersion, ABC):
     def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError()
 

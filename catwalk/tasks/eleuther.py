@@ -1,14 +1,12 @@
 import random
-from tempfile import NamedTemporaryFile
 from typing import Dict, Any, Optional, Union, Callable, Sequence
 
-from tango.common import Tqdm
-from tango.common.sequences import SqliteSparseSequence, MappedSequence
+from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceFormat, PERPLEXITY_METRICS
+from catwalk.task import Task, InstanceFormat
 
 import lm_eval.tasks
-from lm_eval.base import Task as EAITask, PerplexityTask as EAIPerplexityTask
+from lm_eval.base import Task as EAITask
 
 
 @Task.register("eleuther")

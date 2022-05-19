@@ -1,7 +1,10 @@
 import argparse
-import json
 
+from tango import Workspace
 from tango.common.logging import initialize_logging
+
+from catwalk.steps import TabulateMetricsStep
+from catwalk.tasks import TASK_SETS
 
 
 def main():
@@ -14,7 +17,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--limit', type=int)
     parser.add_argument(
-        '-d',
+        '-d', '-w',
         type=str,
         default=None,
         metavar="workspace",
@@ -25,15 +28,22 @@ def main():
     if args.workspace is None:
         workspace = None
     else:
-        from tango.workspaces import LocalWorkspace
-        workspace = LocalWorkspace(args.workspace)
+        workspace = Workspace.from_url(args.workspace)
 
     limit = args.limit if hasattr(args, "limit") else None
 
     from catwalk.steps import CalculateMetricsStep
     from catwalk.steps import PredictStep
 
+    tasks = set()
     for task in args.task:
+        try:
+            tasks |= TASK_SETS[task]
+        except KeyError:
+            tasks.add(task)
+
+    metric_task_dict = {}
+    for task in tasks:
         predictions = PredictStep(
             model=args.model,
             task=task,
@@ -44,9 +54,11 @@ def main():
             model=args.model,
             task=task,
             predictions=predictions)
+        metric_task_dict[task] = metrics
 
-        result = metrics.result(workspace)
-        print(json.dumps(result, indent=4, sort_keys=True))
+    table_step = TabulateMetricsStep(metrics=metric_task_dict)
+    table_step_result = table_step.result(workspace)
+    print("\n".join(table_step_result))
 
 
 if __name__ == "__main__":

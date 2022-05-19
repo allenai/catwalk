@@ -117,3 +117,36 @@ TASKS: Dict[str, Task] = {
     "random_insertion": EleutherTask("random_insertion").add_metrics(QA_METRICS),
     "reversed_words": EleutherTask("reversed_words").add_metrics(QA_METRICS),
 }
+
+TASK_SETS = {
+    "iz": {
+        "arc_challenge",
+        "arc_easy",
+        "boolq",
+        "copa",
+        #"headqa_en",       # Headqa is broken as of 2022-05-05
+        "hellaswag",
+        "lambada",
+        "logiqa",
+        "mathqa",
+        "mc_taco",
+        "mrpc",
+        "multirc",
+        "openbookqa",
+        "piqa",
+        "prost",
+        "pubmedqa",
+        "qnli",
+        "qqp",
+        "race",
+        "rte",
+        "sciq",
+        "sst",
+        "triviaqa",
+        "webqs",
+        "wic",
+        "winogrande",
+        "wnli",
+        "wsc",
+    }
+}

@@ -3,6 +3,7 @@ from typing import Dict
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, CLASSIFICATION_METRICS, QA_METRICS, Task
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
+from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
@@ -116,6 +117,18 @@ TASKS: Dict[str, Task] = {
     "cycle_letters": EleutherTask("cycle_letters").add_metrics(QA_METRICS),
     "random_insertion": EleutherTask("random_insertion").add_metrics(QA_METRICS),
     "reversed_words": EleutherTask("reversed_words").add_metrics(QA_METRICS),
+    # RAFT
+    "raft::ade_corpus_v2": RaftTask("ade_corpus_v2"),
+    "raft::banking_77": RaftTask("banking_77"),
+    "raft::neurips_impact_statement_risks": RaftTask("neurips_impact_statement_risks"),
+    "raft::one_stop_english": RaftTask("one_stop_english"),
+    "raft::overruling": RaftTask("overruling"),
+    "raft::semiconductor_org_types": RaftTask("semiconductor_org_types"),
+    "raft::systematic_review_inclusion": RaftTask("systematic_review_inclusion"),
+    "raft::tai_safety_research": RaftTask("tai_safety_research"),
+    "raft::terms_of_service": RaftTask("terms_of_service"),
+    "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
+    "raft::twitter_complaints": RaftTask("twitter_complaints"),
 }
 
 TASK_SETS = {
@@ -148,5 +161,6 @@ TASK_SETS = {
         "winogrande",
         "wnli",
         "wsc",
-    }
+    },
+    "raft": {name for name in TASKS.keys() if name.startswith("raft::")}
 }

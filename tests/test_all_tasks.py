@@ -9,7 +9,7 @@ task_names = list(catwalk.tasks.TASKS.keys())
 
 
 @pytest.mark.parametrize("task_name", task_names)
-@pytest.mark.parametrize("split", ["train", "validation"])
+@pytest.mark.parametrize("split", ["train"])
 def test_task(task_name: str, split: str):
     task = catwalk.tasks.TASKS[task_name]
     try:

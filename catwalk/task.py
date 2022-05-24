@@ -1,6 +1,7 @@
 from abc import ABC
+from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable, Mapping
+from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable, Mapping, Tuple
 
 import torchmetrics
 from mypy_extensions import KwArg
@@ -45,6 +46,13 @@ class InstanceFormat(Enum):
     ELEUTHER_REQUESTS = 5
     HF_MC = 2
     T5_PROMPT = 6
+    RANK_CLASSIFICATION = 7
+
+
+@dataclass
+class RankClassificationInstance:
+    choices: List[Tuple[str, str]]
+    correct_choice: Optional[int]
 
 
 InstanceConversion = Union[Callable[[Dict[str, Any]], Any], Callable[[Dict[str, Any], KwArg()], Any]]

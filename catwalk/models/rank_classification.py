@@ -124,7 +124,6 @@ class EncoderDecoderRCModel(RankClassificationModel):
             for model_input in model_inputs
         ], dtype=torch.int)
         ordered_indices = torch.argsort(lengths, descending=True)
-        ordered_indices = torch.arange(0, len(ordered_indices)) # DEBUG
         del lengths
 
         # actually do the processing

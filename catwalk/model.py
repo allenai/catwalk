@@ -46,7 +46,7 @@ class Model(Registrable, DetHashWithVersion, ABC):
                 metric_args = unsqueeze_args(metric_args)
                 metric.update(*metric_args)
         return {
-            metric_name: float(metric.compute())
+            metric_name: metric.compute()
             for metric_name, metric in metrics.items()
         }
 

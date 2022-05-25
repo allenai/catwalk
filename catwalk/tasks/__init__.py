@@ -1,6 +1,7 @@
 from typing import Dict
 
-from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, CLASSIFICATION_METRICS, QA_METRICS, Task
+from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
+    classification_metrics, BINARY_CLASSIFICATION_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
 from catwalk.tasks.raft import RaftTask
@@ -34,18 +35,18 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherTask("cola").add_metrics(CLASSIFICATION_METRICS),
+    "cola": EleutherTask("cola").add_metrics(classification_metrics(2)),
     "mnli": EleutherTask("mnli").add_metrics(ENTAILMENT_METRICS),
     "mnli_mismatched": EleutherTask("mnli_mismatched").add_metrics(ENTAILMENT_METRICS),
     "mrpc": EleutherTask("mrpc").add_metrics(ENTAILMENT_METRICS),
     "qnli": EleutherTask("qnli").add_metrics(ENTAILMENT_METRICS),
     "qqp": EleutherTask("qqp").add_metrics(ENTAILMENT_METRICS),
-    "sst": EleutherTask("sst").add_metrics(CLASSIFICATION_METRICS),
+    "sst": EleutherTask("sst").add_metrics(classification_metrics(5)),
     "wnli": EleutherTask("wnli").add_metrics(ENTAILMENT_METRICS),
-    "boolq": EleutherTask("boolq").add_metrics(CLASSIFICATION_METRICS),
+    "boolq": EleutherTask("boolq").add_metrics(classification_metrics(2)),
     "cb": EleutherTask("cb").add_metrics(ENTAILMENT_METRICS),
-    "copa": EleutherTask("copa").add_metrics(CLASSIFICATION_METRICS),
-    "multirc": EleutherTask("multirc").add_metrics(CLASSIFICATION_METRICS),
+    "copa": EleutherTask("copa").add_metrics(MC_METRICS),
+    "multirc": EleutherTask("multirc").add_metrics(MC_METRICS),
     #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
     "wic": EleutherTask("wic").add_metrics(ENTAILMENT_METRICS),
     "wsc": EleutherTask("wsc").add_metrics(MC_METRICS),
@@ -59,8 +60,8 @@ TASKS: Dict[str, Task] = {
     "lambada_mt_it": EleutherTask("lambada_mt_it"),
     "lambada_mt_es": EleutherTask("lambada_mt_es"),
     "prost": EleutherTask("prost").add_metrics(MC_METRICS),
-    "mc_taco": EleutherTask("mc_taco").add_metrics(CLASSIFICATION_METRICS),
-    "pubmedqa": PubmedqaEleutherTask().add_metrics(CLASSIFICATION_METRICS),
+    "mc_taco": EleutherTask("mc_taco").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "pubmedqa": PubmedqaEleutherTask().add_metrics(BINARY_CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq").add_metrics(MC_METRICS),
     "qa4mre_2011": EleutherTask("qa4mre_2011").add_metrics(MC_METRICS),
     "qa4mre_2012": EleutherTask("qa4mre_2012").add_metrics(MC_METRICS),
@@ -82,12 +83,12 @@ TASKS: Dict[str, Task] = {
     "anli_r1": EleutherTask("anli_r1").add_metrics(ENTAILMENT_METRICS),
     "anli_r2": EleutherTask("anli_r2").add_metrics(ENTAILMENT_METRICS),
     "anli_r3": EleutherTask("anli_r3").add_metrics(ENTAILMENT_METRICS),
-    "ethics_cm": EleutherTask("ethics_cm").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_deontology": EleutherTask("ethics_deontology").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_justice": EleutherTask("ethics_justice").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_utilitarianism": EleutherTask("ethics_utilitarianism").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_virtue": EleutherTask("ethics_virtue").add_metrics(CLASSIFICATION_METRICS),
+    "ethics_cm": EleutherTask("ethics_cm").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_deontology": EleutherTask("ethics_deontology").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_justice": EleutherTask("ethics_justice").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_utilitarianism": EleutherTask("ethics_utilitarianism").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_virtue": EleutherTask("ethics_virtue").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "truthfulqa_mc": EleutherTask("truthfulqa_mc"),
     "truthfulqa_gen": EleutherTask("truthfulqa_gen"),
     "mutual": EleutherTask("mutual"),
@@ -119,11 +120,11 @@ TASKS: Dict[str, Task] = {
     "reversed_words": EleutherTask("reversed_words").add_metrics(QA_METRICS),
     # RAFT
     "raft::ade_corpus_v2": RaftTask("ade_corpus_v2"),
-    "raft::banking_77": RaftTask("banking_77"),
+    "raft::banking_77": RaftTask("banking_77", 77),
     "raft::neurips_impact_statement_risks": RaftTask("neurips_impact_statement_risks"),
-    "raft::one_stop_english": RaftTask("one_stop_english"),
+    "raft::one_stop_english": RaftTask("one_stop_english", 3),
     "raft::overruling": RaftTask("overruling"),
-    "raft::semiconductor_org_types": RaftTask("semiconductor_org_types"),
+    "raft::semiconductor_org_types": RaftTask("semiconductor_org_types", 3),
     "raft::systematic_review_inclusion": RaftTask("systematic_review_inclusion"),
     "raft::tai_safety_research": RaftTask("tai_safety_research"),
     "raft::terms_of_service": RaftTask("terms_of_service"),

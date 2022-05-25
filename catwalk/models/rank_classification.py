@@ -71,7 +71,7 @@ class RankClassificationModel(Model):
             tuple_indices = instance_index_to_tuple_indices[instance_index]
             results_for_instance = [results[i] for i in tuple_indices]
             result_tensor = torch.tensor(results_for_instance)
-            metric_args = (result_tensor.argmax(), instance.correct_choice)
+            metric_args = (result_tensor, instance.correct_choice)
             yield {
                 "acc": metric_args,
                 "f1": metric_args,

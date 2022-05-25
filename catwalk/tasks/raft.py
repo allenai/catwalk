@@ -1,6 +1,6 @@
 from typing import List, Any, Dict, Tuple
 
-from catwalk.task import InstanceFormat, CLASSIFICATION_METRICS, RankClassificationInstance
+from catwalk.task import InstanceFormat, RankClassificationInstance, classification_metrics
 from catwalk.tasks import HFDatasetsTask
 
 _FIELD_ORDERING = {"ade_corpus_v2": ["Sentence"], "banking_77": ["Query"], "terms_of_service": ["Sentence"],
@@ -27,13 +27,13 @@ assert _FIELD_ORDERING.keys() == _INSTRUCTIONS.keys()
 
 
 class RaftTask(HFDatasetsTask):
-    def __init__(self, subset: str):
+    def __init__(self, subset: str, number_of_classes: int = 2):
         self.subset = subset
         if subset not in _FIELD_ORDERING:
             raise ValueError(f"RAFT subset {subset} not found")
         super().__init__("ought/raft", subset)
         self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rc)
-        self.add_metrics(CLASSIFICATION_METRICS)
+        self.add_metrics(classification_metrics(number_of_classes))
 
     @property
     def _field_ordering(self):

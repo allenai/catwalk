@@ -114,6 +114,7 @@ class EncoderDecoderRCModel(RankClassificationModel):
         with tokenizer.as_target_tokenizer():
             decoder_inputs = tokenizer([r[1] for r in tuples], return_attention_mask=False)
         for i, input_as_list in enumerate(decoder_inputs['input_ids']):
+            input_as_list = input_as_list[:-1]      # remove the EOS token
             model_inputs[i]["labels"] = torch.tensor(input_as_list, dtype=torch.long)
         del decoder_inputs
 

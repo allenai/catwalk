@@ -308,7 +308,7 @@ class EAIT5(Model):
                 batch_logits = log_softmax(model(**padded_batch).logits, dim=-1).cpu()
 
                 for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
-                    instance_logits = instance_logits[:len(decoder_input_ids)]      # TODO: make sure this works with uneven decoder lengths
+                    instance_logits = instance_logits[:len(decoder_input_ids)]
                     greedy_tokens = instance_logits.argmax(dim=-1)
                     max_equal = (greedy_tokens == decoder_input_ids).all()
 

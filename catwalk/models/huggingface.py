@@ -64,7 +64,4 @@ class HFAutoModel(Model):
                         "correct_answer_index": instance.correct_answer_index,
                         "logits": logits,
                         "acc": (logits, instance.correct_answer_index),
-                        "f1": (logits, instance.correct_answer_index),
-                        "precision": (logits, instance.correct_answer_index),
-                        "recall": (logits, instance.correct_answer_index)
                     }

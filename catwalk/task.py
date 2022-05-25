@@ -1,6 +1,8 @@
 from abc import ABC
+from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable, Mapping
+from functools import partial
+from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable, Mapping, Tuple
 
 import torchmetrics
 from mypy_extensions import KwArg
@@ -12,21 +14,16 @@ from catwalk.metrics.perplexity import PerplexityMetric
 
 MC_METRICS = {
     "acc": torchmetrics.Accuracy,
-    "f1": torchmetrics.F1Score,
-    "precision": torchmetrics.Precision,
-    "recall": torchmetrics.Recall
 }
 
 ENTAILMENT_METRICS = {
     "acc": torchmetrics.Accuracy,
-}
-
-CLASSIFICATION_METRICS = {
-    "acc": torchmetrics.Accuracy,
     "f1": torchmetrics.F1Score,
     "precision": torchmetrics.Precision,
     "recall": torchmetrics.Recall
 }
+
+BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
 
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
@@ -38,6 +35,16 @@ QA_METRICS = {
     "acc": torchmetrics.Accuracy,
 }
 
+
+def classification_metrics(num_classes: int):
+    return {
+        "acc": torchmetrics.Accuracy,
+        "f1": partial(torchmetrics.F1Score, num_classes=num_classes, average=None),
+        "precision": partial(torchmetrics.Precision, num_classes=num_classes, average=None),
+        "recall": partial(torchmetrics.Recall, num_classes=num_classes, average=None)
+    }
+
+
 class InstanceFormat(Enum):
     HF_DICT = 1
     ELEUTHER_DOC = 3
@@ -45,6 +52,13 @@ class InstanceFormat(Enum):
     ELEUTHER_REQUESTS = 5
     HF_MC = 2
     T5_PROMPT = 6
+    RANK_CLASSIFICATION = 7
+
+
+@dataclass
+class RankClassificationInstance:
+    choices: List[Tuple[str, str]]
+    correct_choice: Optional[int]
 
 
 InstanceConversion = Union[Callable[[Dict[str, Any]], Any], Callable[[Dict[str, Any], KwArg()], Any]]

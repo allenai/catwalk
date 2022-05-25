@@ -1,3 +1,4 @@
+import functools
 from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Sequence, Dict, Any, List, Union, Mapping
@@ -42,8 +43,12 @@ class HFDatasetsTask(Task):
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
 
+    @functools.lru_cache
+    def dataset(self, split: str):
+        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
-        ds = datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+        ds = self.dataset(split=split)
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
         ds = MappedSequence(lambda x: x, ds)

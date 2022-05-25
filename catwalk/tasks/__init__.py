@@ -1,13 +1,15 @@
 from typing import Dict
 
-from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, CLASSIFICATION_METRICS, QA_METRICS, Task
+from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
+    classification_metrics, BINARY_CLASSIFICATION_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
+from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
     "wikitext": EleutherTask("wikitext"),
-    "piqa": EleutherTask("piqa").add_instance_conversion(
+    "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -17,7 +19,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(MC_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
-    "rte": EleutherTask("rte").add_instance_conversion(
+    "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
             task_name="rte",
@@ -33,21 +35,21 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherTask("cola").add_metrics(CLASSIFICATION_METRICS),
-    "mnli": EleutherTask("mnli").add_metrics(ENTAILMENT_METRICS),
-    "mnli_mismatched": EleutherTask("mnli_mismatched").add_metrics(ENTAILMENT_METRICS),
-    "mrpc": EleutherTask("mrpc").add_metrics(ENTAILMENT_METRICS),
-    "qnli": EleutherTask("qnli").add_metrics(ENTAILMENT_METRICS),
-    "qqp": EleutherTask("qqp").add_metrics(ENTAILMENT_METRICS),
-    "sst": EleutherTask("sst").add_metrics(CLASSIFICATION_METRICS),
-    "wnli": EleutherTask("wnli").add_metrics(ENTAILMENT_METRICS),
-    "boolq": EleutherTask("boolq").add_metrics(CLASSIFICATION_METRICS),
-    "cb": EleutherTask("cb").add_metrics(ENTAILMENT_METRICS),
-    "copa": EleutherTask("copa").add_metrics(CLASSIFICATION_METRICS),
-    "multirc": EleutherTask("multirc").add_metrics(CLASSIFICATION_METRICS),
+    "cola": EleutherTask("cola", ranked_classification=True).add_metrics(classification_metrics(2)),
+    "mnli": EleutherTask("mnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "mnli_mismatched": EleutherTask("mnli_mismatched", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "mrpc": EleutherTask("mrpc", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "qnli": EleutherTask("qnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "qqp": EleutherTask("qqp", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "sst": EleutherTask("sst", ranked_classification=True).add_metrics(classification_metrics(5)),
+    "wnli": EleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "boolq": EleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
+    "cb": EleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "copa": EleutherTask("copa", ranked_classification=True).add_metrics(MC_METRICS),
+    "multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(MC_METRICS),
     #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
-    "wic": EleutherTask("wic").add_metrics(ENTAILMENT_METRICS),
-    "wsc": EleutherTask("wsc").add_metrics(MC_METRICS),
+    "wic": EleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "wsc": EleutherTask("wsc", ranked_classification=True).add_metrics(MC_METRICS),
     #"coqa": EleutherTask("coqa"),  # currently broken in the datasets library
     "drop": EleutherTask("drop").add_metrics(QA_METRICS),
     "lambada": EleutherTask("lambada"),
@@ -57,37 +59,37 @@ TASKS: Dict[str, Task] = {
     "lambada_mt_de": EleutherTask("lambada_mt_de"),
     "lambada_mt_it": EleutherTask("lambada_mt_it"),
     "lambada_mt_es": EleutherTask("lambada_mt_es"),
-    "prost": EleutherTask("prost").add_metrics(MC_METRICS),
-    "mc_taco": EleutherTask("mc_taco").add_metrics(CLASSIFICATION_METRICS),
-    "pubmedqa": PubmedqaEleutherTask().add_metrics(CLASSIFICATION_METRICS),
-    "sciq": EleutherTask("sciq").add_metrics(MC_METRICS),
-    "qa4mre_2011": EleutherTask("qa4mre_2011").add_metrics(MC_METRICS),
-    "qa4mre_2012": EleutherTask("qa4mre_2012").add_metrics(MC_METRICS),
-    "qa4mre_2013": EleutherTask("qa4mre_2013").add_metrics(MC_METRICS),
+    "prost": EleutherTask("prost", ranked_classification=True).add_metrics(MC_METRICS),
+    "mc_taco": EleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "pubmedqa": PubmedqaEleutherTask().add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "sciq": EleutherTask("sciq", ranked_classification=True).add_metrics(MC_METRICS),
+    "qa4mre_2011": EleutherTask("qa4mre_2011", ranked_classification=True).add_metrics(MC_METRICS),
+    "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_metrics(MC_METRICS),
+    "qa4mre_2013": EleutherTask("qa4mre_2013", ranked_classification=True).add_metrics(MC_METRICS),
     "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
-    "arc_easy": EleutherTask("arc_easy").add_metrics(MC_METRICS),
-    "arc_challenge": EleutherTask("arc_challenge").add_metrics(MC_METRICS),
-    "logiqa": EleutherTask("logiqa").add_metrics(MC_METRICS),
-    "hellaswag": EleutherTask("hellaswag").add_metrics(MC_METRICS),
-    "openbookqa": EleutherTask("openbookqa").add_metrics(MC_METRICS),
+    "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_metrics(MC_METRICS),
+    "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_metrics(MC_METRICS),
+    "logiqa": EleutherTask("logiqa", ranked_classification=True).add_metrics(MC_METRICS),
+    "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_metrics(MC_METRICS),
+    "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_metrics(MC_METRICS),
     "race": RaceEleutherTask().add_metrics(MC_METRICS),
-    "headqa": EleutherTask("headqa").add_metrics(MC_METRICS),
-    "headqa_es": EleutherTask("headqa_es").add_metrics(MC_METRICS),
-    "headqa_en": EleutherTask("headqa_en").add_metrics(MC_METRICS),
-    "mathqa": EleutherTask("mathqa").add_metrics(MC_METRICS),
+    "headqa": EleutherTask("headqa", ranked_classification=True).add_metrics(MC_METRICS),
+    "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_metrics(MC_METRICS),
+    "headqa_en": EleutherTask("headqa_en", ranked_classification=True).add_metrics(MC_METRICS),
+    "mathqa": EleutherTask("mathqa", ranked_classification=True).add_metrics(MC_METRICS),
     "webqs": EleutherTask("webqs").add_metrics(QA_METRICS),
-    "wsc273": EleutherTask("wsc273").add_metrics(ENTAILMENT_METRICS),
-    "winogrande": EleutherTask("winogrande").add_metrics(MC_METRICS),
-    "anli_r1": EleutherTask("anli_r1").add_metrics(ENTAILMENT_METRICS),
-    "anli_r2": EleutherTask("anli_r2").add_metrics(ENTAILMENT_METRICS),
-    "anli_r3": EleutherTask("anli_r3").add_metrics(ENTAILMENT_METRICS),
-    "ethics_cm": EleutherTask("ethics_cm").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_deontology": EleutherTask("ethics_deontology").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_justice": EleutherTask("ethics_justice").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_utilitarianism": EleutherTask("ethics_utilitarianism").add_metrics(CLASSIFICATION_METRICS),
-    "ethics_virtue": EleutherTask("ethics_virtue").add_metrics(CLASSIFICATION_METRICS),
-    "truthfulqa_mc": EleutherTask("truthfulqa_mc"),
+    "wsc273": EleutherTask("wsc273", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "winogrande": EleutherTask("winogrande", ranked_classification=True).add_metrics(MC_METRICS),
+    "anli_r1": EleutherTask("anli_r1", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "anli_r2": EleutherTask("anli_r2", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "anli_r3": EleutherTask("anli_r3", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "ethics_cm": EleutherTask("ethics_cm").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_deontology": EleutherTask("ethics_deontology").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_justice": EleutherTask("ethics_justice").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_utilitarianism": EleutherTask("ethics_utilitarianism").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "ethics_virtue": EleutherTask("ethics_virtue").add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "truthfulqa_mc": EleutherTask("truthfulqa_mc", ranked_classification=True),
     "truthfulqa_gen": EleutherTask("truthfulqa_gen"),
     "mutual": EleutherTask("mutual"),
     "mutual_plus": EleutherTask("mutual_plus"),
@@ -116,6 +118,18 @@ TASKS: Dict[str, Task] = {
     "cycle_letters": EleutherTask("cycle_letters").add_metrics(QA_METRICS),
     "random_insertion": EleutherTask("random_insertion").add_metrics(QA_METRICS),
     "reversed_words": EleutherTask("reversed_words").add_metrics(QA_METRICS),
+    # RAFT
+    "raft::ade_corpus_v2": RaftTask("ade_corpus_v2"),
+    "raft::banking_77": RaftTask("banking_77", 77),
+    "raft::neurips_impact_statement_risks": RaftTask("neurips_impact_statement_risks"),
+    "raft::one_stop_english": RaftTask("one_stop_english", 3),
+    "raft::overruling": RaftTask("overruling"),
+    "raft::semiconductor_org_types": RaftTask("semiconductor_org_types", 3),
+    "raft::systematic_review_inclusion": RaftTask("systematic_review_inclusion"),
+    "raft::tai_safety_research": RaftTask("tai_safety_research"),
+    "raft::terms_of_service": RaftTask("terms_of_service"),
+    "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
+    "raft::twitter_complaints": RaftTask("twitter_complaints"),
 }
 
 TASK_SETS = {
@@ -148,5 +162,6 @@ TASK_SETS = {
         "winogrande",
         "wnli",
         "wsc",
-    }
+    },
+    "raft": {name for name in TASKS.keys() if name.startswith("raft::")}
 }

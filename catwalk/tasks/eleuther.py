@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional, Union, Callable, Sequence
 
 from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceFormat
+from catwalk.task import Task, InstanceFormat, RankClassificationInstance
 
 import lm_eval.tasks
 from lm_eval.base import Task as EAITask
@@ -16,7 +16,8 @@ class EleutherTask(Task):
         eleuther_task: Union[str, Callable[[], EAITask]],
         *,
         random_seed: Optional[int] = None,
-        version_override: Optional[str] = None
+        version_override: Optional[str] = None,
+        ranked_classification: bool = False
     ):
         super().__init__(version_override=version_override)
 
@@ -38,6 +39,8 @@ class EleutherTask(Task):
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, self.instance_as_eleuther_doc)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_CONTEXT, self.instance_to_eleuther_context)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
+        if ranked_classification:
+            self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
 
     def __getstate__(self):
         result = self.__dict__.copy()
@@ -80,12 +83,38 @@ class EleutherTask(Task):
         context = self.instance_to_eleuther_context(instance, num_fewshot=num_fewshot)
         return self.inner_task.construct_requests(self.instance_as_eleuther_doc(instance), context)
 
+    def instance_as_rank_classification(self, instance: Dict[str, Any], **kwargs) -> RankClassificationInstance:
+        requests = self.instance_as_eleuther_requests(instance, **kwargs)
+        choices = [
+            (r.args[0], r.args[1])
+            for r in requests
+        ]
+
+        doc = self.instance_as_eleuther_doc(instance)
+        correct_choice = doc.get("label")
+        if correct_choice is None:
+            correct_choice = doc.get("gold")
+        if correct_choice is None:
+            correct_choice = doc.get("answer")
+        if correct_choice is None:
+            raise ValueError("Could not find label for instance.")
+
+        if isinstance(correct_choice, str):
+            correct_choice = ord(correct_choice[0].lower()) - ord('a')
+        if not isinstance(correct_choice, int):
+            raise ValueError("Could not find label for instance.")
+
+        return RankClassificationInstance(choices, correct_choice)
+
 
 @Task.register("eleuther::race")
 class RaceEleutherTask(EleutherTask):
     """This task is different because there is no 1:1 correspondence between HF instances and EAI instances."""
     def __init__(self, *, random_seed: Optional[int] = None, version_override: Optional[str] = None):
-        super().__init__("race", random_seed=random_seed, version_override=version_override)
+        super().__init__(
+            "race",
+            random_seed=random_seed,
+            version_override=version_override)
         del self.instance_conversions[InstanceFormat.HF_DICT]
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, lambda x: x)
 

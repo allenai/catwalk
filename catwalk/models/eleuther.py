@@ -277,6 +277,7 @@ class EAIT5(Model):
         with tokenizer.as_target_tokenizer():
             decoder_inputs = tokenizer([r.args[1] for r in requests], return_attention_mask=False)
         for i, input_as_list in enumerate(decoder_inputs['input_ids']):
+            input_as_list = input_as_list[:-1]  # remove EOS token
             model_inputs[i]["labels"] = torch.tensor(input_as_list, dtype=torch.long)
         del decoder_inputs
 

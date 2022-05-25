@@ -33,6 +33,7 @@ class RaftTask(HFDatasetsTask):
             raise ValueError(f"RAFT subset {subset} not found")
         super().__init__("ought/raft", subset)
         self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rc)
+        self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
         self.add_metrics(classification_metrics(number_of_classes))
 
     @property
@@ -85,3 +86,15 @@ class RaftTask(HFDatasetsTask):
         assert label >= 0
         assert label < len(self.answer_choices)
         return RankClassificationInstance(tuples, label)
+
+    def instance_as_eleuther_requests(
+        self,
+        instance: Dict[str, Any],
+        **kwargs
+    ):
+        rci = self.instance_as_rc(instance, **kwargs)
+        from lm_eval.base import rf
+        return [
+            rf.loglikelihood(choice[0], choice[1])
+            for choice in rci.choices
+        ]

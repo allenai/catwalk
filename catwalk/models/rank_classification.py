@@ -148,7 +148,7 @@ class EncoderDecoderRCModel(RankClassificationModel):
                 for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
                     instance_logits = instance_logits[:len(decoder_input_ids)]
                     instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1))
-                    results[i] = float(instance_logits.sum())
+                    results[i] = float(instance_logits.sum()) / len(instance_logits)
 
         assert None not in results
         return cast(Sequence[float], results)
@@ -224,10 +224,9 @@ class DecoderOnlyRCModel(RankClassificationModel):
                 batch_logits = log_softmax(model(**padded_batch)[0], dim=-1).cpu()
                 z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
                 for i, instance_logits, input_length, instance_context, instance_continuation in z:
-                    instance_logits = instance_logits[input_length-len(instance_continuation):input_length].unsqueeze(0)
-                    instance_continuation = instance_continuation.unsqueeze(0)
-                    instance_logits = torch.gather(instance_logits, 2, instance_continuation.unsqueeze(-1)).squeeze(-1)
-                    results[i] = float(instance_logits.sum())
+                    instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
+                    instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1))
+                    results[i] = float(instance_logits.sum()) / len(instance_logits)
 
         assert None not in results
         return cast(Sequence[float], results)

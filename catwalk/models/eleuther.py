@@ -177,9 +177,60 @@ class EAIGPT(Model):
         requests: Sequence[Request],
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
-        batch_size: int = 32,
+        _: int = 32,  # batched processing not yet implemented
     ) -> Sequence:
-        raise NotImplementedError
+
+        tokenized_contexts = tokenizer([r.args[0] for r in requests])["input_ids"]
+        # the stop generation phrases
+        untils_per_instance = [
+            r.args[1] for r in requests
+        ]  
+        max_gen_toks = model.config.task_specific_params["text-generation"][
+            "max_length"
+        ]
+        max_total_length = model.config.n_positions
+
+        results = []
+        for tokenized_context, untils in Tqdm.tqdm(
+            zip(tokenized_contexts, untils_per_instance),
+            desc="Running greedy_until queries",
+            total=len(tokenized_contexts),
+        ):
+            # there can be multiple stop phrases with multiple tokens
+            if isinstance(untils, str):
+                untils = [untils]
+            # if any of the stop phrases are single tokens we can use that for early termination
+            primary_until = None
+            for tokenized_until in tokenizer(untils)["input_ids"]:
+                if len(tokenized_until) == 1:
+                    primary_until = tokenized_until[0]
+
+            # truncate from left if no room for generation
+            context_tensor = torch.tensor(
+                [
+                    tokenized_context[max_gen_toks - max_total_length :]
+                ]
+            ).to(model.device)
+
+            full_text_tensor = model.generate(
+                context_tensor,
+                max_new_tokens=max_gen_toks,
+                eos_token_id=primary_until,
+                do_sample=False,
+                pad_token_id=primary_until,
+            )
+
+            continuation_tensor = full_text_tensor[0, context_tensor.shape[1] :]
+
+            continuation = tokenizer.decode(continuation_tensor.tolist())
+
+            # truncate by all the additional until phrases
+            for term in untils:
+                continuation = continuation.split(term)[0]
+
+            results.append(continuation)
+
+        return results
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."

@@ -5,6 +5,10 @@ torchmetrics==0.9.0
 more_itertools
 spacy
 wget
-#lm-eval
-git+https://github.com/EleutherAI/lm-evaluation-harness.git
 datasets>=2.1.0
+
+git+https://github.com/EleutherAI/lm-evaluation-harness.git
+#lm-eval
+# The Eleuther harness depends on these even at runtime, but does not declare them.
+mypy_extensions
+pytest

@@ -27,14 +27,15 @@ class EAIGPT(Model):
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32,
-        max_instances_in_memory: int = 16 * 1024
+        max_instances_in_memory: int = 16 * 1024,
+        max_gen_toks: int = 256
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).to(device).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
-            yield from self.predict_chunk(task, instance_chunk, model, tokenizer, batch_size=batch_size)
+            yield from self.predict_chunk(task, instance_chunk, model, tokenizer, batch_size=batch_size, max_gen_toks=max_gen_toks)
 
     def predict_chunk(
         self,
@@ -43,6 +44,7 @@ class EAIGPT(Model):
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
         batch_size: int = 32,
+        max_gen_toks: int = 256
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
             collections.defaultdict(lambda: collections.defaultdict(list))
@@ -70,7 +72,8 @@ class EAIGPT(Model):
                 requests_per_type,
                 model,
                 tokenizer,
-                batch_size
+                batch_size=batch_size,
+                max_gen_toks=max_gen_toks
             )
 
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
@@ -89,6 +92,7 @@ class EAIGPT(Model):
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
         batch_size: int = 32,
+        **kwargs
     ) -> Sequence:
         tokenized_contexts = tokenizer([r.args[0] for r in requests])
         tokenized_continuations = tokenizer([r.args[1] for r in requests])
@@ -169,6 +173,7 @@ class EAIGPT(Model):
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
         batch_size: int = 32,
+        **kwargs
     ) -> Sequence:
         raise NotImplementedError
 
@@ -177,7 +182,8 @@ class EAIGPT(Model):
         requests: Sequence[Request],
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
-        _: int = 32,  # batched processing not yet implemented
+        max_gen_toks: int = 256,
+        **kwargs
     ) -> Sequence:
 
         tokenized_contexts = tokenizer([r.args[0] for r in requests])["input_ids"]
@@ -204,13 +210,13 @@ class EAIGPT(Model):
             # truncate from left if no room for generation
             context_tensor = torch.tensor(
                 [
-                    tokenized_context[self.max_gen_toks - model.config.n_positions :]
+                    tokenized_context[max_gen_toks - model.config.n_positions :]
                 ]
             ).to(model.device)
 
             full_text_tensor = model.generate(
                 context_tensor,
-                max_length=context_tensor.shape[1] + self.max_gen_toks,
+                max_length=context_tensor.shape[1] + max_gen_toks,
                 eos_token_id=primary_until,
                 do_sample=False,
                 pad_token_id=primary_until,
@@ -227,10 +233,6 @@ class EAIGPT(Model):
             results.append(continuation)
 
         return results
-
-    @property
-    def max_gen_toks(self):
-        return 256
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."

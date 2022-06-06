@@ -7,7 +7,7 @@ inputs:
   cache-prefix:
     description: Update this to invalidate the cache
     required: true
-    default: v0
+    default: v1
 runs:
   using: composite
   steps:

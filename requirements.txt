@@ -1,10 +1,14 @@
-#ai2-tango[all]
-git+https://github.com/allenai/tango.git@main
+ai2-tango[all]
+#git+https://github.com/allenai/tango.git@main
 
 torchmetrics==0.9.0
 more_itertools
-spacy
+spacy>=3.0.0
 wget
-#lm-eval
-git+https://github.com/EleutherAI/lm-evaluation-harness.git
 datasets>=2.1.0
+
+git+https://github.com/EleutherAI/lm-evaluation-harness.git
+#lm-eval
+# The Eleuther harness depends on these even at runtime, but does not declare them.
+mypy_extensions
+pytest

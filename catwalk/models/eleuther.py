@@ -184,11 +184,7 @@ class EAIGPT(Model):
         # the stop generation phrases
         untils_per_instance = [
             r.args[1] for r in requests
-        ]  
-        max_gen_toks = model.config.task_specific_params["text-generation"][
-            "max_length"
         ]
-        max_total_length = model.config.n_positions
 
         results = []
         for tokenized_context, untils in Tqdm.tqdm(
@@ -208,13 +204,13 @@ class EAIGPT(Model):
             # truncate from left if no room for generation
             context_tensor = torch.tensor(
                 [
-                    tokenized_context[max_gen_toks - max_total_length :]
+                    tokenized_context[self.max_gen_toks - model.config.n_positions :]
                 ]
             ).to(model.device)
 
             full_text_tensor = model.generate(
                 context_tensor,
-                max_new_tokens=max_gen_toks,
+                max_length=context_tensor.shape[1] + self.max_gen_toks,
                 eos_token_id=primary_until,
                 do_sample=False,
                 pad_token_id=primary_until,
@@ -231,6 +227,10 @@ class EAIGPT(Model):
             results.append(continuation)
 
         return results
+
+    @property
+    def max_gen_toks(self):
+        return 256
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."

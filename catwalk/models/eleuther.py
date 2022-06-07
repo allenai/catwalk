@@ -1,5 +1,5 @@
 import collections
-from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple
+from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple, Protocol
 
 import more_itertools
 import torch
@@ -27,14 +27,15 @@ class EAIGPT(Model):
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32,
-        max_instances_in_memory: int = 16 * 1024
+        max_instances_in_memory: int = 16 * 1024,
+        max_gen_toks: int = 256
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).to(device).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
-            yield from self.predict_chunk(task, instance_chunk, model, tokenizer, batch_size=batch_size)
+            yield from self.predict_chunk(task, instance_chunk, model, tokenizer, batch_size=batch_size, max_gen_toks=max_gen_toks)
 
     def predict_chunk(
         self,
@@ -42,7 +43,7 @@ class EAIGPT(Model):
         instances: Sequence[Dict[str, Any]],
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
-        batch_size: int = 32,
+        **kwargs
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
             collections.defaultdict(lambda: collections.defaultdict(list))
@@ -60,7 +61,9 @@ class EAIGPT(Model):
 
         # run the requests
         results: Dict[str, Sequence] = {}
-        request_type_to_fn: Mapping[str, Callable[[Sequence[Request], GPT2LMHeadModel, GPT2Tokenizer, int], Sequence]] = {
+        class InferenceFunc(Protocol):
+            def __call__(self, requests: Sequence[Request], model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, **kwargs) -> Sequence: ...
+        request_type_to_fn: Mapping[str, InferenceFunc] = {
             "loglikelihood": self._run_loglikelihood,
             "loglikelihood_rolling": self._run_loglikelihood_rolling,
             "greedy_until": self._run_greedy_until
@@ -70,9 +73,8 @@ class EAIGPT(Model):
                 requests_per_type,
                 model,
                 tokenizer,
-                batch_size
+                **kwargs
             )
-
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
         for instance_index, instance in enumerate(instances):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
@@ -89,6 +91,7 @@ class EAIGPT(Model):
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
         batch_size: int = 32,
+        **kwargs
     ) -> Sequence:
         tokenized_contexts = tokenizer([r.args[0] for r in requests])
         tokenized_continuations = tokenizer([r.args[1] for r in requests])
@@ -169,6 +172,7 @@ class EAIGPT(Model):
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
         batch_size: int = 32,
+        **kwargs
     ) -> Sequence:
         raise NotImplementedError
 
@@ -177,9 +181,57 @@ class EAIGPT(Model):
         requests: Sequence[Request],
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
-        batch_size: int = 32,
+        max_gen_toks: int = 256,
+        **kwargs
     ) -> Sequence:
-        raise NotImplementedError
+
+        tokenized_contexts = tokenizer([r.args[0] for r in requests])["input_ids"]
+        # the stop generation phrases
+        untils_per_instance = [
+            r.args[1] for r in requests
+        ]
+
+        results = []
+        for tokenized_context, untils in Tqdm.tqdm(
+            zip(tokenized_contexts, untils_per_instance),
+            desc="Running greedy_until queries",
+            total=len(tokenized_contexts),
+        ):
+            # there can be multiple stop phrases with multiple tokens
+            if isinstance(untils, str):
+                untils = [untils]
+            # if any of the stop phrases are single tokens we can use that for early termination
+            primary_until = None
+            for tokenized_until in tokenizer(untils)["input_ids"]:
+                if len(tokenized_until) == 1:
+                    primary_until = tokenized_until[0]
+
+            # truncate from left if no room for generation
+            context_tensor = torch.tensor(
+                [
+                    tokenized_context[max_gen_toks - model.config.n_positions :]
+                ]
+            ).to(model.device)
+
+            full_text_tensor = model.generate(
+                context_tensor,
+                max_length=context_tensor.shape[1] + max_gen_toks,
+                eos_token_id=primary_until,
+                do_sample=False,
+                pad_token_id=primary_until, # temporary hack to suppress irrelevant warning until batch processing is added
+            )
+
+            continuation_tensor = full_text_tensor[0, context_tensor.shape[1] :]
+
+            continuation = tokenizer.decode(continuation_tensor.tolist())
+
+            # truncate by all the additional until phrases
+            for term in untils:
+                continuation = continuation.split(term)[0]
+
+            results.append(continuation)
+
+        return results
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."

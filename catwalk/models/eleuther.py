@@ -218,7 +218,7 @@ class EAIGPT(Model):
                 max_length=context_tensor.shape[1] + max_gen_toks,
                 eos_token_id=primary_until,
                 do_sample=False,
-                pad_token_id=primary_until,
+                pad_token_id=primary_until, # temporary hack to suppress irrelevant warning until batch processing is added
             )
 
             continuation_tensor = full_text_tensor[0, context_tensor.shape[1] :]

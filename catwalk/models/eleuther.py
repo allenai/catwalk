@@ -1,5 +1,5 @@
 import collections
-from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple
+from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple, Protocol
 
 import more_itertools
 import torch
@@ -43,8 +43,7 @@ class EAIGPT(Model):
         instances: Sequence[Dict[str, Any]],
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
-        batch_size: int = 32,
-        max_gen_toks: int = 256
+        **kwargs
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
             collections.defaultdict(lambda: collections.defaultdict(list))
@@ -62,7 +61,9 @@ class EAIGPT(Model):
 
         # run the requests
         results: Dict[str, Sequence] = {}
-        request_type_to_fn: Mapping[str, Callable[[Sequence[Request], GPT2LMHeadModel, GPT2Tokenizer, int], Sequence]] = {
+        class InferenceFunc(Protocol):
+            def __call__(self, requests: Sequence[Request], model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, **kwargs) -> Sequence: ...
+        request_type_to_fn: Mapping[str, InferenceFunc] = {
             "loglikelihood": self._run_loglikelihood,
             "loglikelihood_rolling": self._run_loglikelihood_rolling,
             "greedy_until": self._run_greedy_until
@@ -72,10 +73,8 @@ class EAIGPT(Model):
                 requests_per_type,
                 model,
                 tokenizer,
-                batch_size=batch_size,
-                max_gen_toks=max_gen_toks
+                **kwargs
             )
-
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
         for instance_index, instance in enumerate(instances):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)

@@ -29,21 +29,22 @@ jobs:
       matrix:
         python: ['3.9', '3.10']
         task:
+          - name: Build
+            run: python setup.py check && python setup.py bdist_wheel sdist
+
           - name: Test
-            run: |
-              pytest -v --color=yes tests/
+            run: pytest -v --color=yes tests/
+
         include:
-          - python: '3.10'
-            task:
+          - task:
               name: Type check
               run: mypy .
+            python: '3.10'
 
-          - python: '3.10'
-            task:
-              name: Build
-              run: |
-                python setup.py check
-                python setup.py bdist_wheel sdist
+          - task:
+              name: Docs
+              run: cd docs && make html SPHINXOPTS="-W --keep-going"
+            python: '3.10'
 
     steps:
       - uses: actions/checkout@v3

@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from tango.version import VERSION
+from catwalk.version import VERSION
 
 
 def main():

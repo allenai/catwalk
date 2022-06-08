@@ -77,8 +77,8 @@ When you're ready to contribute code to address an open issue, please follow the
 
     Then you can create and activate a new Python environment by running:
 
-        conda create -n tango python=3.9
-        conda activate tango
+        conda create -n catwalk python=3.9
+        conda activate catwalk
 
     Once your virtual environment is activated, you can install your local clone in "editable mode" with
 
@@ -86,10 +86,6 @@ When you're ready to contribute code to address an open issue, please follow the
         pip install -e '.[dev,all]'
 
     The "editable mode" comes from the `-e` argument to `pip`, and essential just creates a symbolic link from the site-packages directory of your virtual environment to the source code in your local clone. That way any changes you make will be immediately reflected in your virtual environment.
-
-    To test your installation, just run
-
-        tango info
 
     </details>
 
@@ -129,7 +125,7 @@ When you're ready to contribute code to address an open issue, please follow the
 
         mypy .
 
-    We also strive to maintain high test coverage, so most contributions should include additions to [the unit tests](https://github.com/allenai/tango/tree/main/tests). These tests are run with [`pytest`](https://docs.pytest.org/en/latest/), which you can use to locally run any test modules that you've added or changed.
+    We also strive to maintain high test coverage, so most contributions should include additions to [the unit tests](https://github.com/allenai/catwalk/tree/main/tests). These tests are run with [`pytest`](https://docs.pytest.org/en/latest/), which you can use to locally run any test modules that you've added or changed.
 
     For example, if you've fixed a bug in `catwalk/a/b.py`, you can run the tests specific to that module with
 

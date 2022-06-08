@@ -107,3 +107,68 @@ raft::tweet_eval_hate
 raft::twitter_complaints
 ```
 </details>
+
+Installation
+------------
+
+**Catwalk** requires Python 3.9 or later.
+
+Install from pypi: `pip install ai2-catwalk`.
+
+Install from source:
+```shell
+git clone https://github.com/allenai/catwalk.git
+cd catwalk
+pip install -e .
+```
+
+Getting started
+---------------
+
+Let's run GPT2 on PIQA:
+```shell
+python -m catwalk --model rc::gpt2 --task piqa
+```
+
+This will load up GPT2 and use it to perform the PIQA task with the "ranked classification" approach.
+
+You can specify multiple tasks at once:
+```shell
+python -m catwalk --model rc::gpt2 --task piqa arc_easy
+```
+
+It'll print you a nice table with all tasks and the metrics for each task:
+```text
+arc_challenge   acc     0.22440272569656372
+arc_easy        acc     0.3998316526412964
+piqa    acc     0.6256800889968872
+```
+
+Tango integration
+-----------------
+
+Catwalk uses [Tango](https://github.com/allenai/tango) for caching and executing evaluations. The command line
+interface internally constructs a Tango step graph and executes it. You can point the command line to a Tango
+workspace to cache results:
+
+```shell
+python -m catwalk --model rc::gpt2 --task piqa arc_easy -w ./my-workspace/
+```
+
+The second time you run one of those tasks, it will be fast:
+```shell
+time python -m catwalk --model rc::gpt2 --task piqa -w ./my-workspace/
+```
+
+```text
+arc_easy	acc	0.39941078424453735
+piqa	acc	0.626224160194397
+
+________________________________________________________
+Executed in    9.82 secs    fish           external
+   usr time    6.51 secs  208.00 micros    6.51 secs
+   sys time    1.25 secs  807.00 micros    1.25 secs
+```
+
+Tango workspaces also save partial results, so if you interrupt an evaluation half-way through, your progress is
+saved.

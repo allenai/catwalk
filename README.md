@@ -1,5 +1,4 @@
-Catwalk
-=======
+# Catwalk
 
 Catwalk shows off models.
 
@@ -108,8 +107,9 @@ raft::twitter_complaints
 ```
 </details>
 
-Installation
-------------
+## Installation
+
+<!-- start install -->
 
 **Catwalk** requires Python 3.9 or later.
 
@@ -122,8 +122,9 @@ cd catwalk
 pip install -e .
 ```
 
-Getting started
----------------
+<!-- end install -->
+
+## Getting started
 
 Let's run GPT2 on PIQA:
 ```shell
@@ -144,8 +145,7 @@ arc_easy        acc     0.3998316526412964
 piqa    acc     0.6256800889968872
 ```
 
-Tango integration
------------------
+## Tango integration
 
 Catwalk uses [Tango](https://github.com/allenai/tango) for caching and executing evaluations. The command line
 interface internally constructs a Tango step graph and executes it. You can point the command line to a Tango
@@ -172,3 +172,22 @@ Executed in    9.82 secs    fish           external
 
 Tango workspaces also save partial results, so if you interrupt an evaluation half-way through, your progress is
 saved.
+
+## Team
+
+<!-- start team -->
+
+**ai2-catwalk** is developed and maintained by the AllenNLP team, backed by [the Allen Institute for Artificial Intelligence (AI2)](https://allenai.org/).
+AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.
+To learn more about who specifically contributed to this codebase, see [our contributors](https://github.com/allenai/catwalk/graphs/contributors) page.
+
+<!-- end team -->
+
+## License
+
+<!-- start license -->
+
+**ai2-catwalk** is licensed under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+A full copy of the license can be found [on GitHub](https://github.com/allenai/catwalk/blob/main/LICENSE).
+
+<!-- end license -->

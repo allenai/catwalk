@@ -65,6 +65,10 @@ InstanceConversion = Union[Callable[[Dict[str, Any]], Any], Callable[[Dict[str, 
 
 
 class Task(Registrable, ABC):
+    """
+    Base class for tasks in Catwalk
+    """
+
     def __init__(self, *, version_override: Optional[str] = None):
         if version_override is not None:
             self.VERSION = version_override
@@ -79,13 +83,16 @@ class Task(Registrable, ABC):
             return self.__dict__
 
     def has_split(self, split: str) -> bool:
+        """Returns ``True`` if a split with the given name exists. ``False`` otherwise."""
         raise NotImplementedError
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
+        """Returns the split with the given name."""
         raise NotImplementedError
 
     @property
     def default_split(self) -> str:
+        """Returns the name of the default split to run evaluations on."""
         return "test"
 
     def make_metrics(self) -> Dict[str, torchmetrics.Metric]:

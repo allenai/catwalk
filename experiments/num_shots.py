@@ -6,7 +6,37 @@ from tango.common.logging import initialize_logging
 from catwalk.steps import PredictStep, CalculateMetricsStep
 from catwalk.tasks import TASK_SETS
 
-shots = [0, 1, 2, 4, 8, 16, 32]
+SHOTS = [0, 1, 2, 4, 8, 16, 32]
+
+DEFAULT_TASKS = {
+    "arc_challenge",
+    "arc_easy",
+    "boolq",
+    "copa",
+    #"headqa_en",       # Headqa is broken as of 2022-05-05
+    "hellaswag",
+    "lambada",
+    "logiqa",
+    "mathqa",
+    "mc_taco",
+    "mrpc",
+    "multirc",
+    "openbookqa",
+    "piqa",
+    "pubmedqa",
+    "qnli",
+    "qqp",
+    "race",
+    "rte",
+    "sciq",
+    "sst",
+    "triviaqa",
+    "webqs",
+    "wic",
+    "winogrande",
+    "wnli",
+    "wsc",
+}
 
 
 def main():
@@ -14,7 +44,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="eai::gpt2")
-    parser.add_argument('--task', type=str, nargs="+", default=["iz"])
+    parser.add_argument('--task', type=str, nargs="+", default=DEFAULT_TASKS)
     parser.add_argument('--split', type=str)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--metric', type=str, nargs="+", default=['acc', 'f1'])
@@ -44,7 +74,7 @@ def main():
 
     results = {}
     for task in tasks:
-        for num_shots in shots:
+        for num_shots in SHOTS:
             predictions = PredictStep(
                 model=args.model,
                 task=task,

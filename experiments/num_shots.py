@@ -50,6 +50,7 @@ def main():
                 task=task,
                 batch_size=args.batch_size,
                 limit=limit,
+                num_shots=num_shots
             )
             metrics = CalculateMetricsStep(
                 model=args.model,

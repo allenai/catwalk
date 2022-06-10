@@ -1,4 +1,4 @@
-from typing import List, Any, Dict, Tuple
+from typing import List, Any, Dict, Tuple, Optional
 
 from catwalk.task import InstanceFormat, RankClassificationInstance, classification_metrics
 from catwalk.tasks import HFDatasetsTask
@@ -32,7 +32,7 @@ class RaftTask(HFDatasetsTask):
         if subset not in _FIELD_ORDERING:
             raise ValueError(f"RAFT subset {subset} not found")
         super().__init__("ought/raft", subset)
-        self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rc)
+        self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
         self.add_metrics(classification_metrics(number_of_classes))
 
@@ -57,12 +57,13 @@ class RaftTask(HFDatasetsTask):
         # RAFT doesn't have labels in the test split
         return "train"
 
-    def instance_as_rc(
+    def instance_as_rank_classification(
         self,
         instance: Dict[str, Any],
         *,
         include_instructions: bool = False,
-        include_labels_in_instructions: bool = False
+        include_labels_in_instructions: bool = False,
+        fewshot_instances: Optional[List[Dict[str, Any]]] = None,
     ) -> RankClassificationInstance:
         if include_instructions:
             if include_labels_in_instructions:
@@ -71,6 +72,15 @@ class RaftTask(HFDatasetsTask):
                 prefix = self.instructions
         else:
             prefix = ""
+
+        if fewshot_instances is None:
+            fewshot_instances = []
+        for fewshot_instance in fewshot_instances:
+            as_mc = self.instance_as_rank_classification(fewshot_instance)
+            if as_mc.correct_choice is None:
+                raise ValueError("Could not determine correct choice in ranked classification instance.")
+            correct_choice = as_mc.choices[as_mc.correct_choice]
+            prefix += f"{correct_choice[0].strip()} {correct_choice[1].strip()}\n\n"
 
         tuples = []
         for answer_choice in self.answer_choices:
@@ -92,7 +102,7 @@ class RaftTask(HFDatasetsTask):
         instance: Dict[str, Any],
         **kwargs
     ):
-        rci = self.instance_as_rc(instance, **kwargs)
+        rci = self.instance_as_rank_classification(instance, **kwargs)
         from lm_eval.base import rf
         return [
             rf.loglikelihood(choice[0], choice[1])

@@ -113,7 +113,8 @@ raft::twitter_complaints
 
 **Catwalk** requires Python 3.9 or later.
 
-Install from pypi: `pip install ai2-catwalk`.
+Unfortunately Catwalk cannot be installed from pypi, because it depends on other packages that are not uploaded to
+pypi.
 
 Install from source:
 ```shell

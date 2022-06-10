@@ -2,6 +2,7 @@ from typing import Dict
 
 from catwalk.model import Model
 from catwalk.models.eleuther import EAIGPT, EAIT5
+from catwalk.models.metaseq import MetaseqOPT
 from catwalk.models.gpt import GPTModel
 from catwalk.models.huggingface import HFAutoModel
 from catwalk.models.rank_classification import EncoderDecoderRCModel, DecoderOnlyRCModel
@@ -64,3 +65,5 @@ for hf_name in _DECODER_ONLY_MODELS:
     MODELS[name] = GPTModel(hf_name)
     MODELS[f"eai::{name}"] = EAIGPT(hf_name)
     MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
+
+MODELS["metaseq::opt"] = MetaseqOPT()

@@ -1,5 +1,5 @@
 import random
-from typing import Dict, Any, Optional, Union, Callable, Sequence
+from typing import Dict, Any, Optional, Union, Callable, Sequence, List
 
 from tango.common.sequences import MappedSequence
 
@@ -83,10 +83,26 @@ class EleutherTask(Task):
         context = self.instance_to_eleuther_context(instance, num_fewshot=num_fewshot)
         return self.inner_task.construct_requests(self.instance_as_eleuther_doc(instance), context)
 
-    def instance_as_rank_classification(self, instance: Dict[str, Any], **kwargs) -> RankClassificationInstance:
+    def instance_as_rank_classification(
+        self,
+        instance: Dict[str, Any],
+        *,
+        fewshot_instances: Optional[List[Dict[str, Any]]] = None,
+        **kwargs
+    ) -> RankClassificationInstance:
+        if fewshot_instances is None:
+            fewshot_instances = []
+        prefix = ""
+        for fewshot_instance in fewshot_instances:
+            as_mc = self.instance_as_rank_classification(fewshot_instance)
+            if as_mc.correct_choice is None:
+                raise ValueError("Could not determine correct choice in ranked classification instance.")
+            correct_choice = as_mc.choices[as_mc.correct_choice]
+            prefix += f"{correct_choice[0].strip()} {correct_choice[1].strip()}\n\n"
+
         requests = self.instance_as_eleuther_requests(instance, **kwargs)
         choices = [
-            (r.args[0], r.args[1])
+            (prefix + r.args[0], r.args[1])
             for r in requests
         ]
 

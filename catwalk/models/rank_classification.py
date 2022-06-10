@@ -33,14 +33,22 @@ class RankClassificationModel(Model):
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32,
-        max_instances_in_memory: int = 32 * 1024
+        max_instances_in_memory: int = 32 * 1024,
+        num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = self._make_model(self.pretrained_model_name_or_path).to(device).eval()
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
-            yield from self.predict_chunk(task, instance_chunk, model, tokenizer, batch_size=batch_size)
+            yield from self.predict_chunk(
+                task,
+                instance_chunk,
+                model,
+                tokenizer,
+                batch_size=batch_size,
+                num_shots=num_shots
+            )
 
     def predict_chunk(
         self,
@@ -49,12 +57,16 @@ class RankClassificationModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
+        num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
         rc_instances: List[RankClassificationInstance] = [
-            task.convert_instance(instance, InstanceFormat.RANK_CLASSIFICATION)
-            for instance in instances
+            task.convert_instance(
+                instance,
+                InstanceFormat.RANK_CLASSIFICATION,
+                fewshot_instances=task.get_fewshot_instances(num_shots, i))
+            for i, instance in enumerate(instances)
         ]
 
         # get all the tuples

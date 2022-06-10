@@ -2,7 +2,8 @@ from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable, Mapping, Tuple
+from random import Random
+from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple
 
 import torchmetrics
 from mypy_extensions import KwArg
@@ -95,6 +96,14 @@ class Task(Registrable, ABC):
         """Returns the name of the default split to run evaluations on."""
         return "test"
 
+    @property
+    def fewshot_instances_split(self) -> str:
+        """Returns the name of the split to use to find few-shot instances in."""
+        for split_name in ["train", "training", "validation"]:
+            if self.has_split(split_name):
+                return split_name
+        raise ValueError("This task has no split to take fewshot instances from.")
+
     def make_metrics(self) -> Dict[str, torchmetrics.Metric]:
         return {
             name: metric_fn()
@@ -106,6 +115,14 @@ class Task(Registrable, ABC):
 
     def convert_instance(self, instance: Dict[str, Any], format: InstanceFormat, **kwargs):
         return self.instance_conversions[format](instance, **kwargs)
+
+    def get_fewshot_instances(self, num_shots: int, random_seed: int = 18830087) -> Sequence[Dict[str, Any]]:
+        # TODO: Take an exception, an instance or a list of instances that should never be returned.
+        r = Random(random_seed)
+        instances = self.get_split(self.fewshot_instances_split)
+        if len(instances) < num_shots:
+            raise ValueError(f"Tried to get {num_shots} shots, but only {len(instances)} are available in the {self.fewshot_instances_split} split.")
+        return r.sample(instances, num_shots)
 
     #
     # builder-style methods

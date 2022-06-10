@@ -8,6 +8,8 @@
 # Python
 __pycache__/
 /catwalk.egg-info/
+/build/
+/dist/
 
 # Eleuther Evaluation Harness creates this directory
 /lm_cache/

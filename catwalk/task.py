@@ -3,11 +3,12 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from random import Random
-from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple
+from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Set, cast, FrozenSet, \
+    Iterable
 
 import torchmetrics
 from mypy_extensions import KwArg
-from tango.common import Registrable
+from tango.common import Registrable, det_hash
 
 from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
@@ -116,13 +117,26 @@ class Task(Registrable, ABC):
     def convert_instance(self, instance: Dict[str, Any], format: InstanceFormat, **kwargs):
         return self.instance_conversions[format](instance, **kwargs)
 
-    def get_fewshot_instances(self, num_shots: int, random_seed: int = 18830087) -> Sequence[Dict[str, Any]]:
-        # TODO: Take an exception, an instance or a list of instances that should never be returned.
+    def get_fewshot_instances(
+        self,
+        num_shots: int,
+        *,
+        exceptions: Union[None, Dict[str, Any], Iterable[Dict[str, Any]]] = None,
+        random_seed: int = 18830087
+    ) -> Sequence[Dict[str, Any]]:
+        if exceptions is None:
+            exceptions = []
+        elif isinstance(exceptions, Dict):
+            exceptions = [exceptions]
+        exceptions = frozenset(det_hash(e) for e in exceptions)
+
         r = Random(random_seed)
         instances = self.get_split(self.fewshot_instances_split)
-        if len(instances) < num_shots:
-            raise ValueError(f"Tried to get {num_shots} shots, but only {len(instances)} are available in the {self.fewshot_instances_split} split.")
-        return r.sample(instances, num_shots)
+        return [
+            instance
+            for instance in r.sample(instances, num_shots + len(exceptions))
+            if det_hash(instance) not in exceptions
+        ]
 
     #
     # builder-style methods

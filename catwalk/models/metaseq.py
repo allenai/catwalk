@@ -267,32 +267,36 @@ class MetaseqOPT(Model):
             # stuff for main proccess
             return self._rank0_worker_main(prompts, generator)
         else:
-            # useful in FSDP setting
-            request_object = dist_utils.broadcast_object(
-                None, src_rank=0, group=dist_utils.get_global_group()
-            )
-            _ = generator.generate(**request_object)
+            for i in range(len(prompts)):
+                # useful in FSDP setting
+                request_object = dist_utils.broadcast_object(
+                    None, src_rank=0, group=dist_utils.get_global_group()
+                )
+                _ = generator.generate(**request_object)
             return _
 
     def _rank0_worker_main(self, prompts: Sequence[str], generator) -> Sequence[str]:
         """
         TODO
         """
-        global outputs
         def tokenize_strings(generator, strings):
             return [encode_fn(generator, s) for s in strings]
-        tokenized_prompts = tokenize_strings(generator, prompts)
+        outputs = []
+        for prompt in prompts:
+            tokenized_prompts = tokenize_strings(generator, [prompt])
 
-        request_object = {
-            'inputs' : tokenized_prompts,
-            'max_tokens': [256] * len(tokenized_prompts),
-            'temperature': 0.7,
-            'top_p': 0.9,
-            'n': 1
-        }
-        dist_utils.broadcast_object(
-                        request_object, src_rank=0, group=dist_utils.get_global_group()
-                    )
-        generations = generator.generate(**request_object)
-        outputs = [doc[0]['text'] for doc in generations]
+            request_object = {
+                'inputs' : tokenized_prompts,
+                'max_tokens': [256] * len(tokenized_prompts),
+                'temperature': 0.7,
+                'top_p': 0.9,
+                'n': 1
+            }
+            dist_utils.broadcast_object(
+                            request_object, src_rank=0, group=dist_utils.get_global_group()
+                        )
+            generations = generator.generate(**request_object)
+            output = [doc[0]['text'] for doc in generations]
+            outputs.extend(output)
+
         return outputs

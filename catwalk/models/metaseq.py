@@ -38,8 +38,9 @@ from metaseq.service.utils import encode_fn, build_logger
 @Model.register("metaseq::opt")
 class MetaseqOPT(Model):
     MAX_SEQ_LEN = 2048
-    BATCH_SIZE = 2048  # silly high bc we dynamically batch by MAX_BATCH_TOKENS
-    MAX_BATCH_TOKENS = 3072
+    # BATCH_SIZE = 2048  # silly high bc we dynamically batch by MAX_BATCH_TOKENS
+    # MAX_BATCH_TOKENS = 3072
+    BATCH_SIZE = 2
     DEFAULT_PORT = 6010
     MODEL_PARALLEL = 8
     TOTAL_WORLD_SIZE = 8
@@ -282,8 +283,8 @@ class MetaseqOPT(Model):
         def tokenize_strings(generator, strings):
             return [encode_fn(generator, s) for s in strings]
         outputs = []
-        for prompt in prompts:
-            tokenized_prompts = tokenize_strings(generator, [prompt])
+        for i in Tqdm.tqdm(list(range(0,len(prompts),self.BATCH_SIZE)), desc="running generation inference"):
+            tokenized_prompts = tokenize_strings(generator, prompts[i:i+self.BATCH_SIZE])
 
             request_object = {
                 'inputs' : tokenized_prompts,

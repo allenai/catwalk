@@ -116,10 +116,15 @@ class EleutherTask(Task):
             raise ValueError("Could not find label for instance.")
 
         if isinstance(correct_choice, str):
-            correct_choice = ord(correct_choice[0].lower()) - ord('a')
+            correct_choice = correct_choice[0].lower()
+            try:
+                correct_choice = int(correct_choice) - 1
+            except ValueError:
+                correct_choice = ord(correct_choice) - ord('a')
         if not isinstance(correct_choice, int):
             raise ValueError("Could not find label for instance.")
 
+        assert correct_choice < len(choices)
         return RankClassificationInstance(choices, correct_choice)
 
 

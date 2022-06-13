@@ -60,7 +60,7 @@ class MetaseqOPT(Model):
     # reshard-model_part-5.pt
     # reshard-model_part-6.pt
     # reshard-model_part-7.pt
-    MODEL_SHARED_FOLDER = '/home/ianm/metaseq/models/'
+    MODEL_SHARED_FOLDER = "/net/nfs.cirrascale/s2-research/opt-175b/checkpoints/"
     # LOCAL_SSD is optional, but it's assuming you have some sort of local
     # hard disk where we can cache a copy of the weights for faster loading.
     LOCAL_SSD = ""
@@ -68,8 +68,8 @@ class MetaseqOPT(Model):
         # don't use local cache
         LOCAL_SSD = MODEL_SHARED_FOLDER
 
-    CHECKPOINT_FOLDER = os.path.join(MODEL_SHARED_FOLDER, "OPT-125M", "reshard_no_os")
-    CHECKPOINT_LOCAL = os.path.join(LOCAL_SSD, "OPT-125M", "reshard_no_os", "reshard.pt")
+    CHECKPOINT_FOLDER = MODEL_SHARED_FOLDER #os.path.join(MODEL_SHARED_FOLDER, "OPT-175B", "reshard_no_os")
+    CHECKPOINT_LOCAL = os.path.join("/net/nfs.cirrascale/s2-research/opt-175b/checkpoints/", "reshard.pt")
 
     # tokenizer files
     BPE_MERGES = os.path.join(MODEL_SHARED_FOLDER, "gpt2-merges.txt")

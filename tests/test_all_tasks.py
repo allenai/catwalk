@@ -1,4 +1,5 @@
 import inspect
+from typing import Any, Dict
 
 import pytest
 
@@ -19,7 +20,7 @@ def test_task(task_name: str, split: str):
     for conversion in task.instance_conversions.values():
         signature = inspect.signature(conversion)
         for instance in instances[:10]:
-            kwargs = {}
+            kwargs: Dict[str, Any] = {}
             if "num_fewshot" in signature.parameters:
                 kwargs["num_fewshot"] = 0
             if "fewshot_instances" in signature.parameters:

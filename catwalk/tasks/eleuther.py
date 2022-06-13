@@ -99,8 +99,6 @@ class EleutherTask(Task):
                 raise ValueError("Could not determine correct choice in ranked classification instance.")
             correct_choice = as_mc.choices[as_mc.correct_choice]
             prefix += f"{correct_choice[0].strip()} {correct_choice[1].strip()}\n\n"
-        del correct_choice
-        del as_mc
 
         requests = self.instance_as_eleuther_requests(instance, **kwargs)
         choices = [

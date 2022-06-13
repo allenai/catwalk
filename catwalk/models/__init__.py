@@ -66,4 +66,5 @@ for hf_name in _DECODER_ONLY_MODELS:
     MODELS[f"eai::{name}"] = EAIGPT(hf_name)
     MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
 
-MODELS["metaseq::opt"] = MetaseqOPT()
+MODELS["metaseq::opt-175b"] = MetaseqOPT("opt-175b")
+MODELS["metaseq::opt-125b"] = MetaseqOPT("opt-125m")

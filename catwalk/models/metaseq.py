@@ -31,72 +31,77 @@ from metaseq.distributed import utils as dist_utils
 from metaseq.hub_utils import GeneratorInterface
 from metaseq.service.utils import encode_fn, build_logger
 
-# mutable global hacks
-# inputs = None
-# outputs = None
-
 @Model.register("metaseq::opt")
 class MetaseqOPT(Model):
     MAX_SEQ_LEN = 2048
     # BATCH_SIZE = 2048  # silly high bc we dynamically batch by MAX_BATCH_TOKENS
     # MAX_BATCH_TOKENS = 3072
     BATCH_SIZE = 2
-    DEFAULT_PORT = 6010
-    MODEL_PARALLEL = 8
-    TOTAL_WORLD_SIZE = 8
+    def __init__(self, model_size: str):
+        assert model_size in ['opt-175b', 'opt-125m']
+        if model_size == 'opt-175b':
+            self.model_parallel = 8
+            self.total_world_size = 8
 
-    # MODEL_SHARED_FOLDER should point to a shared drive (e.g. NFS) where the
-    # checkpoints from S3 are stored. As an example:
-    # MODEL_SHARED_FOLDER = "/example"
-    # $ ls /example
-    # dict.txt  gpt2-merges.txt  gpt2-vocab.json  OPT-175B
-    # SPECIFIC_MODEL_FOLDER = "OPT-175B"
-    # $ ls /example/OPT-175B/reshard_no_os
-    # reshard-model_part-0.pt
-    # reshard-model_part-1.pt
-    # reshard-model_part-2.pt
-    # reshard-model_part-3.pt
-    # reshard-model_part-4.pt
-    # reshard-model_part-5.pt
-    # reshard-model_part-6.pt
-    # reshard-model_part-7.pt
-    MODEL_SHARED_FOLDER = "/net/nfs.cirrascale/s2-research/opt-175b/checkpoints/"
-    # LOCAL_SSD is optional, but it's assuming you have some sort of local
-    # hard disk where we can cache a copy of the weights for faster loading.
-    LOCAL_SSD = ""
-    if not LOCAL_SSD:
-        # don't use local cache
-        LOCAL_SSD = MODEL_SHARED_FOLDER
+            # MODEL_SHARED_FOLDER should point to a shared drive (e.g. NFS) where the
+            # checkpoints from S3 are stored. As an example:
+            # MODEL_SHARED_FOLDER = "/example"
+            # $ ls /example
+            # dict.txt  gpt2-merges.txt  gpt2-vocab.json  OPT-175B
+            # SPECIFIC_MODEL_FOLDER = "OPT-175B"
+            # $ ls /example/OPT-175B/reshard_no_os
+            # reshard-model_part-0.pt
+            # reshard-model_part-1.pt
+            # reshard-model_part-2.pt
+            # reshard-model_part-3.pt
+            # reshard-model_part-4.pt
+            # reshard-model_part-5.pt
+            # reshard-model_part-6.pt
+            # reshard-model_part-7.pt
+            self.mode_shared_folder = "/net/nfs.cirrascale/s2-research/opt-175b/checkpoints/"
 
-    CHECKPOINT_FOLDER = MODEL_SHARED_FOLDER #os.path.join(MODEL_SHARED_FOLDER, "OPT-175B", "reshard_no_os")
-    CHECKPOINT_LOCAL = os.path.join("/net/nfs.cirrascale/s2-research/opt-175b/checkpoints/", "reshard.pt")
+            self.checkpoint_folder = self.mode_shared_folder
+            self.checkpoint_local = os.path.join(self.mode_shared_folder, "reshard.pt")
 
-    # tokenizer files
-    BPE_MERGES = os.path.join(MODEL_SHARED_FOLDER, "gpt2-merges.txt")
-    BPE_VOCAB = os.path.join(MODEL_SHARED_FOLDER, "gpt2-vocab.json")
+            # tokenizer files
+            self.bpe_merges = os.path.join(self.mode_shared_folder, "gpt2-merges.txt")
+            self.bpe_vocab = os.path.join(self.mode_shared_folder, "gpt2-vocab.json")
 
-    LAUNCH_ARGS = [
-        f"--model-parallel-size {MODEL_PARALLEL}",
-        f"--distributed-world-size {TOTAL_WORLD_SIZE}",
-        "--task language_modeling",
-        f"--bpe-merges {BPE_MERGES}",
-        f"--bpe-vocab {BPE_VOCAB}",
-        "--bpe hf_byte_bpe",
-        f"--merges-filename {BPE_MERGES}",
-        f"--vocab-filename {BPE_VOCAB}",
-        f"--path {CHECKPOINT_LOCAL}",
-        "--beam 1 --nbest 1",
-        "--distributed-port 13000",
-        "--checkpoint-shard-count 1",
-        "--use-sharded-state",
-        f"--batch-size {BATCH_SIZE}",
-        f"--buffer-size {BATCH_SIZE * MAX_SEQ_LEN}",
-        f"--max-tokens {BATCH_SIZE * MAX_SEQ_LEN}",
-        "/tmp",  # required "data" argument.
-    ]
-    def __init__(self):
-        # TODO specify model size here?
-        pass
+            
+        elif model_size == 'opt-125m':
+            self.model_parallel = 2
+            self.total_world_size = 2
+
+            self.mode_shared_folder = '/home/ianm/metaseq/models/OPT-125M'
+
+            self.checkpoint_folder = self.mode_shared_folder
+            self.checkpoint_local = os.path.join(self.mode_shared_folder, "reshard.pt")
+
+            # tokenizer files
+            self.bpe_merges = os.path.join(self.mode_shared_folder, "gpt2-merges.txt")
+            self.bpe_vocab = os.path.join(self.mode_shared_folder, "gpt2-vocab.json")
+        else:
+            raise NotImplementedError
+        
+        self.launch_args = [
+                f"--model-parallel-size {self.model_parallel}",
+                f"--distributed-world-size {self.total_world_size}",
+                "--task language_modeling",
+                f"--bpe-merges {self.bpe_merges}",
+                f"--bpe-vocab {self.bpe_vocab}",
+                "--bpe hf_byte_bpe",
+                f"--merges-filename {self.bpe_merges}",
+                f"--vocab-filename {self.bpe_vocab}",
+                f"--path {self.checkpoint_local}",
+                "--beam 1 --nbest 1",
+                "--distributed-port 13000",
+                "--checkpoint-shard-count 1",
+                "--use-sharded-state",
+                f"--batch-size {self.BATCH_SIZE}",
+                f"--buffer-size {self.BATCH_SIZE * self.MAX_SEQ_LEN}",
+                f"--max-tokens {self.BATCH_SIZE * self.MAX_SEQ_LEN}",
+                "/tmp",  # required "data" argument.
+            ]
 
     def predict(  # type: ignore
         self,
@@ -182,12 +187,12 @@ class MetaseqOPT(Model):
         # dumb defaults overriding
         parser.set_defaults(lr_scheduler=None, criterion=None)
         flat_launch_args = []
-        for s in self.LAUNCH_ARGS:
+        for s in self.launch_args:
             flat_launch_args += s.split()
         args = options.parse_args_and_arch(parser, input_args=flat_launch_args)
         args.data = os.path.dirname(args.path)  # hardcode the data arg
         cfg = convert_namespace_to_omegaconf(args)
-        cfg.distributed_training.distributed_world_size = self.TOTAL_WORLD_SIZE
+        cfg.distributed_training.distributed_world_size = self.total_world_size
 
         # spawn distributed
         dist_utils.infer_init_method(cfg.distributed_training)

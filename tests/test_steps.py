@@ -17,15 +17,12 @@ task_names = [
     "mrpc",
     "multirc",
     "openbookqa",
-    "piqa",
     "qnli",
     "qqp",
     "rte",
     "sciq",
-    "sst",
     "webqs",
     "wic",
-    "winogrande",
     "wsc",
 ]
 model_names = [
@@ -36,7 +33,7 @@ params = [(t, m) for t in task_names for m in model_names]
 
 
 generation_task_names = [
-    "squad2",
+    #"squad2",
     "drop",
 ]
 generation_model_names = [

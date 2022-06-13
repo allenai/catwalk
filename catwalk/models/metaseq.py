@@ -21,6 +21,7 @@ import random
 import sys
 import logging
 import signal
+import math
 
 import torch
 
@@ -273,7 +274,7 @@ class MetaseqOPT(Model):
             # stuff for main proccess
             return self._rank0_worker_main(prompts, generator)
         else:
-            for i in range(len(prompts)):
+            for i in range(math.ceil(len(prompts) / self.BATCH_SIZE)):
                 # useful in FSDP setting
                 request_object = dist_utils.broadcast_object(
                     None, src_rank=0, group=dist_utils.get_global_group()

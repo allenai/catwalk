@@ -10,6 +10,7 @@ from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, GPT2LMHeadModel, \
     AutoTokenizer, GPT2Tokenizer, T5TokenizerFast
 
+from catwalk import cached_transformers
 from catwalk.model import Model
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance
 
@@ -38,7 +39,7 @@ class RankClassificationModel(Model):
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = self._make_model(self.pretrained_model_name_or_path).to(device).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
             yield from self.predict_chunk(
@@ -105,7 +106,7 @@ class RankClassificationModel(Model):
 class EncoderDecoderRCModel(RankClassificationModel):
     @classmethod
     def _make_model(cls, pretrained_model_name_or_path: str) -> T5ForConditionalGeneration:
-        return AutoModelForSeq2SeqLM.from_pretrained(pretrained_model_name_or_path)
+        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False)
 
     def _run_loglikelihood(
         self,
@@ -169,7 +170,7 @@ class EncoderDecoderRCModel(RankClassificationModel):
 class DecoderOnlyRCModel(RankClassificationModel):
     @classmethod
     def _make_model(cls, pretrained_model_name_or_path: str) -> GPT2LMHeadModel:
-        return AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path)
+        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False)
 
     def _run_loglikelihood(
         self,

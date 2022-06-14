@@ -4,10 +4,12 @@ from typing import Sequence, Dict, Any, Iterator, Tuple
 import more_itertools
 import torch
 from tango.common import Tqdm
+from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from catwalk import cached_transformers
 from catwalk.task import Task
 from catwalk.model import Model
 
@@ -24,8 +26,9 @@ class GPTModel(Model):
         *,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        device = resolve_device()
+        model = cached_transformers.get(AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         @dataclass
         class ModelInstance:

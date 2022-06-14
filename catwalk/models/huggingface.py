@@ -4,8 +4,10 @@ import more_itertools
 import torch
 from tango.common import Tqdm
 from tango.common.sequences import MappedSequence
+from tango.integrations.torch.util import resolve_device
 from transformers import AutoModelForMultipleChoice, AutoTokenizer
 
+from catwalk import cached_transformers
 from catwalk.model import Model, UnsupportedTaskError
 from catwalk.task import Task, InstanceFormat
 
@@ -31,8 +33,10 @@ class HFAutoModel(Model):
             instances)
 
         # There is no Huggingface pipeline for this.
-        model = AutoModelForMultipleChoice.from_pretrained(self.pretrained_model_name_or_path).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        device = resolve_device()
+        model = cached_transformers.get(AutoModelForMultipleChoice, self.pretrained_model_name_or_path, False).eval().to(device)
+        tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
+
         instances = Tqdm.tqdm(instances, desc="Processing instances")
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):

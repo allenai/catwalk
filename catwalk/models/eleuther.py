@@ -11,6 +11,7 @@ from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel, \
     AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
+from catwalk import cached_transformers
 from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model
 from catwalk.tasks.eleuther import EleutherTask
@@ -39,8 +40,8 @@ class EAIGPT(Model):
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).to(device).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        model = cached_transformers.get(AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
             yield from self.predict_chunk(
@@ -285,8 +286,8 @@ class EAIT5(Model):
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = AutoModelForSeq2SeqLM.from_pretrained(self.pretrained_model_name_or_path).to(device).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        model = cached_transformers.get(AutoModelForSeq2SeqLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        tokenizer = cached_transformers.get_tokenizer(T5TokenizerFast, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
             yield from self.predict_chunk(

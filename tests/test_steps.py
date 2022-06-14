@@ -1,5 +1,8 @@
+import inspect
+
 import pytest
 
+from catwalk import MODELS
 from catwalk.steps import PredictStep, CalculateMetricsStep
 
 task_names = [
@@ -9,20 +12,15 @@ task_names = [
     "headqa",
     "hellaswag",
     "lambada",
-    "logiqa",
     "mc_taco",
     "mrpc",
     "multirc",
     "openbookqa",
-    "piqa",
     "qnli",
     "qqp",
     "rte",
-    "sciq",
-    "sst",
     "webqs",
     "wic",
-    "winogrande",
     "wsc",
 ]
 model_names = [
@@ -35,7 +33,6 @@ params = [(t, m) for t in task_names for m in model_names]
 generation_task_names = [
     "squad2",
     "drop",
-    "truthfulqa_gen"
 ]
 generation_model_names = [
     "eai::tiny-gpt2"
@@ -46,7 +43,12 @@ params = params + generation_params
 
 @pytest.mark.parametrize("task_name,model_name", params)
 def test_task_eval(task_name: str, model_name: str):
-    predict_step = PredictStep(model=model_name, task=task_name, limit=10)
+    if MODELS[model_name].supports_fewshot:
+        predict_kwargs = {"num_shots": 3}
+    else:
+        predict_kwargs = {}
+
+    predict_step = PredictStep(model=model_name, task=task_name, limit=10, **predict_kwargs)
     metrics_step = CalculateMetricsStep(model=model_name, task=task_name, predictions=predict_step)
     result = metrics_step.result()
     assert result is not None

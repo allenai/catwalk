@@ -7,6 +7,7 @@ from tango.common import Tqdm
 from tango.common.sequences import MappedSequence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
+from catwalk import cached_transformers
 from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model, UnsupportedTaskError
 
@@ -71,10 +72,10 @@ class T5ModelFromPretrained(T5Model):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
     def get_model(self) -> T5ForConditionalGeneration:
-        return AutoModelForSeq2SeqLM.from_pretrained(self.pretrained_model_name_or_path)
+        return cached_transformers.get(AutoModelForSeq2SeqLM, self.pretrained_model_name_or_path, False)
 
     def get_tokenizer(self) -> T5TokenizerFast:
-        return AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        return cached_transformers.get_tokenizer(T5TokenizerFast, self.pretrained_model_name_or_path)
 
 
 @Model.register("catwalk::t5_from_model")
@@ -92,6 +93,6 @@ class T5ModelFromModel(T5Model):
 
     def get_tokenizer(self) -> T5TokenizerFast:
         if self.tokenizer is None:
-            return AutoTokenizer.from_pretrained(self.get_model().name_or_path)
+            return cached_transformers.get_tokenizer(T5TokenizerFast, self.get_model().name_or_path)
         else:
             return self.tokenizer

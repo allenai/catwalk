@@ -11,6 +11,7 @@ from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel, \
     AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
+from catwalk import cached_transformers
 from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model
 from catwalk.tasks.eleuther import EleutherTask
@@ -18,6 +19,13 @@ from catwalk.tasks.eleuther import EleutherTask
 
 @Model.register("eai::gpt")
 class EAIGPT(Model):
+    """
+    This model performs tasks the same way that EleutherAI does with their lm-eval project at
+    https://github.com/EleutherAI/lm-evaluation-harness.
+
+    This is the decoder-only variant. There is also an encoder/decoder variant at :class:`.EAIT5`.
+    """
+
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
@@ -28,14 +36,22 @@ class EAIGPT(Model):
         *,
         batch_size: int = 32,
         max_instances_in_memory: int = 16 * 1024,
-        max_gen_toks: int = 256
+        max_gen_toks: int = 256,
+        num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = AutoModelForCausalLM.from_pretrained(self.pretrained_model_name_or_path).to(device).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        model = cached_transformers.get(AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
-            yield from self.predict_chunk(task, instance_chunk, model, tokenizer, batch_size=batch_size, max_gen_toks=max_gen_toks)
+            yield from self.predict_chunk(
+                task,
+                instance_chunk,
+                model,
+                tokenizer,
+                batch_size=batch_size,
+                max_gen_toks=max_gen_toks,
+                num_shots=num_shots)
 
     def predict_chunk(
         self,
@@ -43,6 +59,8 @@ class EAIGPT(Model):
         instances: Sequence[Dict[str, Any]],
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
+        *,
+        num_shots: int = 0,
         **kwargs
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
@@ -51,7 +69,10 @@ class EAIGPT(Model):
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
-            instance_requests = task.convert_instance(instance, InstanceFormat.ELEUTHER_REQUESTS)
+            instance_requests = task.convert_instance(
+                instance,
+                InstanceFormat.ELEUTHER_REQUESTS,
+                num_fewshot=num_shots)
             if not isinstance(instance_requests, (list, tuple)):
                 instance_requests = [instance_requests]
             for instance_request in instance_requests:
@@ -243,6 +264,13 @@ class EAIGPT(Model):
 
 @Model.register("eai::t5")
 class EAIT5(Model):
+    """
+    This model performs tasks the same way that EleutherAI does with their lm-eval project at
+    https://github.com/EleutherAI/lm-evaluation-harness.
+
+    This is the encoder/decoder variant. There is also a decoder-only variant at :class:`.EAIGPT`.
+    """
+
     VERSION = "003gat"
 
     def __init__(self, pretrained_model_name_or_path: str):
@@ -254,14 +282,21 @@ class EAIT5(Model):
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32,
-        max_instances_in_memory: int = 16 * 1024
+        max_instances_in_memory: int = 16 * 1024,
+        num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = AutoModelForSeq2SeqLM.from_pretrained(self.pretrained_model_name_or_path).to(device).eval()
-        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        model = cached_transformers.get(AutoModelForSeq2SeqLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        tokenizer = cached_transformers.get_tokenizer(T5TokenizerFast, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
-            yield from self.predict_chunk(task, instance_chunk, model, tokenizer, batch_size=batch_size)
+            yield from self.predict_chunk(
+                task,
+                instance_chunk,
+                model,
+                tokenizer,
+                batch_size=batch_size,
+                num_shots=num_shots)
 
     def predict_chunk(
         self,
@@ -269,7 +304,9 @@ class EAIT5(Model):
         instances: Sequence[Dict[str, Any]],
         model: T5ForConditionalGeneration,
         tokenizer: T5TokenizerFast,
+        *,
         batch_size: int = 32,
+        num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
             collections.defaultdict(lambda: collections.defaultdict(list))
@@ -277,7 +314,10 @@ class EAIT5(Model):
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
-            instance_requests = task.convert_instance(instance, InstanceFormat.ELEUTHER_REQUESTS)
+            instance_requests = task.convert_instance(
+                instance,
+                InstanceFormat.ELEUTHER_REQUESTS,
+                num_fewshot=num_shots)
             if not isinstance(instance_requests, (list, tuple)):
                 instance_requests = [instance_requests]
             for instance_request in instance_requests:

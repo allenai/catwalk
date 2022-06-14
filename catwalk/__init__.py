@@ -1,5 +1,5 @@
-from .model import Model
-from .models import MODELS
+from catwalk.model import Model
+from catwalk.models import MODELS
 
-from .task import Task
-from .tasks import TASKS
+from catwalk.task import Task
+from catwalk.tasks import TASKS

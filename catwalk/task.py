@@ -2,11 +2,13 @@ from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from typing import Dict, Any, Optional, Sequence, TYPE_CHECKING, Union, List, Callable, Mapping, Tuple
+from random import Random
+from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Set, cast, FrozenSet, \
+    Iterable
 
 import torchmetrics
 from mypy_extensions import KwArg
-from tango.common import Registrable
+from tango.common import Registrable, det_hash
 
 from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
@@ -95,6 +97,14 @@ class Task(Registrable, ABC):
         """Returns the name of the default split to run evaluations on."""
         return "test"
 
+    @property
+    def fewshot_instances_split(self) -> str:
+        """Returns the name of the split to use to find few-shot instances in."""
+        for split_name in ["train", "training", "validation"]:
+            if self.has_split(split_name):
+                return split_name
+        raise ValueError("This task has no split to take fewshot instances from.")
+
     def make_metrics(self) -> Dict[str, torchmetrics.Metric]:
         return {
             name: metric_fn()
@@ -106,6 +116,27 @@ class Task(Registrable, ABC):
 
     def convert_instance(self, instance: Dict[str, Any], format: InstanceFormat, **kwargs):
         return self.instance_conversions[format](instance, **kwargs)
+
+    def get_fewshot_instances(
+        self,
+        num_shots: int,
+        *,
+        exceptions: Union[None, Dict[str, Any], Iterable[Dict[str, Any]]] = None,
+        random_seed: int = 18830087
+    ) -> Sequence[Dict[str, Any]]:
+        if exceptions is None:
+            exceptions = []
+        elif isinstance(exceptions, Dict):
+            exceptions = [exceptions]
+        exceptions = frozenset(det_hash(e) for e in exceptions)
+
+        r = Random(random_seed)
+        instances = self.get_split(self.fewshot_instances_split)
+        return [
+            instance
+            for instance in r.sample(instances, num_shots + len(exceptions))
+            if det_hash(instance) not in exceptions
+        ]
 
     #
     # builder-style methods

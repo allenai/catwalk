@@ -30,8 +30,8 @@ class PredictStep(Step):
         model: Union[str, Model],
         task: Union[str, Task],
         split: Optional[str] = None,
-        batch_size: int = 32,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
+        **kwargs
     ) -> Sequence[Any]:
         if isinstance(model, str):
             model = MODELS[model]
@@ -45,7 +45,7 @@ class PredictStep(Step):
         if limit is not None:
             instances = instances[:limit]
         instances = instances[len(results):]
-        for result in model.predict(task, instances, batch_size=batch_size):
+        for result in model.predict(task, instances, **kwargs):
             results.append(result)
         return results
 

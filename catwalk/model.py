@@ -1,3 +1,4 @@
+import inspect
 from abc import ABC
 from typing import Sequence, Dict, Any, Iterator, Tuple, List
 
@@ -49,6 +50,10 @@ class Model(Registrable, DetHashWithVersion, ABC):
             metric_name: metric.compute()
             for metric_name, metric in metrics.items()
         }
+
+    @property
+    def supports_fewshot(self) -> bool:
+        return "num_shots" in inspect.signature(self.predict).parameters
 
 
 class UnsupportedTaskError(Exception):

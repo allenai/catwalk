@@ -73,7 +73,7 @@ class MetaseqOPT(Model):
             self.model_parallel = 2
             self.total_world_size = 2
 
-            self.mode_shared_folder = '/home/ianm/metaseq/models/OPT-125M'
+            self.mode_shared_folder = '/net/nfs.cirrascale/allennlp/ianm/models/OPT-125M' #'/home/ianm/metaseq/models/OPT-125M'
 
             self.checkpoint_folder = self.mode_shared_folder
             self.checkpoint_local = os.path.join(self.mode_shared_folder, "reshard.pt")

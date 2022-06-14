@@ -16,7 +16,7 @@ on:
 
 env:
   # Change this to invalidate existing cache.
-  CACHE_PREFIX: v0
+  CACHE_PREFIX: v1
   PYTHON_PATH: ./
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
             run: python setup.py check && python setup.py bdist_wheel sdist
 
           - name: Test
-            run: pytest -v --color=yes tests/
+            run: pytest --forked -v --color=yes tests/
 
         include:
           - task:

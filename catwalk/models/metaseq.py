@@ -288,9 +288,10 @@ class MetaseqOPT(Model):
         """
         def tokenize_strings(generator, strings):
             return [encode_fn(generator, s) for s in strings]
-        outputs = []
-        for i in Tqdm.tqdm(list(range(0,len(prompts),self.BATCH_SIZE)), desc="running generation inference"):
-            tokenized_prompts = tokenize_strings(generator, prompts[i:i+self.BATCH_SIZE])
+        sorted_outputs = []
+        sorted_prompts, old2new_idxs = self._sort_prompts(prompts)
+        for i in Tqdm.tqdm(list(range(0,len(sorted_prompts),self.BATCH_SIZE)), desc="running generation inference"):
+            tokenized_prompts = tokenize_strings(generator, sorted_prompts[i:i+self.BATCH_SIZE])
 
             request_object = {
                 'inputs' : tokenized_prompts,
@@ -304,6 +305,17 @@ class MetaseqOPT(Model):
                         )
             generations = generator.generate(**request_object)
             output = [doc[0]['text'] for doc in generations]
-            outputs.extend(output)
+            sorted_outputs.extend(output)
+
+        outputs = [sorted_outputs[old2new_idxs[i]] for i in range(len(prompts))]
 
         return outputs
+    
+    def _sort_prompts(self, prompts: Sequence[str]):
+        "sorts prompts by longest first for efficient padding and quick detection of memory overruns"
+        argsorted = [pair for pair in sorted(enumerate(prompts), key=lambda pair: -len(pair[1]))]
+        old_idxs, sorted_prompts = zip(*argsorted)
+        old2new_idxs = {old_idxs[i]: i for i in range(len(prompts))}
+
+        return sorted_prompts, old2new_idxs
+        

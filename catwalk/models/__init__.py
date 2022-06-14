@@ -39,7 +39,8 @@ _ENCODER_DECODER_MODELS = {
 _DECODER_ONLY_MODELS = {
     "gpt2",
     "sshleifer/tiny-gpt2",
-    "EleutherAI/gpt-j-6B"
+    "EleutherAI/gpt-j-6B",
+    "gpt2-xl"
 }
 
 

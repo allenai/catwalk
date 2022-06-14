@@ -11,6 +11,7 @@ packaging
 # running tests
 pytest>=6.2.5
 pytest-sphinx
+pytest-xdist
 pytest-forked
 flaky
 

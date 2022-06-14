@@ -12,7 +12,6 @@ task_names = [
     "headqa",
     "hellaswag",
     "lambada",
-    "logiqa",
     "mc_taco",
     "mrpc",
     "multirc",
@@ -20,7 +19,6 @@ task_names = [
     "qnli",
     "qqp",
     "rte",
-    "sciq",
     "webqs",
     "wic",
     "wsc",
@@ -33,7 +31,7 @@ params = [(t, m) for t in task_names for m in model_names]
 
 
 generation_task_names = [
-    #"squad2",
+    "squad2",
     "drop",
 ]
 generation_model_names = [

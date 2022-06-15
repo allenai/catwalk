@@ -271,8 +271,9 @@ class MetaseqOPT(Model):
             request_object = {
                 'inputs' : tokenized_prompts,
                 'max_tokens': [256] * len(tokenized_prompts),
-                'temperature': 0.7,
-                'top_p': 0.9,
+                'temperature': 1.0, #0.7,
+                'top_p': 0.0, #0.9,
+                'stop': tokenize_strings(generator, ['\n'])[0],
                 'n': 1
             }
             dist_utils.broadcast_object(

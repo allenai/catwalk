@@ -39,7 +39,6 @@ class MetaseqOPT(Model):
     # MAX_BATCH_TOKENS = 3072
     BATCH_SIZE = 2
     def __init__(self, model_size: str):
-        assert model_size in ['opt-175b', 'opt-125m']
         if model_size == 'opt-175b':
             self.model_parallel = 8
             self.total_world_size = 8

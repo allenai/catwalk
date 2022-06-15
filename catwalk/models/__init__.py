@@ -67,4 +67,5 @@ for hf_name in _DECODER_ONLY_MODELS:
     MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
 
 MODELS["metaseq::opt-175b"] = MetaseqOPT("opt-175b")
+MODELS["metaseq::opt-30b"] = MetaseqOPT("opt-30b")
 MODELS["metaseq::opt-125m"] = MetaseqOPT("opt-125m")

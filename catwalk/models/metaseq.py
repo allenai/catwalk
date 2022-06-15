@@ -42,47 +42,26 @@ class MetaseqOPT(Model):
         if model_size == 'opt-175b':
             self.model_parallel = 8
             self.total_world_size = 8
-
-            # MODEL_SHARED_FOLDER should point to a shared drive (e.g. NFS) where the
-            # checkpoints from S3 are stored. As an example:
-            # MODEL_SHARED_FOLDER = "/example"
-            # $ ls /example
-            # dict.txt  gpt2-merges.txt  gpt2-vocab.json  OPT-175B
-            # SPECIFIC_MODEL_FOLDER = "OPT-175B"
-            # $ ls /example/OPT-175B/reshard_no_os
-            # reshard-model_part-0.pt
-            # reshard-model_part-1.pt
-            # reshard-model_part-2.pt
-            # reshard-model_part-3.pt
-            # reshard-model_part-4.pt
-            # reshard-model_part-5.pt
-            # reshard-model_part-6.pt
-            # reshard-model_part-7.pt
             self.mode_shared_folder = "/net/nfs.cirrascale/s2-research/opt-175b/checkpoints/"
 
-            self.checkpoint_folder = self.mode_shared_folder
-            self.checkpoint_local = os.path.join(self.mode_shared_folder, "reshard.pt")
-
-            # tokenizer files
-            self.bpe_merges = os.path.join(self.mode_shared_folder, "gpt2-merges.txt")
-            self.bpe_vocab = os.path.join(self.mode_shared_folder, "gpt2-vocab.json")
-
-            
         elif model_size == 'opt-125m':
             self.model_parallel = 2
             self.total_world_size = 2
-
             self.mode_shared_folder = '/net/nfs.cirrascale/allennlp/ianm/models/OPT-125M' #'/home/ianm/metaseq/models/OPT-125M'
 
+        elif model_size == 'opt-30b':
+            self.model_parallel = 2
+            self.total_world_size = 2
+            self.mode_shared_folder = '/net/nfs.cirrascale/allennlp/ianm/models/OPT-30B' #'/home/ianm/metaseq/models/OPT-30B'
+        else:
+            raise NotImplementedError
+        
             self.checkpoint_folder = self.mode_shared_folder
             self.checkpoint_local = os.path.join(self.mode_shared_folder, "reshard.pt")
 
             # tokenizer files
             self.bpe_merges = os.path.join(self.mode_shared_folder, "gpt2-merges.txt")
             self.bpe_vocab = os.path.join(self.mode_shared_folder, "gpt2-vocab.json")
-        else:
-            raise NotImplementedError
-        
         self.launch_args = [
                 f"--model-parallel-size {self.model_parallel}",
                 f"--distributed-world-size {self.total_world_size}",
@@ -93,13 +72,10 @@ class MetaseqOPT(Model):
                 f"--merges-filename {self.bpe_merges}",
                 f"--vocab-filename {self.bpe_vocab}",
                 f"--path {self.checkpoint_local}",
-                "--beam 1 --nbest 1",
+                "--beam 1 --nbest 1", # TODO can I remove this?
                 "--distributed-port 13000",
                 "--checkpoint-shard-count 1",
                 "--use-sharded-state",
-                f"--batch-size {self.BATCH_SIZE}",
-                f"--buffer-size {self.BATCH_SIZE * self.MAX_SEQ_LEN}",
-                f"--max-tokens {self.BATCH_SIZE * self.MAX_SEQ_LEN}",
                 "/tmp",  # required "data" argument.
             ]
 

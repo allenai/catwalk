@@ -34,16 +34,12 @@ from metaseq.service.utils import encode_fn, build_logger
 
 @Model.register("metaseq::opt")
 class MetaseqOPT(Model):
-    MAX_SEQ_LEN = 2048
-    # BATCH_SIZE = 2048  # silly high bc we dynamically batch by MAX_BATCH_TOKENS
-    # MAX_BATCH_TOKENS = 3072
-    BATCH_SIZE = 2
     def __init__(self, model_size: str):
         if model_size == 'opt-175b':
             self.model_parallel = 8
             self.total_world_size = 8
             self.mode_shared_folder = "/net/nfs.cirrascale/s2-research/opt-175b/checkpoints/"
-
+            
         elif model_size == 'opt-125m':
             self.model_parallel = 2
             self.total_world_size = 2
@@ -56,12 +52,12 @@ class MetaseqOPT(Model):
         else:
             raise NotImplementedError
         
-            self.checkpoint_folder = self.mode_shared_folder
-            self.checkpoint_local = os.path.join(self.mode_shared_folder, "reshard.pt")
+        self.checkpoint_folder = self.mode_shared_folder
+        self.checkpoint_local = os.path.join(self.mode_shared_folder, "reshard.pt")
 
-            # tokenizer files
-            self.bpe_merges = os.path.join(self.mode_shared_folder, "gpt2-merges.txt")
-            self.bpe_vocab = os.path.join(self.mode_shared_folder, "gpt2-vocab.json")
+        # tokenizer files
+        self.bpe_merges = os.path.join(self.mode_shared_folder, "gpt2-merges.txt")
+        self.bpe_vocab = os.path.join(self.mode_shared_folder, "gpt2-vocab.json")
         self.launch_args = [
                 f"--model-parallel-size {self.model_parallel}",
                 f"--distributed-world-size {self.total_world_size}",
@@ -84,11 +80,14 @@ class MetaseqOPT(Model):
         task: Task,
         instances: Sequence[Dict[str, Any]],
         *args,
+        batch_size: int = 2,
         **kwargs
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
             collections.defaultdict(lambda: collections.defaultdict(list))
         requests: Mapping[str, List[Request]] = collections.defaultdict(list)
+
+        kwargs['batch_size'] = batch_size
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
@@ -144,7 +143,7 @@ class MetaseqOPT(Model):
         requests: Sequence[Request],
         **kwargs
     ) -> Sequence:
-        output = self.generate([r.args[0] for r in requests])
+        output = self._init_model_and_gen([r.args[0] for r in requests], **kwargs)
         return output
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
@@ -154,10 +153,7 @@ class MetaseqOPT(Model):
             for key, fn in task.inner_task.aggregation().items()
         }
     
-    def generate(self, prompts: Sequence[str]) -> Sequence[str]:
-        return self._init_model_and_gen(prompts)
-    
-    def _init_model_and_gen(self, prompts: Sequence[str]) -> Sequence[str]:
+    def _init_model_and_gen(self, prompts: Sequence[str], **kwargs) -> Sequence[str]:
         # parse args
         parser = options.get_generation_parser()
         # dumb defaults overriding
@@ -174,10 +170,10 @@ class MetaseqOPT(Model):
         dist_utils.infer_init_method(cfg.distributed_training)
         start_rank = cfg.distributed_training.distributed_rank
         cfg.distributed_training.distributed_rank = None  # assign automatically
-        kwargs = {
+        kwargs.update({
             "start_rank": start_rank,
             "namespace_args": args
-        }
+        })
         spawncontext = torch.multiprocessing.start_processes(
             self._distributed_main,
             # need to give rank offset as 1 to cover the fact that the main
@@ -233,7 +229,7 @@ class MetaseqOPT(Model):
 
         return output
 
-    def _worker_main(self, prompts: Sequence[str], cfg: MetaseqConfig, **kwargs) -> Sequence[str]:
+    def _worker_main(self, prompts: Sequence[str], cfg: MetaseqConfig, batch_size: int = 2, **kwargs) -> Sequence[str]:
         # make sure generations are stochastic since we have many workers TODO understand this
         torch.manual_seed(random.randint(1, 20000))
         torch.cuda.manual_seed(random.randint(1, 20000))
@@ -247,9 +243,9 @@ class MetaseqOPT(Model):
         )
         if torch.distributed.get_rank() == 0:
             # stuff for main proccess
-            return self._rank0_worker_main(prompts, generator)
+            return self._rank0_worker_main(prompts, generator, batch_size=batch_size, **kwargs)
         else:
-            for i in range(math.ceil(len(prompts) / self.BATCH_SIZE)):
+            for i in range(math.ceil(len(prompts) / batch_size)):
                 # useful in FSDP setting
                 request_object = dist_utils.broadcast_object(
                     None, src_rank=0, group=dist_utils.get_global_group()
@@ -257,7 +253,7 @@ class MetaseqOPT(Model):
                 _ = generator.generate(**request_object)
             return _
 
-    def _rank0_worker_main(self, prompts: Sequence[str], generator) -> Sequence[str]:
+    def _rank0_worker_main(self, prompts: Sequence[str], generator, batch_size: int = 2, **kwargs) -> Sequence[str]:
         """
         TODO
         """
@@ -265,8 +261,8 @@ class MetaseqOPT(Model):
             return [encode_fn(generator, s) for s in strings]
         sorted_outputs = []
         sorted_prompts, old2new_idxs = self._sort_prompts(prompts)
-        for i in Tqdm.tqdm(list(range(0,len(sorted_prompts),self.BATCH_SIZE)), desc="running generation inference"):
-            tokenized_prompts = tokenize_strings(generator, sorted_prompts[i:i+self.BATCH_SIZE])
+        for i in Tqdm.tqdm(list(range(0,len(sorted_prompts),batch_size)), desc="running generation inference"):
+            tokenized_prompts = tokenize_strings(generator, sorted_prompts[i:i+batch_size])
 
             request_object = {
                 'inputs' : tokenized_prompts,

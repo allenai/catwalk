@@ -47,7 +47,16 @@ class SquadShiftsTask(Task):
             fewshot_examples_formatted = ""
         else:
             fewshot_examples_formatted = []
-            for ex in self.random.sample(self.few_shot_source, num_shots):
+            sample = None
+            while True:
+                sample = self.random.sample(self.few_shot_source, num_shots)
+                def is_sample_good(ex, q_max, a_max):
+                    answer = ex['answers']['text'][0]
+                    return (len(tokenizer.encode(ex['question']).ids) < q_max) and (len(tokenizer.encode(answer).ids) < a_max)
+                if all(is_sample_good(ex, 50, 50) for ex in sample):
+                    break
+                print('skipping ICL sample beause answers or questions are too long') #TODO make this logging instead
+            for ex in sample:
                 answer = ex['answers']['text'][0]
                 truncated_context = self._get_context_window(ex, ex['context'], answer, tokenizer=tokenizer)
                 fewshot_examples_formatted.append(self._format_example(truncated_context, ex['question'], (' '+ answer)))
@@ -60,9 +69,11 @@ class SquadShiftsTask(Task):
     def _format_example(self, truncated_context: str, question: str, answer: str = '') -> str:
         return f"Background: {truncated_context}\n\nQuestion: {question}\n\nAnswer:{answer}"
     
-    def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_size: int = 100, window_stride: int = 1):
+    def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_size: int = 100, window_stride: int = 50):
+        # window_size -= len(tokenizer.encode(self._format_example('', instance['question'],instance['answers']['text'][0])))
+        answer_toks = tokenizer.encode(answer).ids
+        assert len(answer_toks) < window_size
         answer = tokenizer.decode(tokenizer.encode(answer).ids)
-        window_size -= len(tokenizer.encode(self._format_example('', instance['question'],instance['answers']['text'][0])))
         toks = tokenizer.encode(full_context).ids
         assert answer in tokenizer.decode(toks)
         for i in range(0, len(toks), window_stride):

@@ -37,7 +37,7 @@ from tokenizers import ByteLevelBPETokenizer
 
 @Model.register("metaseq::opt")
 class MetaseqOPT(Model):
-    MAX_GEN_LENGTH = 256
+    MAX_GEN_LENGTH = 20
     MAX_SEQ_LEN = 2048
     def __init__(self, model_size: str):
         if model_size == 'opt-175b':

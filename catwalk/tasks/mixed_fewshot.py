@@ -49,18 +49,19 @@ class SquadShiftsTask(Task):
             fewshot_examples_formatted = []
             for ex in self.random.sample(self.few_shot_source, num_shots):
                 answer = ex['answers']['text'][0]
-                truncated_context = self._get_context_window(ex['context'], answer, tokenizer=tokenizer)
+                truncated_context = self._get_context_window(ex, ex['context'], answer, tokenizer=tokenizer)
                 fewshot_examples_formatted.append(self._format_example(truncated_context, ex['question'], (' '+ answer)))
             fewshot_examples_formatted = '\n\n'.join(fewshot_examples_formatted)
         
-        truncated_instance_context = self._get_context_window(instance['context'],instance['answers']['text'][0], tokenizer, 25, 200)
+        truncated_instance_context = self._get_context_window(instance, instance['context'],instance['answers']['text'][0], tokenizer, 25, 200)
         instance_formated = self._format_example(truncated_instance_context, instance['question'])
 
         return fewshot_examples_formatted + '\n\n' + instance_formated
     def _format_example(self, truncated_context: str, question: str, answer: str = '') -> str:
         return f"Background: {truncated_context}\n\nQuestion: {question}\n\nAnswer:{answer}"
     
-    def _get_context_window(self, full_context: str, answer: str, tokenizer: Any, window_stride: int = 5, window_size: int = 80):
+    def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_stride: int = 5, window_size: int = 100):
+        window_size -= len(tokenizer.encode(self._format_example('', instance['question'],instance['answers']['text'][0])))
         toks = tokenizer.encode(full_context).ids
         for i in range(0, len(toks), window_stride):
             context_window = tokenizer.decode(toks[i:i+window_size])

@@ -61,9 +61,10 @@ class SquadShiftsTask(Task):
         return f"Background: {truncated_context}\n\nQuestion: {question}\n\nAnswer:{answer}"
     
     def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_size: int = 100, window_stride: int = 1):
-        assert answer in full_context
+        answer = tokenizer.decode(tokenizer.encode(answer).ids)
         window_size -= len(tokenizer.encode(self._format_example('', instance['question'],instance['answers']['text'][0])))
         toks = tokenizer.encode(full_context).ids
+        assert answer in tokenizer.decode(toks)
         for i in range(0, len(toks), window_stride):
             context_window = tokenizer.decode(toks[i:i+window_size])
             if answer in context_window:

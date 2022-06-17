@@ -1,12 +1,35 @@
-from typing import Union, Dict, Any, Optional, Sequence, Iterable
+from typing import (
+    Union,
+    Dict,
+    Any,
+    Optional,
+    Sequence,
+    Iterable,
+    List,
+    Tuple,
+    MutableSequence,
+)
 
+import tango.integrations.torch
 from tango import Step, JsonFormat
-from tango.common.sequences import SqliteSparseSequence
+from tango.common import Lazy, DatasetDict
+from tango.common.sequences import (
+    SqliteSparseSequence,
+    MappedSequence,
+    ConcatenatedSequence,
+)
 from tango.format import SqliteSequenceFormat, TextFormat
+from tango.integrations.torch import (
+    TorchFormat,
+    TorchTrainStep,
+    TorchTrainingEngine,
+    DataLoader,
+)
+from torch.optim import AdamW
 
 from catwalk.task import Task
 from catwalk.tasks import TASKS
-from catwalk.model import Model
+from catwalk.model import Model, Instance
 from catwalk.models import MODELS
 
 
@@ -74,6 +97,64 @@ class CalculateMetricsStep(Step):
             task = TASKS[task]
 
         return model.calculate_metrics(task, predictions)
+
+
+@Step.register("catwalk::finetune")
+class FinetuneStep(TorchTrainStep):
+    VERSION = "001"
+    FORMAT = TorchFormat
+
+    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(kwargs["model"], str):
+            kwargs["model"] = MODELS[kwargs["model"]]
+
+        new_tasks = []
+        for old_task in kwargs["tasks"]:
+            if isinstance(old_task, str):
+                old_task = TASKS[old_task]
+            new_tasks.append(old_task)
+        kwargs["tasks"] = new_tasks
+
+        return kwargs
+
+    def run(
+        self,
+        model: Union[str, Model],
+        tasks: List[Union[str, Task]],
+        train_epochs: int = 10,
+        lr: float = 1e-5,
+    ) -> Model:  # type: ignore
+        if isinstance(model, str):
+            model = MODELS[model]
+        trainable_model = model.trainable_copy()
+
+        # make splits
+        splits_of_splits: Dict[str, List[Sequence[Tuple[Task, Instance]]]] = {
+            "test": [],
+            "validation": [],
+            "train": [],
+        }
+        for task in tasks:
+            if isinstance(task, str):
+                task = TASKS[task]
+            for split_name in splits_of_splits.keys():
+                if task.has_split(split_name):
+                    splits_of_splits[split_name].append(
+                        MappedSequence(lambda i: (task, i), task.get_split(split_name))
+                    )
+        splits = {
+            split_name: ConcatenatedSequence(*split_instances)
+            for split_name, split_instances in splits_of_splits.items()
+            if len(split_instances) > 0
+        }
+
+        return super().run(
+            trainable_model,
+            Lazy(TorchTrainingEngine, optimizer=Lazy(AdamW, lr=lr)),
+            DatasetDict(splits=splits),
+            Lazy(DataLoader),
+            train_epochs=train_epochs,
+        )
 
 
 @Step.register("catwalk::tabulate_metrics")

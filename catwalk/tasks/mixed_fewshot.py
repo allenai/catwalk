@@ -60,7 +60,7 @@ class SquadShiftsTask(Task):
     def _format_example(self, truncated_context: str, question: str, answer: str = '') -> str:
         return f"Background: {truncated_context}\n\nQuestion: {question}\n\nAnswer:{answer}"
     
-    def _get_context_window(self, full_context: str, answer: str, tokenizer: Any, window_stride: int = 25, window_size: int = 100):
+    def _get_context_window(self, full_context: str, answer: str, tokenizer: Any, window_stride: int = 25, window_size: int = 80):
         toks = tokenizer.encode(full_context).ids
         for i in range(0, len(toks), window_stride):
             context_window = tokenizer.decode(toks[i:i+window_size])

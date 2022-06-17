@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT
 from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model
 from catwalk.tasks.eleuther import EleutherTask
-from catwalk.tasks.mixed_fewshot import SquadShiftsTask
+from catwalk.tasks.mixed_fewshot import MixedFewshotTask
 
 #### metaseq imports
 import os
@@ -92,7 +92,7 @@ class MetaseqOPT(Model):
 
         if isinstance(task, EleutherTask):
             return self._predict_on_eleuther(task, instances, **kwargs)
-        elif isinstance(task, SquadShiftsTask):
+        elif isinstance(task, MixedFewshotTask):
             return self._predict_on_mixed_fewshot_squadshifts(task, instances, **kwargs)
         else:
             raise NotImplementedError
@@ -199,7 +199,7 @@ class MetaseqOPT(Model):
                 key: fn([p[key] for p in predictions])
                 for key, fn in task.inner_task.aggregation().items()
             }
-        elif isinstance(task, SquadShiftsTask):
+        elif isinstance(task, MixedFewshotTask):
             kwargs = {'preds':[],'target':[]}
             for p in predictions:
                 kwargs['preds'].append(p['preds'])

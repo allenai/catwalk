@@ -5,17 +5,38 @@ from datasets import load_dataset
 import random
 from tokenizers import ByteLevelBPETokenizer
 from torchmetrics import SQuAD
+from torchmetrics.functional.text.squad import _normalize_text
 
 
 
-class SquadShiftsTask(Task):
+class MixedFewshotTask(Task):
+    SQUADSHIFT_SPLITS = ['new_wiki', 'nyt', 'reddit', 'amazon']
+    MRQA_TEST_SPLITS = [
+                'BioASQ',
+                'DROP',
+                'DuoRC.ParaphraseRC',
+                'RACE',
+                'RelationExtraction',
+                'TextbookQA'
+            ]
+    MRQA_VALIDATION_SPLITS = [
+        'HotpotQA',
+        'NaturalQuestionsShort',
+        'NewsQA',
+        'SQuAD',
+        'SearchQA',
+        'TriviaQA-web'
+    ]
     def __init__(
         self,
+        inference_dataset_name: str,
         *,
         random_seed: Optional[int] = None,
         version_override: Optional[str] = None
     ):
         super().__init__(version_override=version_override)
+        assert inference_dataset_name in ['squadshifts', 'mrqa']
+        self.inference_dataset_name = inference_dataset_name
         self.add_instance_conversion(InstanceFormat.MIXED_FEWSHOT_SQUADSHIFTS, self.instance_as_mixed_fewshot)
         self.few_shot_source = MappedSequence(lambda x: x, load_dataset('squad')['train'])
         assert all(len(ex['answers']['text']) > 0 for ex in self.few_shot_source)
@@ -27,14 +48,29 @@ class SquadShiftsTask(Task):
 
     def has_split(self, split: str) -> bool:
         """Returns ``True`` if a split with the given name exists. ``False`` otherwise."""
-        return split in ['new_wiki', 'nyt', 'reddit', 'amazon']
+        if self.inference_dataset_name == 'squadshifts':
+            return split in self.SQUADSHIFT_SPLITS
+        elif self.inference_dataset_name == 'mrqa':
+            return split in (self.MRQA_TEST_SPLITS + self.MRQA_VALIDATION_SPLITS)
+        else:
+            raise NotImplementedError
+            
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
         """Returns the split with the given name."""
-        assert self.has_split(split), "split must be in ['new_wiki', 'nyt', 'reddit', 'amazon']"
-        ds = load_dataset('squadshifts', split)
-        assert list(ds.keys()) == ['test']
-        ds = ds['test']
+        assert self.has_split(split)
+        if self.inference_dataset_name == 'squadshifts':
+            ds = load_dataset(self.inference_dataset_name, split)
+            assert list(ds.keys()) == ['test']
+            ds = ds['test'] 
+        elif self.inference_dataset_name == 'mrqa':
+            ds = load_dataset(self.inference_dataset_name, split=('test' if split in self.MRQA_TEST_SPLITS else 'validation'))
+            ds = ds.filter(lambda e: e['subset'] == split)
+            ds = ds.rename_column('qid','id')
+            def reformat_answers(e):
+                e['answers'] = {'text':e['detected_answers']['text'], 'answer_start':[d['start'][0] for d in e['detected_answers']['char_spans']]}
+                return e
+            ds = ds.map(reformat_answers)      
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
         ds = MappedSequence(lambda x: x, ds)
@@ -70,15 +106,19 @@ class SquadShiftsTask(Task):
         return f"Background: {truncated_context}\n\nQuestion: {question}\n\nAnswer:{answer}"
     
     def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_size: int = 100, window_stride: int = 50):
+        def normalize_text(s):
+            # required for MRQA because of noisy answers
+            s = _normalize_text(s)
+            return ''.join(s.split())
         # window_size -= len(tokenizer.encode(self._format_example('', instance['question'],instance['answers']['text'][0])))
         answer_toks = tokenizer.encode(answer).ids
         assert len(answer_toks) < window_size
         answer = tokenizer.decode(tokenizer.encode(answer).ids)
         toks = tokenizer.encode(full_context).ids
-        assert answer in tokenizer.decode(toks)
+        assert normalize_text(answer) in normalize_text(tokenizer.decode(toks))
         for i in range(0, len(toks), window_stride):
             context_window = tokenizer.decode(toks[i:i+window_size])
-            if answer in context_window:
+            if normalize_text(answer) in normalize_text(context_window):
                 return context_window
         
         raise RuntimeError('Answer not found in context, this should not happen')

@@ -15,6 +15,7 @@ def main():
     parser.add_argument('--task', type=str, nargs="+")
     parser.add_argument('--split', type=str)
     parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--num_shots', type=int)
     parser.add_argument('--limit', type=int)
     parser.add_argument(
         '-d', '-w',
@@ -41,6 +42,10 @@ def main():
             tasks |= TASK_SETS[task]
         except KeyError:
             tasks.add(task)
+    
+    kwargs = {}
+    if args.num_shots is not None:
+        kwargs["num_shots"] = args.num_shots
 
     metric_task_dict = {}
     for task in tasks:
@@ -49,7 +54,8 @@ def main():
             task=task,
             split=args.split,
             batch_size=args.batch_size,
-            limit=limit)
+            limit=limit,
+            **kwargs)
         metrics = CalculateMetricsStep(
             model=args.model,
             task=task,

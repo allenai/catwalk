@@ -1,5 +1,5 @@
 import collections
-from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple, Protocol
+from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple, Protocol, Union
 
 import more_itertools
 import torch
@@ -14,6 +14,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT
 from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model
 from catwalk.tasks.eleuther import EleutherTask
+from catwalk.tasks.mixed_fewshot import SquadShiftsTask
 
 #### metaseq imports
 import os
@@ -32,8 +33,12 @@ from metaseq.distributed import utils as dist_utils
 from metaseq.hub_utils import GeneratorInterface
 from metaseq.service.utils import encode_fn, build_logger
 
+from tokenizers import ByteLevelBPETokenizer
+
 @Model.register("metaseq::opt")
 class MetaseqOPT(Model):
+    MAX_GEN_LENGTH = 256
+    MAX_SEQ_LEN = 2048
     def __init__(self, model_size: str):
         if model_size == 'opt-175b':
             self.model_parallel = 8
@@ -83,11 +88,24 @@ class MetaseqOPT(Model):
         batch_size: int = 2,
         **kwargs
     ) -> Iterator[Dict[str, Any]]:
+        kwargs['batch_size'] = batch_size
+
+        if isinstance(task, EleutherTask):
+            return self._predict_on_eleuther(task, instances, **kwargs)
+        elif isinstance(task, SquadShiftsTask):
+            return self._predict_on_mixed_fewshot_squadshifts(task, instances, **kwargs)
+        else:
+            raise NotImplementedError
+
+    def _predict_on_eleuther(self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        *args,
+        **kwargs
+    ) -> Iterator[Dict[str, Any]]:
         instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
             collections.defaultdict(lambda: collections.defaultdict(list))
         requests: Mapping[str, List[Request]] = collections.defaultdict(list)
-
-        kwargs['batch_size'] = batch_size
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
@@ -98,7 +116,6 @@ class MetaseqOPT(Model):
                 request_type = instance_request.request_type
                 instance_index_to_request_indices[instance_index][request_type].append(len(requests[request_type]))
                 requests[request_type].append(instance_request)
-
         # run the requests
         results: Dict[str, Sequence] = {}
         class InferenceFunc(Protocol):
@@ -123,35 +140,76 @@ class MetaseqOPT(Model):
 
             yield task.inner_task.process_results(doc, results_for_instance)
 
+    def _predict_on_mixed_fewshot_squadshifts(self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        *args,
+        num_shots: int = 0,
+        **kwargs
+    ) -> Iterator[Dict[str, Any]]:
+
+        # The model uses its own, separate tokenizer, but we instantiate an identical one here for truncation measurements
+        tokenizer = ByteLevelBPETokenizer.from_file(
+            self.bpe_vocab, self.bpe_merges
+        )
+
+        mixed_fewshot_instances = [task.convert_instance(instance, InstanceFormat.MIXED_FEWSHOT_SQUADSHIFTS, num_shots=num_shots, tokenizer=tokenizer) for instance in instances]
+        results = self._run_greedy_until(mixed_fewshot_instances, **kwargs)
+
+        for instance_index, instance in enumerate(instances):
+            yield {
+                'preds':{
+                    'prediction_text':results[instance_index],
+                    'id':instance['id']
+                },
+                'target':{
+                    'answers':instance['answers'],
+                    'id':instance['id']
+                }
+            }
+
     def _run_loglikelihood(
         self,
-        requests: Sequence[Request],
+        inputs: Sequence[Union[Request, str]],
         **kwargs
     ) -> Sequence:
         # temporaray bypass of reference scoring functionality
-        return [(float('-inf'), False)] * len(requests)
+        return [(float('-inf'), False)] * len(inputs)
 
     def _run_loglikelihood_rolling(
         self,
-        requests: Sequence[Request],
+        inputs: Sequence[Union[Request, str]],
         **kwargs
     ) -> Sequence:
         raise NotImplementedError
 
     def _run_greedy_until(
         self,
-        requests: Sequence[Request],
+        inputs: Sequence[Union[Request, str]],
         **kwargs
     ) -> Sequence:
-        output = self._init_model_and_gen([r.args[0] for r in requests], **kwargs)
+        if isinstance(inputs[0], Request):
+            inputs = [r.args[0] for r in inputs]
+        output = self._init_model_and_gen(inputs, **kwargs)
         return output
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
-        assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
-        return {
-            key: fn([p[key] for p in predictions])
-            for key, fn in task.inner_task.aggregation().items()
-        }
+        if isinstance(task, EleutherTask):
+            return {
+                key: fn([p[key] for p in predictions])
+                for key, fn in task.inner_task.aggregation().items()
+            }
+        elif isinstance(task, SquadShiftsTask):
+            kwargs = {'preds':[],'target':[]}
+            for p in predictions:
+                kwargs['preds'].append(p['preds'])
+                kwargs['target'].append(p['target'])
+            
+            evals = {}
+            for k, fn in task.metrics.items():
+                evals.update(fn(**kwargs))
+            return evals
+        
     
     def _init_model_and_gen(self, prompts: Sequence[str], **kwargs) -> Sequence[str]:
         # parse args
@@ -261,12 +319,13 @@ class MetaseqOPT(Model):
             return [encode_fn(generator, s) for s in strings]
         sorted_outputs = []
         sorted_prompts, old2new_idxs = self._sort_prompts(prompts)
+        assert len(tokenize_strings(generator, sorted_prompts[0:1])[0]) + self.MAX_GEN_LENGTH <= self.MAX_SEQ_LEN
         for i in Tqdm.tqdm(list(range(0,len(sorted_prompts),batch_size)), desc="running generation inference"):
             tokenized_prompts = tokenize_strings(generator, sorted_prompts[i:i+batch_size])
 
             request_object = {
                 'inputs' : tokenized_prompts,
-                'max_tokens': [256] * len(tokenized_prompts),
+                'max_tokens': [self.MAX_GEN_LENGTH] * len(tokenized_prompts),
                 'temperature': 1.0, #0.7,
                 'top_p': 0.0, #0.9,
                 'stop': tokenize_strings(generator, ['\n'])[0],

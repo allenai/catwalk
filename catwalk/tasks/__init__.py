@@ -6,6 +6,7 @@ from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleut
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.t5 import t5_prompt_conversion
+from catwalk.tasks.mixed_fewshot import SquadShiftsTask
 
 TASKS: Dict[str, Task] = {
     "wikitext": EleutherTask("wikitext"),
@@ -130,6 +131,7 @@ TASKS: Dict[str, Task] = {
     "raft::terms_of_service": RaftTask("terms_of_service"),
     "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
+    "mixed_fewshot::squadshifts": SquadShiftsTask(),
 }
 
 TASK_SETS = {

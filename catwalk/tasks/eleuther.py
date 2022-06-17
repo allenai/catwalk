@@ -94,10 +94,10 @@ class EleutherTask(Task):
             fewshot_instances = []
         prefix = ""
         for fewshot_instance in fewshot_instances:
-            as_mc = self.instance_as_rank_classification(fewshot_instance)
-            if as_mc.correct_choice is None:
+            as_rc = self.instance_as_rank_classification(fewshot_instance)
+            if as_rc.correct_choice is None:
                 raise ValueError("Could not determine correct choice in ranked classification instance.")
-            correct_choice = as_mc.choices[as_mc.correct_choice]
+            correct_choice = as_rc.choices[as_rc.correct_choice]
             prefix += f"{correct_choice[0].strip()} {correct_choice[1].strip()}\n\n"
 
         requests = self.instance_as_eleuther_requests(instance, **kwargs)

@@ -104,21 +104,22 @@ class MixedFewshotTask(Task):
         return fewshot_examples_formatted + '\n\n' + instance_formated
     def _format_example(self, truncated_context: str, question: str, answer: str = '') -> str:
         return f"Background: {truncated_context}\n\nQuestion: {question}\n\nAnswer:{answer}"
-    
-    def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_size: int = 100, window_stride: int = 50):
-        def normalize_text(s):
+
+    def normalize_text(self, s):
             # required for MRQA because of noisy answers
             s = _normalize_text(s)
             return ''.join(s.split())
+    
+    def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_size: int = 100, window_stride: int = 50):
         # window_size -= len(tokenizer.encode(self._format_example('', instance['question'],instance['answers']['text'][0])))
         answer_toks = tokenizer.encode(answer).ids
         assert len(answer_toks) < window_size
         answer = tokenizer.decode(tokenizer.encode(answer).ids)
         toks = tokenizer.encode(full_context).ids
-        assert normalize_text(answer) in normalize_text(tokenizer.decode(toks))
+        assert (self.normalize_text(answer) in self.normalize_text(tokenizer.decode(toks))) or (answer in tokenizer.decode(toks))
         for i in range(0, len(toks), window_stride):
             context_window = tokenizer.decode(toks[i:i+window_size])
-            if normalize_text(answer) in normalize_text(context_window):
+            if (self.normalize_text(answer) in self.normalize_text(context_window)) or (answer in context_window):
                 return context_window
         
         raise RuntimeError('Answer not found in context, this should not happen')

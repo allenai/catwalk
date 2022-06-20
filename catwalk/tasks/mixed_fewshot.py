@@ -107,6 +107,7 @@ class MixedFewshotTask(Task):
 
     def normalize_text(self, s):
             # required for MRQA because of noisy answers
+            s = s.replace('-',' ') # required for SearchQA
             s = _normalize_text(s)
             return ''.join(s.split())
     

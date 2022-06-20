@@ -65,6 +65,7 @@ class MixedFewshotTask(Task):
             ds = ds['test'] 
         elif self.inference_dataset_name == 'mrqa':
             ds = load_dataset(self.inference_dataset_name, split=('test' if split in self.MRQA_TEST_SPLITS else 'validation'))
+            ds.cleanup_cache_files() # required for MRQA tasks not to get stuck on one split
             ds = ds.filter(lambda e: e['subset'] == split)
             ds = ds.rename_column('qid','id')
             def reformat_answers(e):

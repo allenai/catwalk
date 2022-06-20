@@ -40,6 +40,7 @@ class HFDatasetsTask(Task):
         self.dataset_name = dataset_name
         self.add_instance_conversion(InstanceFormat.HF_DICT, lambda x: x)
 
+    @functools.lru_cache
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
 

@@ -1,9 +1,12 @@
 from typing import Dict
 
+import datasets
+
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
+from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
@@ -131,6 +134,9 @@ TASKS: Dict[str, Task] = {
     "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
 }
+
+for config in datasets.get_dataset_config_names("bigscience/P3"):
+    TASKS[f"p3::{config}"] = P3Task(config)
 
 TASK_SETS = {
     "iz": {

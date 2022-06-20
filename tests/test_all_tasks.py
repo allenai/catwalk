@@ -6,7 +6,9 @@ import pytest
 import catwalk.tasks
 import catwalk.models
 
-task_names = list(catwalk.tasks.TASKS.keys())
+# There are too many P3 tasks, and picking one downloads all of them, so we have to skip them.
+task_names = [task for task in catwalk.tasks.TASKS.keys() if not task.startswith("p3::")]
+task_names.remove("triviaqa")   # triviaqa is huge
 
 
 @pytest.mark.parametrize("task_name", task_names)

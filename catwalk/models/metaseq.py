@@ -281,9 +281,6 @@ class MetaseqOPT(Model):
         return output
 
     def _worker_main(self, prompts: Sequence[str], cfg: MetaseqConfig, batch_size: int = 2, **kwargs) -> Sequence[str]:
-        # make sure generations are stochastic since we have many workers TODO understand this
-        torch.manual_seed(random.randint(1, 20000))
-        torch.cuda.manual_seed(random.randint(1, 20000))
 
         generator = GeneratorInterface(cfg)
         models = generator.load_model()

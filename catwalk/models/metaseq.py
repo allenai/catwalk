@@ -1,15 +1,9 @@
 import collections
-from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple, Protocol, Union
+from typing import Sequence, Dict, Any, Iterator, Mapping, List, Protocol, Union
 
-import more_itertools
 import torch
 from lm_eval.base import Request
 from tango.common import Tqdm
-from tango.integrations.torch.util import resolve_device
-from torch import log_softmax
-from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel, \
-    AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
 from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model
@@ -19,8 +13,6 @@ from catwalk.tasks.mixed_fewshot import MixedFewshotTask
 #### metaseq imports
 import os
 import random
-import sys
-import logging
 import signal
 import math
 
@@ -31,7 +23,7 @@ from metaseq.dataclass.configs import MetaseqConfig
 from metaseq.dataclass.utils import convert_namespace_to_omegaconf
 from metaseq.distributed import utils as dist_utils
 from metaseq.hub_utils import GeneratorInterface
-from metaseq.service.utils import encode_fn, build_logger
+from metaseq.service.utils import encode_fn
 
 from tokenizers import ByteLevelBPETokenizer
 
@@ -80,7 +72,7 @@ class MetaseqOPT(Model):
                 "/tmp",  # required "data" argument.
             ]
 
-    def predict(  # type: ignore
+    def predict(
         self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
@@ -93,7 +85,7 @@ class MetaseqOPT(Model):
         if isinstance(task, EleutherTask):
             return self._predict_on_eleuther(task, instances, **kwargs)
         elif isinstance(task, MixedFewshotTask):
-            return self._predict_on_mixed_fewshot_squadshifts(task, instances, **kwargs)
+            return self._predict_on_mixed_fewshot(task, instances, **kwargs)
         else:
             raise NotImplementedError
 
@@ -116,6 +108,7 @@ class MetaseqOPT(Model):
                 request_type = instance_request.request_type
                 instance_index_to_request_indices[instance_index][request_type].append(len(requests[request_type]))
                 requests[request_type].append(instance_request)
+
         # run the requests
         results: Dict[str, Sequence] = {}
         class InferenceFunc(Protocol):
@@ -130,7 +123,7 @@ class MetaseqOPT(Model):
                 requests_per_type,
                 **kwargs
             )
-        assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
+
         for instance_index, instance in enumerate(instances):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
 
@@ -140,7 +133,7 @@ class MetaseqOPT(Model):
 
             yield task.inner_task.process_results(doc, results_for_instance)
 
-    def _predict_on_mixed_fewshot_squadshifts(self,
+    def _predict_on_mixed_fewshot(self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
         *args,
@@ -153,7 +146,7 @@ class MetaseqOPT(Model):
             self.bpe_vocab, self.bpe_merges
         )
 
-        mixed_fewshot_instances = [task.convert_instance(instance, InstanceFormat.MIXED_FEWSHOT_SQUADSHIFTS, num_shots=num_shots, tokenizer=tokenizer) for instance in instances]
+        mixed_fewshot_instances = [task.convert_instance(instance, InstanceFormat.MIXED_FEWSHOT, num_shots=num_shots, tokenizer=tokenizer) for instance in instances]
         results = self._run_greedy_until(mixed_fewshot_instances, **kwargs)
 
         for instance_index, instance in enumerate(instances):
@@ -293,9 +286,8 @@ class MetaseqOPT(Model):
         torch.cuda.manual_seed(random.randint(1, 20000))
 
         generator = GeneratorInterface(cfg)
-        models = generator.load_model()  # noqa: F841
+        models = generator.load_model()
 
-        # logger.info(f"loaded model {cfg.distributed_training.distributed_rank}") TODO delete?
         request_object = dist_utils.broadcast_object(
             None, src_rank=0, group=dist_utils.get_global_group()
         )
@@ -312,9 +304,6 @@ class MetaseqOPT(Model):
             return _
 
     def _rank0_worker_main(self, prompts: Sequence[str], generator, batch_size: int = 2, **kwargs) -> Sequence[str]:
-        """
-        TODO
-        """
         def tokenize_strings(generator, strings):
             return [encode_fn(generator, s) for s in strings]
         sorted_outputs = []
@@ -326,8 +315,8 @@ class MetaseqOPT(Model):
             request_object = {
                 'inputs' : tokenized_prompts,
                 'max_tokens': [self.MAX_GEN_LENGTH] * len(tokenized_prompts),
-                'temperature': 1.0, #0.7,
-                'top_p': 0.0, #0.9,
+                'temperature': 1.0,
+                'top_p': 0.0,
                 'stop': tokenize_strings(generator, ['\n'])[0],
                 'n': 1
             }
@@ -343,7 +332,9 @@ class MetaseqOPT(Model):
         return outputs
     
     def _sort_prompts(self, prompts: Sequence[str]):
-        "sorts prompts by longest first for efficient padding and quick detection of memory overruns"
+        """
+        Sorts prompts by longest number of characters first for efficient padding and quick detection of memory overruns.
+        """
         argsorted = [pair for pair in sorted(enumerate(prompts), key=lambda pair: -len(pair[1]))]
         old_idxs, sorted_prompts = zip(*argsorted)
         old2new_idxs = {old_idxs[i]: i for i in range(len(prompts))}

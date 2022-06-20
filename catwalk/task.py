@@ -53,7 +53,7 @@ class InstanceFormat(Enum):
     HF_MC = 2
     T5_PROMPT = 6
     RANK_CLASSIFICATION = 7
-    MIXED_FEWSHOT_SQUADSHIFTS = 8
+    MIXED_FEWSHOT = 8
 
 
 @dataclass

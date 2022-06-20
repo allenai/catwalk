@@ -37,7 +37,7 @@ class MixedFewshotTask(Task):
         super().__init__(version_override=version_override)
         assert inference_dataset_name in ['squadshifts', 'mrqa']
         self.inference_dataset_name = inference_dataset_name
-        self.add_instance_conversion(InstanceFormat.MIXED_FEWSHOT_SQUADSHIFTS, self.instance_as_mixed_fewshot)
+        self.add_instance_conversion(InstanceFormat.MIXED_FEWSHOT, self.instance_as_mixed_fewshot)
         self.few_shot_source = MappedSequence(lambda x: x, load_dataset('squad')['train'])
         assert all(len(ex['answers']['text']) > 0 for ex in self.few_shot_source)
         # We maintain our own random, to help with determinism.
@@ -61,7 +61,6 @@ class MixedFewshotTask(Task):
         assert self.has_split(split)
         if self.inference_dataset_name == 'squadshifts':
             ds = load_dataset(self.inference_dataset_name, split)
-            assert list(ds.keys()) == ['test']
             ds = ds['test'] 
         elif self.inference_dataset_name == 'mrqa':
             ds = load_dataset(self.inference_dataset_name, split=('test' if split in self.MRQA_TEST_SPLITS else 'validation'))
@@ -71,7 +70,9 @@ class MixedFewshotTask(Task):
             def reformat_answers(e):
                 e['answers'] = {'text':e['detected_answers']['text'], 'answer_start':[d['start'][0] for d in e['detected_answers']['char_spans']]}
                 return e
-            ds = ds.map(reformat_answers)      
+            ds = ds.map(reformat_answers)
+        else:
+            raise NotImplementedError      
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
         ds = MappedSequence(lambda x: x, ds)
@@ -113,7 +114,6 @@ class MixedFewshotTask(Task):
             return ''.join(s.split())
     
     def _get_context_window(self, instance: Dict[str, Any], full_context: str, answer: str, tokenizer: Any, window_size: int = 100, window_stride: int = 50):
-        # window_size -= len(tokenizer.encode(self._format_example('', instance['question'],instance['answers']['text'][0])))
         answer_toks = tokenizer.encode(answer).ids
         assert len(answer_toks) < window_size
         answer = tokenizer.decode(tokenizer.encode(answer).ids)

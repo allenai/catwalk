@@ -97,12 +97,12 @@ class MixedFewshotTask(Task):
                 answer = ex['answers']['text'][0]
                 truncated_context = self._get_context_window(ex, ex['context'], answer, tokenizer=tokenizer)
                 fewshot_examples_formatted.append(self._format_example(truncated_context, ex['question'], (' '+ answer)))
-            fewshot_examples_formatted = '\n\n'.join(fewshot_examples_formatted)
+            fewshot_examples_formatted = '\n\n'.join(fewshot_examples_formatted) + '\n\n'
         
         truncated_instance_context = self._get_context_window(instance, instance['context'],instance['answers']['text'][0], tokenizer, 200)
         instance_formated = self._format_example(truncated_instance_context, instance['question'])
 
-        return fewshot_examples_formatted + '\n\n' + instance_formated
+        return fewshot_examples_formatted + instance_formated
     def _format_example(self, truncated_context: str, question: str, answer: str = '') -> str:
         return f"Background: {truncated_context}\n\nQuestion: {question}\n\nAnswer:{answer}"
 

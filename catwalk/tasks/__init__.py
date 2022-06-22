@@ -133,6 +133,7 @@ TASKS: Dict[str, Task] = {
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
     "mixed_fewshot::squadshifts": MixedFewshotTask("squadshifts"),
     "mixed_fewshot::mrqa": MixedFewshotTask("mrqa"),
+    "mixed_fewshot::squad": MixedFewshotTask("squad"),
 }
 
 TASK_SETS = {

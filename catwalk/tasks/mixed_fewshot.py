@@ -35,7 +35,7 @@ class MixedFewshotTask(Task):
         version_override: Optional[str] = None
     ):
         super().__init__(version_override=version_override)
-        assert inference_dataset_name in ['squadshifts', 'mrqa']
+        assert inference_dataset_name in ['squadshifts', 'mrqa', 'squad']
         self.inference_dataset_name = inference_dataset_name
         self.add_instance_conversion(InstanceFormat.MIXED_FEWSHOT, self.instance_as_mixed_fewshot)
         self.few_shot_source = MappedSequence(lambda x: x, load_dataset('squad')['train'])
@@ -52,6 +52,8 @@ class MixedFewshotTask(Task):
             return split in self.SQUADSHIFT_SPLITS
         elif self.inference_dataset_name == 'mrqa':
             return split in (self.MRQA_TEST_SPLITS + self.MRQA_VALIDATION_SPLITS)
+        elif self.inference_dataset_name == 'squad':
+            return split in ['train', 'validation']
         else:
             raise NotImplementedError
             
@@ -71,6 +73,8 @@ class MixedFewshotTask(Task):
                 e['answers'] = {'text':e['detected_answers']['text'], 'answer_start':[d['start'][0] for d in e['detected_answers']['char_spans']]}
                 return e
             ds = ds.map(reformat_answers)
+        elif self.inference_dataset_name == 'squad':
+            ds = load_dataset(self.inference_dataset_name, split=split)
         else:
             raise NotImplementedError      
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack

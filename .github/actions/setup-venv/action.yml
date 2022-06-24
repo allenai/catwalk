@@ -19,7 +19,7 @@ runs:
     - shell: bash
       run: |
         # Install prerequisites.
-        pip install --upgrade pip setuptools wheel virtualenv
+        pip install --upgrade pip setuptools wheel virtualenv numpy
     - shell: bash
       run: |
         # Get the exact Python version to use in the cache key.

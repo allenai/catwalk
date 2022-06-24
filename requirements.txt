@@ -7,8 +7,6 @@ spacy>=3.0.0
 wget
 datasets>=2.1.0
 
-numpy   # Seems to be a build-time dependency of numexpr.
-
 git+https://github.com/EleutherAI/lm-evaluation-harness.git
 #lm-eval
 # The Eleuther harness depends on these even at runtime, but does not declare them.

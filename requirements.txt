@@ -7,8 +7,11 @@ spacy>=3.0.0
 wget
 datasets>=2.1.0
 
-git+https://github.com/EleutherAI/lm-evaluation-harness.git
+#git+https://github.com/EleutherAI/lm-evaluation-harness.git
+git+https://github.com/dirkgr/lm-evaluation-harness.git@NumexprDependency
 #lm-eval
 # The Eleuther harness depends on these even at runtime, but does not declare them.
 mypy_extensions
 pytest
+
+numexpr>=2.8.1

@@ -33,7 +33,7 @@ jobs:
             run: python setup.py check && python setup.py bdist_wheel sdist
 
           - name: Test
-            run: pytest --forked -n2 -v --color=yes tests/
+            run: pytest --forked -n4 -v --color=yes tests/
 
         include:
           - task:

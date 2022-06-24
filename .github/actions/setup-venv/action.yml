@@ -36,6 +36,7 @@ runs:
         # Set up virtual environment without cache hit.
         test -d .venv || virtualenv -p $(which python) --copies --reset-app-data .venv
         . .venv/bin/activate
+        pip install numpy  # This is a build-time dependency of numexpr 🙄.
         pip install -e .[dev]
     - if: steps.virtualenv-cache.outputs.cache-hit == 'true'
       shell: bash

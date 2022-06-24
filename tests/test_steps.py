@@ -1,5 +1,3 @@
-import inspect
-
 import pytest
 
 from catwalk import MODELS

@@ -13,5 +13,3 @@ git+https://github.com/dirkgr/lm-evaluation-harness.git@NumexprDependency
 # The Eleuther harness depends on these even at runtime, but does not declare them.
 mypy_extensions
 pytest
-
-numexpr>=2.8.1

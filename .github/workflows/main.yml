@@ -22,7 +22,7 @@ env:
 jobs:
   checks:
     name: Python ${{ matrix.python }} - ${{ matrix.task.name }}
-    runs-on: self-hosted
+    runs-on: [self-hosted, CPU-only]
     timeout-minutes: 30
     strategy:
       fail-fast: false

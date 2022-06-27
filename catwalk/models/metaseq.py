@@ -66,7 +66,7 @@ class MetaseqOPT(Model):
                 f"--vocab-filename {self.bpe_vocab}",
                 f"--path {self.checkpoint_local}",
                 "--beam 1 --nbest 1", # TODO can I remove this?
-                "--distributed-port 13000",
+                "--distributed-port -1",
                 "--checkpoint-shard-count 1",
                 "--use-sharded-state",
                 "/tmp",  # required "data" argument.

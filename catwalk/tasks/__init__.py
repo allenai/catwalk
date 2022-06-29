@@ -5,7 +5,7 @@ import datasets
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
-from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
+from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.t5 import t5_prompt_conversion
@@ -21,6 +21,15 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="label"
         )
     ).add_metrics(MC_METRICS),
+    "squad": HFDatasetsTask("squad").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(
         InstanceFormat.T5_PROMPT,

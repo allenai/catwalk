@@ -3,6 +3,7 @@ from typing import Union, Dict, Any, Optional, Sequence, Iterable
 from tango import Step, JsonFormat
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
+import torch
 
 from catwalk.task import Task
 from catwalk.tasks import TASKS
@@ -85,7 +86,14 @@ class TabulateMetricsStep(Step):
         if format == "text":
             for task_name, task_metrics in metrics.items():
                 for metric_name, metric_value in task_metrics.items():
-                    yield f"{task_name}\t{metric_name}\t{metric_value}"
+                    # For SQuAD metric a dictionary is returned, so we need to iterate over the keys to get the values
+                    if isinstance(metric_value, dict):
+                        for nested_metric_name, nested_metric_value in metric_value.items():
+                            # For SQuAD metric the return value is a tensor so we need to get the item
+                            nested_metric_value = nested_metric_value.item() if isinstance(nested_metric_value, torch.Tensor) else nested_metric_value
+                            yield f"{task_name}\t{nested_metric_name}\t{nested_metric_value}"
+                    else:
+                        yield f"{task_name}\t{metric_name}\t{metric_value}"
         elif format == "latex":
             raise NotImplementedError()
         else:

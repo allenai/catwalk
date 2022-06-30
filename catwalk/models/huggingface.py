@@ -36,8 +36,7 @@ class HFAutoModel(Model):
 
     
     def _convert_instances(self, instances: Sequence[Dict[str, Any]], instance_format, task) -> MappedSequence:
-        instances = MappedSequence(lambda instance: task.convert_instance(instance, instance_format), instances)
-        return instances
+        return MappedSequence(lambda instance: task.convert_instance(instance, instance_format), instances)
     
     def _predict_qa(
         self,
@@ -79,12 +78,12 @@ class HFAutoModel(Model):
                 tensors["example_id"] = [batch[sample_mapping[i]].id for i in range(len(tensors["input_ids"]))]  
                 
                 predictions = postprocess_qa_predictions(batch, tensors, (results.start_logits.cpu().numpy(), results.end_logits.cpu().numpy()))
-
+                
                 for instance in batch:
                     yield {
                         "correct_answers": instance.answers,
                         "predicted_answer": predictions[instance.id],
-                        "squad": ({"id": instance.id, "prediction_text": predictions[instance.id]}, {"id": instance.id, "answers": instance.answers})
+                        "squad_metrics": ({"id": instance.id, "prediction_text": predictions[instance.id]}, {"id": instance.id, "answers": instance.answers})
                     }
 
     def _predict_mc(

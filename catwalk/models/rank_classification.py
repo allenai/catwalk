@@ -11,7 +11,7 @@ from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, T5ForCondi
     AutoTokenizer, GPT2Tokenizer, T5TokenizerFast
 
 from catwalk import cached_transformers
-from catwalk.model import Model
+from catwalk.model import Model, TrainableModel, Instance
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance
 
 _Model = Union[T5ForConditionalGeneration, GPT2LMHeadModel]
@@ -51,8 +51,9 @@ class RankClassificationModel(Model):
                 num_shots=num_shots
             )
 
+    @classmethod
     def predict_chunk(
-        self,
+        cls,
         task: Task,
         instances: Sequence[Dict[str, Any]],
         model: _Model,
@@ -77,7 +78,7 @@ class RankClassificationModel(Model):
                 tuples.append(instance_request)
 
         # run the requests
-        results = self._run_loglikelihood(tuples, model, tokenizer, batch_size)
+        results = cls._run_loglikelihood(tuples, model, tokenizer, batch_size)
 
         # collect the results
         for instance_index, instance in enumerate(rc_instances):
@@ -92,14 +93,73 @@ class RankClassificationModel(Model):
                 "recall": metric_args,
             }
 
+    @classmethod
     def _run_loglikelihood(
-        self,
+        cls,
         tuples: Sequence[Tuple[str, str]],
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
     ) -> Sequence[float]:
         raise NotImplementedError
+
+    def trainable_copy(self) -> TrainableModel:
+        predict_chunk = self.predict_chunk
+
+        class TrainableRankClassificationModel(TrainableModel):
+            def __init__(self, model: _Model, tokenizer: _Tokenizer):
+                super().__init__(model)
+                self.model = model
+                self.tokenizer = tokenizer
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+
+            def predict(
+                self,
+                task: Task,
+                instances: Sequence[Dict[str, Any]],
+                *,
+                batch_size: int = 32,
+                max_instances_in_memory: int = 32 * 1024,
+                num_shots: int = 0
+            ) -> Iterator[Dict[str, Any]]:
+                for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
+                    yield from predict_chunk(
+                        task,
+                        instance_chunk,
+                        self.model,
+                        self.tokenizer,
+                        batch_size=batch_size,
+                        num_shots=num_shots)
+
+            def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:
+                rc_instances = (
+                    task.convert_instance(instance, InstanceFormat.RANK_CLASSIFICATION)
+                    for task, instance in instances
+                )
+                correct_strings = [
+                    rc.choices[rc.correct_choice]
+                    for rc in rc_instances
+                ]
+                tokenized_strings = self.tokenizer(
+                    correct_strings,
+                    padding=True,
+                    truncation=True,
+                    pad_to_multiple_of=8,
+                    return_tensors='pt',
+                    is_split_into_words=False)
+                tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
+                for i, label in enumerate(tokenized_strings.labels):
+                    mask = [s == 1 for s in tokenized_strings.sequence_ids(i)]
+                    label[mask] = tokenized_strings.input_ids[i, mask]
+                return {
+                    key: tensor.to(self.model.device)
+                    for key, tensor in tokenized_strings.items()
+                }
+
+        return TrainableRankClassificationModel(
+            self._make_model(self.pretrained_model_name_or_path),
+            cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
+        )
 
 
 @Model.register("rc::encoder_decoder")
@@ -108,8 +168,9 @@ class EncoderDecoderRCModel(RankClassificationModel):
     def _make_model(cls, pretrained_model_name_or_path: str) -> T5ForConditionalGeneration:
         return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False)
 
+    @classmethod
     def _run_loglikelihood(
-        self,
+        cls,
         tuples: Sequence[Tuple[str, str]],
         model: _Model,
         tokenizer: _Tokenizer,
@@ -172,8 +233,9 @@ class DecoderOnlyRCModel(RankClassificationModel):
     def _make_model(cls, pretrained_model_name_or_path: str) -> GPT2LMHeadModel:
         return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False)
 
+    @classmethod
     def _run_loglikelihood(
-        self,
+        cls,
         tuples: Sequence[Tuple[str, str]],
         model: _Model,
         tokenizer: _Tokenizer,

@@ -132,11 +132,12 @@ class Task(Registrable, ABC):
 
         r = Random(random_seed)
         instances = self.get_split(self.fewshot_instances_split)
-        return [
+        sampled_instances = [
             instance
             for instance in r.sample(instances, num_shots + len(exceptions))
             if det_hash(instance) not in exceptions
         ]
+        return sampled_instances[:num_shots]
 
     #
     # builder-style methods

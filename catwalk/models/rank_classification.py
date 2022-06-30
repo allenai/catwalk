@@ -113,7 +113,7 @@ class RankClassificationModel(Model):
                 self.tokenizer = tokenizer
                 self.tokenizer.pad_token = self.tokenizer.eos_token
 
-            def predict(
+            def predict(  # type: ignore
                 self,
                 task: Task,
                 instances: Sequence[Dict[str, Any]],

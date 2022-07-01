@@ -1,4 +1,3 @@
-from tqdm import trange
 from transformers import AdamW
 
 from catwalk import MODELS, TASKS

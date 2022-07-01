@@ -146,7 +146,7 @@ TASKS: Dict[str, Task] = {
     "metaicl::poem_sentiment": MetaICLTask("poem_sentiment").add_metrics(classification_metrics(3)),
     "metaicl::climate_fever": MetaICLTask("climate_fever").add_metrics(classification_metrics(4)),
     "metaicl::medical_questions_pairs": MetaICLTask("medical_questions_pairs").add_metrics(classification_metrics(2)),
-    "metaicl::tweet_eval-stance_atheism": MetaICLTask("tweet_eval-stance_atheism").add_metrics(classification_metrics(2)),
+    "metaicl::tweet_eval-stance_atheism": MetaICLTask("tweet_eval-stance_atheism").add_metrics(classification_metrics(3)),
     "metaicl::superglue-cb": MetaICLTask("superglue-cb").add_metrics(classification_metrics(3)),
     "metaicl::dbpedia_14": MetaICLTask("dbpedia_14").add_metrics(classification_metrics(14)),
     "metaicl::wiki_qa": MetaICLTask("wiki_qa").add_metrics(classification_metrics(2)),

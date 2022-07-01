@@ -3,6 +3,7 @@ from catwalk.task import Task, InstanceFormat, RankClassificationInstance
 from typing import Optional, Sequence, Dict, Any, List, Union, Mapping, Iterable 
 from random import Random
 
+import functools
 import datasets
 from tango.common.sequences import MappedSequence
 from tango.common import Registrable, det_hash
@@ -17,7 +18,7 @@ class MetaICLTask(Task):
         super().__init__(version_override=version_override)
         self.dataset_name = dataset_name
         self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
-
+        
     def has_split(self, split: str) -> bool:
          return split in ['dev', 'test']
 
@@ -26,9 +27,15 @@ class MetaICLTask(Task):
         """Returns the name of the split to use to find few-shot instances in."""
         raise NotImplementedError('MetaICL uses a fixed set of ICL demonstrations rather than sampling from a split')
 
+    @functools.lru_cache
+    def _get_dataset(self, num_shots: int, fewshot_seed: int, split: str):
+        data_files = {
+            split : f"data/{self.dataset_name}/{self.dataset_name}_{num_shots}_{fewshot_seed}_{split}.jsonl"
+        }
+        return datasets.load_dataset('allenai/metaicl-data', data_files=data_files, split=split)
+
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
-        data_files = {split : f"data/{self.dataset_name}/{self.dataset_name}_16_100_{split}.jsonl"} # TODO figure out more elegant way to deal with redundant inference splits 
-        ds = datasets.load_dataset('allenai/metaicl-data', data_files=data_files, split=split)
+        ds = self._get_dataset(num_shots=16, fewshot_seed=100, split=split)
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
         ds = MappedSequence(lambda x: x, ds)
@@ -51,8 +58,7 @@ class MetaICLTask(Task):
             exceptions = [exceptions]
         exceptions = frozenset(det_hash(e) for e in exceptions)
 
-        data_files = {'train' : f"data/{self.dataset_name}/{self.dataset_name}_{num_shots}_{random_seed}_train.jsonl"}
-        ds = datasets.load_dataset('allenai/metaicl-data', data_files=data_files, split='train')
+        ds = self._get_dataset(num_shots=num_shots, fewshot_seed=random_seed, split='train')
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
         ds = MappedSequence(lambda x: x, ds)

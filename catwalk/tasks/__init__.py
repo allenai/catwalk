@@ -135,7 +135,8 @@ TASKS: Dict[str, Task] = {
     "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
     # MetaICL
-    "metaicl::piqa": MetaICLTask("piqa").add_metrics(MC_METRICS)
+    "metaicl::piqa": MetaICLTask("piqa").add_metrics(MC_METRICS),
+    "metaicl::boolq": MetaICLTask("boolq").add_metrics(classification_metrics(2))
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):

@@ -122,14 +122,19 @@ class RankClassificationModel(Model):
                 max_instances_in_memory: int = 32 * 1024,
                 num_shots: int = 0
             ) -> Iterator[Dict[str, Any]]:
-                for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
-                    yield from predict_chunk(
-                        task,
-                        instance_chunk,
-                        self.model,
-                        self.tokenizer,
-                        batch_size=batch_size,
-                        num_shots=num_shots)
+                training_mode = self.model.training
+                try:
+                    self.model.eval()
+                    for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
+                        yield from predict_chunk(
+                            task,
+                            instance_chunk,
+                            self.model,
+                            self.tokenizer,
+                            batch_size=batch_size,
+                            num_shots=num_shots)
+                finally:
+                    self.model.train(training_mode)
 
             def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:
                 rc_instances = (

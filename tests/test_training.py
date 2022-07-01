@@ -16,6 +16,7 @@ def test_training():
     first_loss = None
     loss = None
     for _ in range(100):
+        optimizer.zero_grad()
         loss = model.forward(**batch)["loss"]
         loss.backward()
         loss = float(loss)

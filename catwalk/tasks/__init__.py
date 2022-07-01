@@ -8,6 +8,7 @@ from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleut
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
+from catwalk.tasks.metaicl import MetaICLTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
@@ -133,6 +134,8 @@ TASKS: Dict[str, Task] = {
     "raft::terms_of_service": RaftTask("terms_of_service"),
     "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
+    # MetaICL
+    "metaicl::piqa": MetaICLTask("piqa").add_metrics(MC_METRICS)
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):

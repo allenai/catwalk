@@ -1,17 +1,4 @@
-# coding=utf-8
-# Copyright 2020 The HuggingFace Team All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# adapted from https://github.com/huggingface/transformers/blob/main/examples/pytorch/question-answering/utils_qa.py
 """
 Post-processing utilities for question answering.
 """
@@ -26,7 +13,7 @@ import numpy as np
 def postprocess_qa_predictions(
     examples,
     features,
-    predictions: Tuple[np.ndarray, np.ndarray],
+    logits: Tuple[np.ndarray, np.ndarray],
     version_2_with_negative: bool = False,
     n_best_size: int = 20,
     max_answer_length: int = 30,
@@ -39,7 +26,7 @@ def postprocess_qa_predictions(
     Args:
         examples: The non-preprocessed dataset (see the main script for more information).
         features: The processed dataset (see the main script for more information).
-        predictions (:obj:`Tuple[np.ndarray, np.ndarray]`):
+        logits (:obj:`Tuple[np.ndarray, np.ndarray]`):
             The predictions of the model: two arrays containing the start logits and the end logits respectively. Its
             first dimension must match the number of elements of :obj:`features`.
         version_2_with_negative (:obj:`bool`, `optional`, defaults to :obj:`False`):
@@ -57,12 +44,12 @@ def postprocess_qa_predictions(
 
             Only useful when :obj:`version_2_with_negative` is :obj:`True`.
     """
-    if len(predictions) != 2:
+    if len(logits) != 2:
         raise ValueError("`predictions` should be a tuple with two elements (start_logits, end_logits).")
-    all_start_logits, all_end_logits = predictions
+    all_start_logits, all_end_logits = logits
 
-    if len(predictions[0]) != len(features["input_ids"]):
-        raise ValueError(f"Got {len(predictions[0])} predictions and {len(features['input_ids'])} features.")
+    if len(logits[0]) != len(features["input_ids"]):
+        raise ValueError(f"Got {len(logits[0])} predictions and {len(features['input_ids'])} features.")
 
     # Build a map example to its corresponding features.
     example_id_to_index = {instance.id: i for i, instance in enumerate(examples)}

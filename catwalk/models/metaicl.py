@@ -66,8 +66,8 @@ class MetaICLModel(DecoderOnlyRCModel):
         rc_instances = [self._apply_meta_icl_concatinated_input_truncation(instance, tokenizer) for instance in rc_instances]
 
         # get all the tuples
-        for instance_index, instance in enumerate(rc_instances):
-            for instance_request in instance.choices:
+        for instance_index, rc_instance in enumerate(rc_instances):
+            for instance_request in rc_instance.choices:
                 instance_index_to_tuple_indices[instance_index].append(len(tuples))
                 tuples.append(instance_request)
 
@@ -79,11 +79,11 @@ class MetaICLModel(DecoderOnlyRCModel):
             warnings.warn("All examples in this dataset chunk are being truncated after concatenation, consider using smaller max_length_per_example")
 
         # collect the results
-        for instance_index, instance in enumerate(rc_instances):
+        for instance_index, rc_instance in enumerate(rc_instances):
             tuple_indices = instance_index_to_tuple_indices[instance_index]
             results_for_instance = [results[i] for i in tuple_indices]
             result_tensor = torch.tensor(results_for_instance)
-            metric_args = (result_tensor, instance.correct_choice)
+            metric_args = (result_tensor, rc_instance.correct_choice)
             yield {
                 "acc": metric_args,
                 "f1": metric_args,
@@ -128,8 +128,6 @@ class MetaICLModel(DecoderOnlyRCModel):
             n_mask = tokenizer.model_max_length-len(ids1)-len(ids2)
             assert n_mask>=0, (tokenizer.model_max_length, len(ids1), len(ids2))
             new_choices.append((tokenizer.decode(ids1), choice[1]))
-
-        label = instance.correct_choice
-        assert label < len(new_choices)
-        return RankClassificationInstance(new_choices, label)
+            
+        return RankClassificationInstance(new_choices, instance.correct_choice)
         

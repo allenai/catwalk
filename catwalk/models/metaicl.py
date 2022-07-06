@@ -16,6 +16,7 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 
 
 class MetaICLModel(DecoderOnlyRCModel):
+    """A model that reproduces the formatting and truncation of MetaICL."""
 
     def __init__(self, pretrained_model_name_or_path: str, max_length_per_example : int = 256, continuation_seperator: str = '\n', example_seperatior='\n\n\n'):
         super().__init__(pretrained_model_name_or_path)

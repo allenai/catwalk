@@ -1,14 +1,15 @@
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance
 
-from typing import Optional, Sequence, Dict, Any, List, Union, Mapping, Iterable 
-from random import Random
+from typing import Optional, Sequence, Dict, Any, Union, Iterable
 
 import functools
 import datasets
 from tango.common.sequences import MappedSequence
-from tango.common import Registrable, det_hash
+from tango.common import det_hash
 
 class MetaICLTask(Task):
+    """A task that loads data in the MetaICL fewshot setting. This uses the same set of ICL demonstrations for all test instances."""
+    
     def __init__(
         self,
         dataset_name: str,

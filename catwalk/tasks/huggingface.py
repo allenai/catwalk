@@ -64,43 +64,49 @@ class HFMCInstance:
     correct_answer_index: int
 
 
-def hfmc_conversion(
+def normalize_answers(answer: Any) -> int:
+    if isinstance(answer, int):
+        return answer
+    if isinstance(answer, str):
+        try:
+            return int(answer)
+        except ValueError:
+            if len(answer) == 1:
+                answer = answer.lower()
+                return ord(answer[0]) - ord('a')
+            else:
+                raise
+    raise TypeError
+
+
+def hfmc_convert(
+    instance: Dict[str, Any],
     *,
     context_field: Optional[str] = None,
     question_field: str,
     answer_choices_fields: Union[str, List[str]],
     correct_answer_index_field: str,
     id_field: Optional[str] = None,
+) -> HFMCInstance:
+    if isinstance(answer_choices_fields, str):
+        answer_choices = get_from_dict(instance, answer_choices_fields)
+    else:
+        answer_choices = [get_from_dict(instance, field) for field in answer_choices_fields]
+    answer_choices = [a.strip() for a in answer_choices]
+
+    question = get_from_dict(instance, question_field).strip()
+    if context_field is not None:
+        question = get_from_dict(instance, context_field).strip() + " " + question
+
+    return HFMCInstance(
+        id=str(get_from_dict(instance, id_field)) if id_field else None,
+        question=question,
+        answer_choices=answer_choices,
+        correct_answer_index=normalize_answers(instance[correct_answer_index_field]))
+
+
+def hfmc_conversion(
+    **kwargs,
 ) -> InstanceConversion:
-    def normalize_answers(answer: Any) -> int:
-        if isinstance(answer, int):
-            return answer
-        if isinstance(answer, str):
-            try:
-                return int(answer)
-            except ValueError:
-                if len(answer) == 1:
-                    answer = answer.lower()
-                    return ord(answer[0]) - ord('a')
-                else:
-                    raise
-        raise TypeError
-
-    def convert(instance: Dict[str, Any]) -> HFMCInstance:
-        if isinstance(answer_choices_fields, str):
-            answer_choices = get_from_dict(instance, answer_choices_fields)
-        else:
-            answer_choices = [get_from_dict(instance, field) for field in answer_choices_fields]
-        answer_choices = [a.strip() for a in answer_choices]
-
-        question = get_from_dict(instance, question_field).strip()
-        if context_field is not None:
-            question = get_from_dict(instance, context_field).strip() + " " + question
-
-        return HFMCInstance(
-            id=str(get_from_dict(instance, id_field)) if id_field else None,
-            question=question,
-            answer_choices=answer_choices,
-            correct_answer_index=normalize_answers(instance[correct_answer_index_field]))
-
-    return convert
+    # We're doing this in this stupid way because this makes the conversion function picklable.
+    return functools.partial(hfmc_convert, **kwargs)

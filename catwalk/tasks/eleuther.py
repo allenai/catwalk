@@ -1,5 +1,6 @@
+import functools
 import random
-from typing import Dict, Any, Optional, Union, Callable, Sequence, List
+from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar
 
 from tango.common.sequences import MappedSequence
 
@@ -9,13 +10,19 @@ import lm_eval.tasks
 from lm_eval.base import Task as EAITask
 
 
+T = TypeVar("T")
+
+
+def _identity(x: T) -> T:
+    return x
+
+
 @Task.register("eleuther")
 class EleutherTask(Task):
     def __init__(
         self,
         eleuther_task: Union[str, Callable[[], EAITask]],
         *,
-        random_seed: Optional[int] = None,
         version_override: Optional[str] = None,
         ranked_classification: bool = False
     ):
@@ -24,18 +31,13 @@ class EleutherTask(Task):
         if isinstance(eleuther_task, str):
             # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to
             # make this lazy.
-            self.eleuther_task_fn = lambda: lm_eval.tasks.get_task(eleuther_task)()
+            self.eleuther_task_fn = lm_eval.tasks.get_task(eleuther_task)
         else:
             self.eleuther_task_fn = eleuther_task
 
         self.eleuther_task: Optional[EAITask] = None
 
-        # We maintain our own random, to help with determinism.
-        if random_seed is None:
-            random_seed = 57885161 + 43112609    # What could be more perfect than the sum of two perfect numbers?
-        self.random = random.Random(random_seed)
-
-        self.add_instance_conversion(InstanceFormat.HF_DICT, lambda x: x)
+        self.add_instance_conversion(InstanceFormat.HF_DICT, _identity)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, self.instance_as_eleuther_doc)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_CONTEXT, self.instance_to_eleuther_context)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
@@ -131,11 +133,8 @@ class EleutherTask(Task):
 @Task.register("eleuther::race")
 class RaceEleutherTask(EleutherTask):
     """This task is different because there is no 1:1 correspondence between HF instances and EAI instances."""
-    def __init__(self, *, random_seed: Optional[int] = None, version_override: Optional[str] = None):
-        super().__init__(
-            "race",
-            random_seed=random_seed,
-            version_override=version_override)
+    def __init__(self, *, version_override: Optional[str] = None):
+        super().__init__("race", version_override=version_override)
         del self.instance_conversions[InstanceFormat.HF_DICT]
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, lambda x: x)
 
@@ -161,8 +160,8 @@ class RaceEleutherTask(EleutherTask):
 @Task.register("eleuther::pubmedqa")
 class PubmedqaEleutherTask(EleutherTask):
     """This task is different because EAI relabels the datasets."""
-    def __init__(self, *, random_seed: Optional[int] = None, version_override: Optional[str] = None):
-        super().__init__("pubmedqa", random_seed=random_seed, version_override=version_override)
+    def __init__(self, *, version_override: Optional[str] = None):
+        super().__init__("pubmedqa", version_override=version_override)
 
     def has_split(self, split: str) -> bool:
         if split == "train":

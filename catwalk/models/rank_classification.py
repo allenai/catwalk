@@ -1,5 +1,5 @@
 import collections
-from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, Optional, cast
+from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, Optional, cast, Callable
 
 import more_itertools
 import torch
@@ -104,67 +104,68 @@ class RankClassificationModel(Model):
         raise NotImplementedError
 
     def trainable_copy(self) -> TrainableModel:
-        predict_chunk = self.predict_chunk
-
-        class TrainableRankClassificationModel(TrainableModel):
-            def __init__(self, model: _Model, tokenizer: _Tokenizer):
-                super().__init__(model)
-                self.model = model
-                self.tokenizer = tokenizer
-                self.tokenizer.pad_token = self.tokenizer.eos_token
-
-            def predict(  # type: ignore
-                self,
-                task: Task,
-                instances: Sequence[Dict[str, Any]],
-                *,
-                batch_size: int = 32,
-                max_instances_in_memory: int = 32 * 1024,
-                num_shots: int = 0
-            ) -> Iterator[Dict[str, Any]]:
-                training_mode = self.model.training
-                try:
-                    self.model.eval()
-                    for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
-                        yield from predict_chunk(
-                            task,
-                            instance_chunk,
-                            self.model,
-                            self.tokenizer,
-                            batch_size=batch_size,
-                            num_shots=num_shots)
-                finally:
-                    self.model.train(training_mode)
-
-            def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:
-                rc_instances = (
-                    task.convert_instance(instance, InstanceFormat.RANK_CLASSIFICATION)
-                    for task, instance in instances
-                )
-                correct_strings = [
-                    rc.choices[rc.correct_choice]
-                    for rc in rc_instances
-                ]
-                tokenized_strings = self.tokenizer(
-                    correct_strings,
-                    padding=True,
-                    truncation=True,
-                    pad_to_multiple_of=8,
-                    return_tensors='pt',
-                    is_split_into_words=False)
-                tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
-                for i, label in enumerate(tokenized_strings.labels):
-                    mask = [s == 1 for s in tokenized_strings.sequence_ids(i)]
-                    label[mask] = tokenized_strings.input_ids[i, mask]
-                return {
-                    key: tensor.to(self.model.device)
-                    for key, tensor in tokenized_strings.items()
-                }
-
         return TrainableRankClassificationModel(
             self._make_model(self.pretrained_model_name_or_path),
             cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
+            self.predict_chunk
         )
+
+
+class TrainableRankClassificationModel(TrainableModel):
+    def __init__(self, model: _Model, tokenizer: _Tokenizer, predict_chunk_fn: Callable):
+        super().__init__(model)
+        self.model = model
+        self.tokenizer = tokenizer
+        self.predict_chunk = predict_chunk_fn
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+
+    def predict(  # type: ignore
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        *,
+        batch_size: int = 32,
+        max_instances_in_memory: int = 32 * 1024,
+        num_shots: int = 0
+    ) -> Iterator[Dict[str, Any]]:
+        training_mode = self.model.training
+        try:
+            self.model.eval()
+            for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
+                yield from self.predict_chunk(
+                    task,
+                    instance_chunk,
+                    self.model,
+                    self.tokenizer,
+                    batch_size=batch_size,
+                    num_shots=num_shots)
+        finally:
+            self.model.train(training_mode)
+
+    def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:
+        rc_instances = (
+            task.convert_instance(instance, InstanceFormat.RANK_CLASSIFICATION)
+            for task, instance in instances
+        )
+        correct_strings = [
+            rc.choices[rc.correct_choice]
+            for rc in rc_instances
+        ]
+        tokenized_strings = self.tokenizer(
+            correct_strings,
+            padding=True,
+            truncation=True,
+            pad_to_multiple_of=8,
+            return_tensors='pt',
+            is_split_into_words=False)
+        tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
+        for i, label in enumerate(tokenized_strings.labels):
+            mask = [s == 1 for s in tokenized_strings.sequence_ids(i)]
+            label[mask] = tokenized_strings.input_ids[i, mask]
+        return {
+            key: tensor.to(self.model.device)
+            for key, tensor in tokenized_strings.items()
+        }
 
 
 @Model.register("rc::encoder_decoder")

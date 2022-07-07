@@ -53,6 +53,10 @@ class MetaICLTask(Task):
         if num_shots == 0:
             return []
         assert random_seed in [100, 13, 21, 42, 87] and num_shots <= 16, "Only prebuilt seeds supported for now"
+        
+        # For now we only have 16 shot cached so we just subsample it
+        subsample_num_shots = num_shots
+        num_shots = 16
 
         if exceptions is None:
             exceptions = []
@@ -68,7 +72,7 @@ class MetaICLTask(Task):
         assert len(ds) == num_shots
         assert not any(det_hash(instance) in exceptions for instance in ds), "MetaICL should never have overlap between inference and fewshot splits"
 
-        return ds[:num_shots]
+        return ds[:subsample_num_shots]
 
     def instance_as_rank_classification(
         self,

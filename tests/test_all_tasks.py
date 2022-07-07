@@ -19,7 +19,7 @@ def test_task(task_name: str):
     instances = None
     for split in ["train", "validation", "test"]:
         if task.has_split(split):
-            instances = task.get_instances(split)
+            instances = task.get_split(split)
             break
         
     if not instances:

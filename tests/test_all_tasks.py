@@ -7,7 +7,7 @@ import catwalk.tasks
 import catwalk.models
 
 # There are too many P3 tasks, so we just pick one.
-task_names = [task for task in catwalk.tasks.TASKS.keys() if not task.startswith("p3::")]
+task_names = [task for task in catwalk.tasks.TASKS.keys() if not task.startswith("p3::") and isinstance(catwalk.tasks.TASKS[task], catwalk.tasks.EleutherTask)]
 task_names.insert(0, "p3::wiki_qa_Is_This_True_")
 
 

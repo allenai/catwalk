@@ -35,7 +35,8 @@ class RankClassificationModel(Model):
         *,
         batch_size: int = 32,
         max_instances_in_memory: int = 32 * 1024,
-        num_shots: int = 0
+        num_shots: int = 0,
+        fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = self._make_model(self.pretrained_model_name_or_path).to(device).eval()
@@ -48,7 +49,8 @@ class RankClassificationModel(Model):
                 model,
                 tokenizer,
                 batch_size=batch_size,
-                num_shots=num_shots
+                num_shots=num_shots,
+                fewshot_seed=fewshot_seed
             )
 
     @classmethod
@@ -59,7 +61,8 @@ class RankClassificationModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
-        num_shots: int = 0
+        num_shots: int = 0,
+        fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
@@ -67,7 +70,7 @@ class RankClassificationModel(Model):
             task.convert_instance(
                 instance,
                 InstanceFormat.RANK_CLASSIFICATION,
-                fewshot_instances=task.get_fewshot_instances(num_shots, random_seed=i, exceptions=instance))
+                fewshot_instances=task.get_fewshot_instances(num_shots, random_seed=fewshot_seed if fewshot_seed is not None else i, exceptions=instance))
             for i, instance in enumerate(instances)
         ]
 

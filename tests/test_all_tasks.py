@@ -16,7 +16,7 @@ task_names.insert(0, "p3::wiki_qa_Is_This_True_")
 def test_task(task_name: str, split: str):
     task = catwalk.tasks.TASKS[task_name]
     try:
-        instances = task.get_split(split)
+        instances = task.get_split(split if not task_name.startswith("metaicl::") else "test")
     except KeyError:
         return
     for conversion in task.instance_conversions.values():
@@ -26,5 +26,5 @@ def test_task(task_name: str, split: str):
             if "num_fewshot" in signature.parameters:
                 kwargs["num_fewshot"] = 0
             if "fewshot_instances" in signature.parameters:
-                kwargs["fewshot_instances"] = task.get_fewshot_instances(2, exceptions=instance)
+                kwargs["fewshot_instances"] = task.get_fewshot_instances(2 if not task_name.startswith("metaicl::") else 16, exceptions=instance)
             assert conversion(instance, **kwargs) is not None

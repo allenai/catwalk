@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds the ability to train models
 - Few-shot abilities
 - P3 tasks
+- Adds a new MetaICLTask that supports the evaluation classification tasks in that benchmark
+- Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
 
 ### Fixed
 

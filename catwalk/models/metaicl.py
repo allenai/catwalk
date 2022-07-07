@@ -49,10 +49,7 @@ class MetaICLModel(DecoderOnlyRCModel):
             fewshot_instances=task.get_fewshot_instances(num_shots, random_seed=fewshot_seed if fewshot_seed is not None else i, exceptions=instance)
             truncated_fewshot_instances = []
             for i, fewshot_instance in enumerate(fewshot_instances):
-                if i == 0:
-                    fewshot_instance['input'] = self._apply_meta_icl_per_instance_truncation(fewshot_instance, tokenizer, is_first=True)
-                else:
-                    fewshot_instance['input'] =  self._apply_meta_icl_per_instance_truncation(fewshot_instance, tokenizer)
+                fewshot_instance['input'] = self._apply_meta_icl_per_instance_truncation(fewshot_instance, tokenizer, is_first=(i==0))
                 truncated_fewshot_instances.append(fewshot_instance)
             
             rc_instances.append(task.convert_instance(

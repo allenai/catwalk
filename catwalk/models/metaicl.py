@@ -101,7 +101,6 @@ class MetaICLModel(DecoderOnlyRCModel):
             input_tokens = input_tokens[:self.max_length_per_example - 2 - len(output_tokens)]
             assert len(input_tokens)+len(output_tokens)+2<=self.max_length_per_example, \
                 (instance.get("task", None), len(input_tokens), len(output_tokens), self.max_length_per_example)
-            instance['output'] = tokenizer.decode(output_tokens)
         else:
             assert len(instance["options"])>=2, instance
             assert instance["output"] in instance["options"]

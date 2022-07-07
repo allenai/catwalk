@@ -99,8 +99,6 @@ class MetaICLModel(DecoderOnlyRCModel):
         if is_icl_demonstration:
             output_tokens = tokenizer(self.continuation_seperator + instance["output"])["input_ids"]
             input_tokens = input_tokens[:self.max_length_per_example - 2 - len(output_tokens)]
-            assert len(input_tokens)+len(output_tokens)+2<=self.max_length_per_example, \
-                (instance.get("task", None), len(input_tokens), len(output_tokens), self.max_length_per_example)
         else:
             assert len(instance["options"])>=2, instance
             assert instance["output"] in instance["options"]
@@ -122,7 +120,6 @@ class MetaICLModel(DecoderOnlyRCModel):
             if len(ids1)+len(ids2) > tokenizer.model_max_length:
                 self.instances_truncated += 1
                 ids1 = ids1[len(ids1)+len(ids2)-tokenizer.model_max_length:] # len = max_length-len(ids2)
-                assert len(ids1)+len(ids2)==tokenizer.model_max_length
 
             n_mask = tokenizer.model_max_length-len(ids1)-len(ids2)
             assert n_mask>=0, (tokenizer.model_max_length, len(ids1), len(ids2))

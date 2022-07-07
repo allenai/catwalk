@@ -72,7 +72,6 @@ class MetaICLModel(DecoderOnlyRCModel):
         # run the requests
         results = self._run_loglikelihood(tuples, model, tokenizer, batch_size)
 
-        # TODO figure out why this is being suppressed
         if self.instances_truncated == self.instances_total:
             warnings.warn("All examples in this dataset chunk are being truncated after concatenation, consider using smaller max_length_per_example")
 

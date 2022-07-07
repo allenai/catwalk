@@ -5,13 +5,14 @@ import torch
 from tango.common import Tqdm
 from tango.common.sequences import MappedSequence
 from tango.integrations.torch.util import resolve_device
-from transformers import AutoModelForMultipleChoice, AutoTokenizer, AutoModelForQuestionAnswering
+from transformers import (AutoModelForMultipleChoice, 
+                          AutoTokenizer, 
+                          AutoModelForQuestionAnswering, 
+                          QuestionAnsweringPipeline)
 
 from catwalk import cached_transformers
 from catwalk.model import Model, UnsupportedTaskError
 from catwalk.task import Task, InstanceFormat
-from catwalk.models.utils_qa import postprocess_qa_predictions
-
 
 @Model.register("catwalk::hf")
 class HFAutoModel(Model):
@@ -47,45 +48,22 @@ class HFAutoModel(Model):
         instances = self._convert_instances(instances, InstanceFormat.HF_QA, task)
         
         device = resolve_device()
-        model = cached_transformers.get(AutoModelForQuestionAnswering, self.pretrained_model_name_or_path, False).eval().to(device)
+        model = cached_transformers.get(AutoModelForQuestionAnswering, self.pretrained_model_name_or_path, False)
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
-        pad_on_right = tokenizer.padding_side == "right"
+        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=device.index or torch.cuda.current_device() if device.type == "cuda" else -1)
 
+        iterations = Tqdm.tqdm(range(0, len(instances), batch_size), desc="Processing instances")
+        
         instances = Tqdm.tqdm(instances, desc="Processing instances")
-        with torch.inference_mode():
-            for batch in more_itertools.chunked(instances, batch_size):
-                texts: List[Tuple[str, str]] = [(instance.question, instance.context) if pad_on_right else (instance.context, instance.question) for instance in batch]
-
-                tensors = tokenizer.batch_encode_plus(
-                    texts,
-                    padding=True,
-                    truncation="only_second" if pad_on_right else "only_first", 
-                    pad_to_multiple_of=8,
-                    stride=128,
-                    return_overflowing_tokens=True,
-                    return_offsets_mapping=True
-                )
+        for batch in more_itertools.chunked(instances, batch_size):
+            contexts_batch = [instance.context for instance in batch]
+            questions_batch = [instance.question for instance in batch]
+            outputs = pipe(context=contexts_batch, question=questions_batch)
+            for instance, prediction in zip(batch, outputs):
+                yield {
+                    "squad_metrics": ({"id": instance.id, "prediction_text": prediction["answer"]}, {"id": instance.id, "answers": instance.answers})
+                }
                 
-                sample_mapping = tensors.pop("overflow_to_sample_mapping")           
-                offsets_mapping = tensors.pop("offset_mapping")
-                
-                results = model(
-                    **{key: torch.tensor(tensor).to(device) for key, tensor in tensors.items()},
-                    return_dict=True
-                )
-                
-                tensors["offset_mapping"] = offsets_mapping
-                tensors["example_id"] = [batch[sample_mapping[i]].id for i in range(len(tensors["input_ids"]))]  
-                
-                predictions = postprocess_qa_predictions(batch, tensors, (results.start_logits.cpu().numpy(), results.end_logits.cpu().numpy()))
-                
-                for instance in batch:
-                    yield {
-                        "correct_answers": instance.answers,
-                        "predicted_answer": predictions[instance.id],
-                        "squad_metrics": ({"id": instance.id, "prediction_text": predictions[instance.id]}, {"id": instance.id, "answers": instance.answers})
-                    }
-
     def _predict_mc(
         self,
         task: Task,

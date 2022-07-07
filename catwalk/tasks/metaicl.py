@@ -65,7 +65,7 @@ class MetaICLTask(Task):
         ds = MappedSequence(lambda x: x, ds)
 
         assert len(ds) == num_shots
-        assert not any(det_hash(instance) in exceptions for instance in ds), "MetaICL should never have overlap between infernce and fewshot splits"
+        assert not any(det_hash(instance) in exceptions for instance in ds), "MetaICL should never have overlap between inference and fewshot splits"
 
         return ds
 

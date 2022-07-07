@@ -18,12 +18,12 @@ class MetaICLModel(DecoderOnlyRCModel):
         *,
         max_length_per_example: int = 256,
         continuation_seperator: str = '\n',
-        example_seperatior: str = '\n\n\n'
+        example_seperator: str = '\n\n\n'
     ):
         super().__init__(pretrained_model_name_or_path)
         self.max_length_per_example = max_length_per_example
         self.continuation_seperator = continuation_seperator
-        self.example_seperatior = example_seperatior
+        self.example_seperator = example_seperator
         self.instances_truncated = 0
         self.instances_total = 0
 
@@ -58,10 +58,10 @@ class MetaICLModel(DecoderOnlyRCModel):
                 InstanceFormat.RANK_CLASSIFICATION,
                 fewshot_instances=truncated_fewshot_instances,
                 continuation_seperator=self.continuation_seperator,
-                example_seperator=self.example_seperatior,
+                example_seperator=self.example_seperator,
             ))
         
-        rc_instances = [self._apply_meta_icl_concatinated_input_truncation(instance, tokenizer) for instance in rc_instances]
+        rc_instances = [self._apply_meta_icl_concatenated_input_truncation(instance, tokenizer) for instance in rc_instances]
 
         # get all the tuples
         for instance_index, rc_instance in enumerate(rc_instances):
@@ -92,7 +92,7 @@ class MetaICLModel(DecoderOnlyRCModel):
     def _apply_meta_icl_per_instance_truncation(self, instance: Dict[str, Any], tokenizer: _Tokenizer, is_icl_demonstration: bool = True, is_first: bool = False) -> str:
         """Applies identical truncation as in metaicl.data.py.MetaICLData._prepro_each_datapoint"""
         # formatting is added and then thrown away just because it is needed for truncation lengths
-        input_tokens = tokenizer(('' if is_first else self.example_seperatior) + instance['input'])["input_ids"]
+        input_tokens = tokenizer(('' if is_first else self.example_seperator) + instance['input'])["input_ids"]
 
         if is_icl_demonstration:
             output_tokens = tokenizer(self.continuation_seperator + instance["output"])["input_ids"]
@@ -108,7 +108,7 @@ class MetaICLModel(DecoderOnlyRCModel):
 
         return tokenizer.decode(input_tokens).strip()
 
-    def _apply_meta_icl_concatinated_input_truncation(self, instance: RankClassificationInstance, tokenizer: _Tokenizer) -> RankClassificationInstance:
+    def _apply_meta_icl_concatenated_input_truncation(self, instance: RankClassificationInstance, tokenizer: _Tokenizer) -> RankClassificationInstance:
         """Applies identical truncation as in metaicl.data.py.MetaICLData.prepro_sentence_pair_single"""
         new_choices = []
         for choice in instance.choices:

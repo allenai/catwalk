@@ -54,6 +54,7 @@ class EleutherTask(Task):
         return self.eleuther_task
 
     def has_split(self, split: str) -> bool:
+        print(self.inner_task.dataset)
         return split in self.inner_task.dataset
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:

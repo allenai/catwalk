@@ -84,7 +84,7 @@ class TabulateMetricsStep(Step):
     FORMAT = TextFormat
 
     def run(self, metrics: Dict[str, Dict[str, float]], format: str = "text") -> Iterable[str]:
-        flattend_metrics = defaultdict(dict)
+        flattend_metrics: Dict[str, Dict[str, float]] = defaultdict(dict)
         for task_name, task_metrics in metrics.items():
             for metric_name, metric_value in task_metrics.items():
                 # if metric_value is a dict, then it's a nested metric

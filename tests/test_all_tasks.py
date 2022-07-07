@@ -12,12 +12,10 @@ task_names.insert(0, "p3::wiki_qa_Is_This_True_")
 
 
 @pytest.mark.parametrize("task_name", task_names)
-@pytest.mark.parametrize("split", ["train"])
-def test_task(task_name: str, split: str):
+def test_task(task_name: str):
     task = catwalk.tasks.TASKS[task_name]
-    try:
-        instances = task.get_split(split)
-    except KeyError:
+    instances = next((task.get_split(split) for split in ["train", "validation", "test"] if task.has_split(split)), None)
+    if not instances:
         return
     for conversion in task.instance_conversions.values():
         signature = inspect.signature(conversion)
@@ -25,6 +23,9 @@ def test_task(task_name: str, split: str):
             kwargs: Dict[str, Any] = {}
             if "num_fewshot" in signature.parameters:
                 kwargs["num_fewshot"] = 0
-            if "fewshot_instances" in signature.parameters:
-                kwargs["fewshot_instances"] = task.get_fewshot_instances(2, exceptions=instance)
-            assert conversion(instance, **kwargs) is not None
+            try:
+                if "fewshot_instances" in signature.parameters:
+                        kwargs["fewshot_instances"] = task.get_fewshot_instances(2, exceptions=instance)
+                assert conversion(instance, **kwargs) is not None
+            except ValueError: # This task doesn't support fewshot for the chosen split.
+                    return

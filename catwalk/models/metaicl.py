@@ -1,18 +1,12 @@
 import collections
-from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping
+from typing import Dict, Any, List, Tuple, Sequence, Iterator, Mapping
 
 import torch
-from transformers import T5ForConditionalGeneration, GPT2LMHeadModel, \
-    GPT2Tokenizer, T5TokenizerFast
 import numpy as np
 import warnings
 
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance
-from catwalk.models.rank_classification import DecoderOnlyRCModel
-
-
-_Model = Union[T5ForConditionalGeneration, GPT2LMHeadModel]
-_Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
+from catwalk.models.rank_classification import DecoderOnlyRCModel, _Model, _Tokenizer
 
 
 class MetaICLModel(DecoderOnlyRCModel):

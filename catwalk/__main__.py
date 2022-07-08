@@ -8,7 +8,7 @@ from catwalk.tasks import TASK_SETS
 
 
 def main():
-    initialize_logging()
+    initialize_logging(log_level="WARNING")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True)
@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--split', type=str)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--num_shots', type=int)
+    parser.add_argument('--fewshot_seed', type=int)
     parser.add_argument('--limit', type=int)
     parser.add_argument(
         '-d', '-w',
@@ -46,6 +47,8 @@ def main():
     kwargs = {}
     if args.num_shots is not None:
         kwargs["num_shots"] = args.num_shots
+    if args.fewshot_seed is not None:
+        kwargs["fewshot_seed"] = args.fewshot_seed
 
     metric_task_dict = {}
     for task in tasks:

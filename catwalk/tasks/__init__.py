@@ -8,6 +8,7 @@ from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleut
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
+from catwalk.tasks.metaicl import MetaICLTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
@@ -178,6 +179,29 @@ TASKS: Dict[str, Task] = {
     "raft::terms_of_service": RaftTask("terms_of_service"),
     "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
+    # MetaICL
+    "metaicl::piqa": MetaICLTask("piqa").add_metrics(MC_METRICS),
+    "metaicl::boolq": MetaICLTask("boolq").add_metrics(classification_metrics(2)),
+    "metaicl::tweet_eval-stance_feminist": MetaICLTask("tweet_eval-stance_feminist").add_metrics(classification_metrics(3)),
+    "metaicl::ethos-national_origin": MetaICLTask("ethos-national_origin").add_metrics(classification_metrics(2)),
+    "metaicl::tweet_eval-hate": MetaICLTask("tweet_eval-hate").add_metrics(classification_metrics(2)),
+    "metaicl::ag_news": MetaICLTask("ag_news").add_metrics(classification_metrics(4)),
+    "metaicl::amazon_polarity": MetaICLTask("amazon_polarity").add_metrics(classification_metrics(2)),
+    "metaicl::hate_speech18": MetaICLTask("hate_speech18").add_metrics(classification_metrics(2)),
+    "metaicl::poem_sentiment": MetaICLTask("poem_sentiment").add_metrics(classification_metrics(3)),
+    "metaicl::climate_fever": MetaICLTask("climate_fever").add_metrics(classification_metrics(4)),
+    "metaicl::medical_questions_pairs": MetaICLTask("medical_questions_pairs").add_metrics(classification_metrics(2)),
+    "metaicl::tweet_eval-stance_atheism": MetaICLTask("tweet_eval-stance_atheism").add_metrics(classification_metrics(3)),
+    "metaicl::superglue-cb": MetaICLTask("superglue-cb").add_metrics(classification_metrics(3)),
+    "metaicl::dbpedia_14": MetaICLTask("dbpedia_14").add_metrics(classification_metrics(14)),
+    "metaicl::wiki_qa": MetaICLTask("wiki_qa").add_metrics(classification_metrics(2)),
+    "metaicl::emo": MetaICLTask("emo").add_metrics(classification_metrics(4)),
+    "metaicl::yelp_polarity": MetaICLTask("yelp_polarity").add_metrics(classification_metrics(2)),
+    "metaicl::ethos-religion": MetaICLTask("ethos-religion").add_metrics(classification_metrics(2)),
+    "metaicl::financial_phrasebank": MetaICLTask("financial_phrasebank").add_metrics(classification_metrics(3)),
+    "metaicl::tab_fact": MetaICLTask("tab_fact").add_metrics(classification_metrics(2)),
+    "metaicl::anli": MetaICLTask("anli").add_metrics(classification_metrics(3)),
+    "metaicl::ethos-race": MetaICLTask("ethos-race").add_metrics(classification_metrics(2)),
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):
@@ -214,5 +238,27 @@ TASK_SETS = {
         "wnli",
         "wsc",
     },
-    "raft": {name for name in TASKS.keys() if name.startswith("raft::")}
+    "raft": {name for name in TASKS.keys() if name.startswith("raft::")},
+    "metaicl-classification-eval": {
+        "metaicl::tweet_eval-stance_feminist",
+        "metaicl::ethos-national_origin",
+        "metaicl::tweet_eval-hate",
+        "metaicl::ag_news",
+        "metaicl::amazon_polarity",
+        "metaicl::hate_speech18",
+        "metaicl::poem_sentiment",
+        "metaicl::climate_fever",
+        "metaicl::medical_questions_pairs",
+        "metaicl::tweet_eval-stance_atheism",
+        "metaicl::superglue-cb",
+        "metaicl::dbpedia_14",
+        "metaicl::wiki_qa",
+        "metaicl::emo",
+        "metaicl::yelp_polarity",
+        "metaicl::ethos-religion",
+        "metaicl::financial_phrasebank",
+        "metaicl::tab_fact",
+        "metaicl::anli",
+        "metaicl::ethos-race"
+    },
 }

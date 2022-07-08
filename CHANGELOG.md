@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+
+- set default logging level to `"WARNING"` instead of `"ERROR"` when invoking `python -m catwalk`
 
 ### Added
 
@@ -13,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - P3 tasks
 - Encoder-only QA models
 - SQuAD and SQuADShifts tasks
+- Adds a new MetaICLTask that supports the evaluation classification tasks in that benchmark
+- Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
 
 ### Fixed
 

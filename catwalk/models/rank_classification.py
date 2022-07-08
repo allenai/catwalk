@@ -53,9 +53,8 @@ class RankClassificationModel(Model):
                 fewshot_seed=fewshot_seed
             )
 
-    @classmethod
     def predict_chunk(
-        cls,
+        self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
         model: _Model,
@@ -81,7 +80,7 @@ class RankClassificationModel(Model):
                 tuples.append(instance_request)
 
         # run the requests
-        results = cls._run_loglikelihood(tuples, model, tokenizer, batch_size)
+        results = self._run_loglikelihood(tuples, model, tokenizer, batch_size)
 
         # collect the results
         for instance_index, instance in enumerate(rc_instances):

@@ -45,17 +45,17 @@ class HFAutoModel(Model):
         instances: Sequence[Dict[str, Any]],
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        instances = self._convert_instances(instances, InstanceFormat.HF_QA, task)
+        converted_instances = self._convert_instances(instances, InstanceFormat.HF_QA, task)
         
         device = resolve_device()
         model = cached_transformers.get(AutoModelForQuestionAnswering, self.pretrained_model_name_or_path, False)
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
         pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=device.index or torch.cuda.current_device() if device.type == "cuda" else -1)
         
-        contexts = [instance.context for instance in instances]
-        questions = [instance.question for instance in instances]
+        contexts = [instance.context for instance in converted_instances]
+        questions = [instance.question for instance in converted_instances]
         
-        for instance, prediction in zip(instances, Tqdm.tqdm(pipe(context=contexts, question=questions, batch_size=batch_size), desc="Processing instances")):
+        for instance, prediction in zip(converted_instances, Tqdm.tqdm(pipe(context=contexts, question=questions, batch_size=batch_size), desc="Processing instances")):
             yield {
                 "squad_metrics": ({"id": instance.id, "prediction_text": prediction["answer"]}, {"id": instance.id, "answers": instance.answers})
             }

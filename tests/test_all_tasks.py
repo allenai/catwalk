@@ -26,5 +26,5 @@ def test_task(task_name: str, split: str):
             if "num_fewshot" in signature.parameters:
                 kwargs["num_fewshot"] = 0
             if "fewshot_instances" in signature.parameters:
-                kwargs["fewshot_instances"] = task.get_fewshot_instances(2 if not task_name.startswith("metaicl::") else 16, exceptions=instance)
+                kwargs["fewshot_instances"] = task.get_fewshot_instances(2, exceptions=instance)
             assert conversion(instance, **kwargs) is not None

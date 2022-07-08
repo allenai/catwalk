@@ -21,7 +21,7 @@ class MetaICLTask(Task):
         self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
         
     def has_split(self, split: str) -> bool:
-         return split in ['dev', 'test']
+         return split in ['test']
 
     @property
     def fewshot_instances_split(self) -> str:
@@ -36,6 +36,7 @@ class MetaICLTask(Task):
         return datasets.load_dataset('allenai/metaicl-data', data_files=data_files, split=split)
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
+        assert self.has_split(split)
         ds = self._get_dataset(num_shots=16, fewshot_seed=100, split=split)
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
@@ -51,7 +52,11 @@ class MetaICLTask(Task):
     ) -> Sequence[Dict[str, Any]]:
         if num_shots == 0:
             return []
-        assert random_seed in [100, 13, 21, 42, 87] and num_shots == 16, "Only prebuilt seeds supported for now"
+        assert random_seed in [100, 13, 21, 42, 87] and num_shots <= 16, "Only prebuilt seeds supported for now"
+        
+        # For now we only have 16 shot cached so we just subsample it
+        subsample_num_shots = num_shots
+        num_shots = 16
 
         if exceptions is None:
             exceptions = []
@@ -67,7 +72,7 @@ class MetaICLTask(Task):
         assert len(ds) == num_shots
         assert not any(det_hash(instance) in exceptions for instance in ds), "MetaICL should never have overlap between inference and fewshot splits"
 
-        return ds
+        return ds[:subsample_num_shots]
 
     def instance_as_rank_classification(
         self,

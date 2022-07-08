@@ -8,7 +8,7 @@ from catwalk.tasks import TASK_SETS
 
 
 def main():
-    initialize_logging()
+    initialize_logging(log_level="WARNING")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True)

@@ -27,7 +27,6 @@ class MetaICLModel(DecoderOnlyRCModel):
         self.instances_truncated = 0
         self.instances_total = 0
 
-
     def predict_chunk(
         self,
         task: Task,
@@ -45,7 +44,7 @@ class MetaICLModel(DecoderOnlyRCModel):
 
         rc_instances: List[RankClassificationInstance] = []
         for i, instance in enumerate(instances):
-            # pre-instance processsing (both fewshot and test example)
+            # pre-instance processing (both fewshot and test example)
             instance['input'] = self._apply_meta_icl_per_instance_truncation(instance, tokenizer, is_icl_demonstration=False)
             fewshot_instances=task.get_fewshot_instances(num_shots, random_seed=fewshot_seed if fewshot_seed is not None else i, exceptions=instance)
             truncated_fewshot_instances = []

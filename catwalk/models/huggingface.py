@@ -51,18 +51,14 @@ class HFAutoModel(Model):
         model = cached_transformers.get(AutoModelForQuestionAnswering, self.pretrained_model_name_or_path, False)
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
         pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=device.index or torch.cuda.current_device() if device.type == "cuda" else -1)
-
-        iterations = Tqdm.tqdm(range(0, len(instances), batch_size), desc="Processing instances")
         
-        instances = Tqdm.tqdm(instances, desc="Processing instances")
-        for batch in more_itertools.chunked(instances, batch_size):
-            contexts_batch = [instance.context for instance in batch]
-            questions_batch = [instance.question for instance in batch]
-            outputs = pipe(context=contexts_batch, question=questions_batch)
-            for instance, prediction in zip(batch, outputs):
-                yield {
-                    "squad_metrics": ({"id": instance.id, "prediction_text": prediction["answer"]}, {"id": instance.id, "answers": instance.answers})
-                }
+        contexts = [instance.context for instance in instances]
+        questions = [instance.question for instance in instances]
+        
+        for instance, prediction in zip(instances, Tqdm.tqdm(pipe(context=contexts, question=questions, batch_size=batch_size), desc="Processing instances")):
+            yield {
+                "squad_metrics": ({"id": instance.id, "prediction_text": prediction["answer"]}, {"id": instance.id, "answers": instance.answers})
+            }
                 
     def _predict_mc(
         self,

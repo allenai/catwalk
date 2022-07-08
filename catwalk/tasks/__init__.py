@@ -137,7 +137,7 @@ TASKS: Dict[str, Task] = {
     "ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_utilitarianism": EleutherTask("ethics_utilitarianism").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_virtue": EleutherTask("ethics_virtue").add_metrics(BINARY_CLASSIFICATION_METRICS),
-    "truthfulqa_mc": EleutherTask("truthfulqa_mc", ranked_classification=True),
+    # "truthfulqa_mc": EleutherTask("truthfulqa_mc", ranked_classification=True),
     "truthfulqa_gen": EleutherTask("truthfulqa_gen"),
     "mutual": EleutherTask("mutual"),
     "mutual_plus": EleutherTask("mutual_plus"),

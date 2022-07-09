@@ -6,8 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-### Changed
 
+### Changed
+- MetaICLTask now supports fewshots less than 16 and only support getting the test split
 - set default logging level to `"WARNING"` instead of `"ERROR"` when invoking `python -m catwalk`
 
 ### Added

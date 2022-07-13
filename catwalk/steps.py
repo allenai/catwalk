@@ -7,11 +7,9 @@ from typing import (
     Iterable,
     List,
     Tuple,
-    MutableSequence,
 )
 from collections import defaultdict
 
-import tango.integrations.torch
 from tango import Step, JsonFormat
 from tango.common import Lazy, DatasetDict
 from tango.common.sequences import (

@@ -5,7 +5,7 @@ import datasets
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
-from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask
+from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
@@ -22,6 +22,51 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="label"
         )
     ).add_metrics(MC_METRICS),
+    "squad": HFDatasetsTask("squad").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "squadshifts-reddit": HFDatasetsTask("squadshifts", "reddit").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
+    "squadshifts-amazon": HFDatasetsTask("squadshifts", "amazon").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
+    "squadshifts-nyt": HFDatasetsTask("squadshifts", "nyt").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
+    "squadshifts-new-wiki": HFDatasetsTask("squadshifts", "new_wiki").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(
         InstanceFormat.T5_PROMPT,
@@ -93,7 +138,7 @@ TASKS: Dict[str, Task] = {
     "ethics_utilitarianism_original": EleutherTask("ethics_utilitarianism_original").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_utilitarianism": EleutherTask("ethics_utilitarianism").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_virtue": EleutherTask("ethics_virtue").add_metrics(BINARY_CLASSIFICATION_METRICS),
-    "truthfulqa_mc": EleutherTask("truthfulqa_mc", ranked_classification=True),
+    # "truthfulqa_mc": EleutherTask("truthfulqa_mc", ranked_classification=True),
     "truthfulqa_gen": EleutherTask("truthfulqa_gen"),
     "mutual": EleutherTask("mutual"),
     "mutual_plus": EleutherTask("mutual_plus"),

@@ -5,12 +5,14 @@ import torch
 from tango.common import Tqdm
 from tango.common.sequences import MappedSequence
 from tango.integrations.torch.util import resolve_device
-from transformers import AutoModelForMultipleChoice, AutoTokenizer
+from transformers import (AutoModelForMultipleChoice, 
+                          AutoTokenizer, 
+                          AutoModelForQuestionAnswering, 
+                          QuestionAnsweringPipeline)
 
 from catwalk import cached_transformers
 from catwalk.model import Model, UnsupportedTaskError
 from catwalk.task import Task, InstanceFormat
-
 
 @Model.register("catwalk::hf")
 class HFAutoModel(Model):
@@ -18,7 +20,7 @@ class HFAutoModel(Model):
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-
+        
     def predict(  # type: ignore
         self,
         task: Task,
@@ -26,11 +28,45 @@ class HFAutoModel(Model):
         *,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        if not task.has_instance_conversion(InstanceFormat.HF_MC):
-            raise UnsupportedTaskError(self, task)
-        instances = MappedSequence(
-            lambda instance: task.convert_instance(instance, InstanceFormat.HF_MC),
-            instances)
+        if task.has_instance_conversion(InstanceFormat.HF_MC):
+            return self._predict_mc(task, instances, batch_size=batch_size)
+        elif task.has_instance_conversion(InstanceFormat.HF_QA):
+            return self._predict_qa(task, instances, batch_size=batch_size)
+        
+        raise UnsupportedTaskError(self, task)
+
+    
+    def _convert_instances(self, instances: Sequence[Dict[str, Any]], instance_format, task) -> MappedSequence:
+        return MappedSequence(lambda instance: task.convert_instance(instance, instance_format), instances)
+    
+    def _predict_qa(
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        batch_size: int = 32
+    ) -> Iterator[Dict[str, Any]]:
+        converted_instances = self._convert_instances(instances, InstanceFormat.HF_QA, task)
+        
+        device = resolve_device()
+        model = cached_transformers.get(AutoModelForQuestionAnswering, self.pretrained_model_name_or_path, False)
+        tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
+        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=device.index or torch.cuda.current_device() if device.type == "cuda" else -1)
+        
+        contexts = [instance.context for instance in converted_instances]
+        questions = [instance.question for instance in converted_instances]
+        
+        for instance, prediction in zip(converted_instances, Tqdm.tqdm(pipe(context=contexts, question=questions, batch_size=batch_size), desc="Processing instances")):
+            yield {
+                "squad_metrics": ({"id": instance.id, "prediction_text": prediction["answer"]}, {"id": instance.id, "answers": instance.answers})
+            }
+                
+    def _predict_mc(
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        batch_size: int = 32
+    ) -> Iterator[Dict[str, Any]]:
+        instances = self._convert_instances(instances, InstanceFormat.HF_MC, task)
 
         # There is no Huggingface pipeline for this.
         device = resolve_device()
@@ -62,10 +98,11 @@ class HFAutoModel(Model):
                 )
                 results = model(
                     return_dict=True,
-                    **{key: tensor.view(len(batch), number_of_choices, -1) for key, tensor in tensors.items()})
+                    **{key: tensor.view(len(batch), number_of_choices, -1).to(device) for key, tensor in tensors.items()})
                 for instance, logits in zip(batch, results.logits.detach().cpu()):
                     yield {
                         "correct_answer_index": instance.correct_answer_index,
                         "logits": logits,
                         "acc": (logits, instance.correct_answer_index),
                     }
+                    

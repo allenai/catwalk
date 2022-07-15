@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple, Dict
+from typing import List, Optional, Sequence, Tuple, Dict
 from tango.common import Tqdm
 
 
@@ -38,7 +38,7 @@ class PrefixTrieNode():
         self.lengths_covered: List[int] = []
         self.children: Dict[int,'PrefixTrieNode'] = {}
     
-    def get_sequence(self) -> List[int]:
+    def get_sequence(self) -> List[Optional[int]]:
         current_node = self
         sequence = []
         while current_node.parent is not None:

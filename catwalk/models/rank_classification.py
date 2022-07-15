@@ -291,7 +291,7 @@ class DecoderOnlyRCModel(RankClassificationModel):
 
     def _reset_cache_variables(self):
         self.cached_sequence: Sequence[int] = None
-        self.cached_past_key_values: Tuple[Tuple[torch.Tensor]] = None
+        self.cached_past_key_values: torch.Tensor = None
         self.longest_prefix_to_indices: Dict[Sequence[int],Sequence[int]] = None
         self.indices_to_longest_prefix: OrderedDict[int,Sequence[int]] = None
 

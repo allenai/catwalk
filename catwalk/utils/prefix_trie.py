@@ -4,9 +4,9 @@ from tango.common import Tqdm
 
 class PrefixTrie():
     def __init__(self, sequences: Sequence[Sequence[int]], minimum_prefix: int = 10):
-        self.root = PrefixTrieNode(parent=None, token=None)
+        self.root = PrefixTrieNode()
         self.minimum_prefix = minimum_prefix
-        self.nodes = []
+        self.nodes: List['PrefixTrieNode'] = []
         for i, sequence in Tqdm.tqdm(enumerate(sequences), desc="Building PrefixTrie for caching", total=len(sequences)):
             self.add_sequence(sequence=sequence, index=i)
         # remove all indices and lenghts_covered at non-forking, non-leaf nodes
@@ -31,7 +31,7 @@ class PrefixTrie():
         return [node for node in self.nodes if len(node.children) == 0]
 
 class PrefixTrieNode():
-    def __init__(self, parent: 'PrefixTrieNode', token: int):
+    def __init__(self, parent: 'PrefixTrieNode' = None, token: int = None):
         self.parent = parent
         self.token = token
         self.indices: List[int] = []

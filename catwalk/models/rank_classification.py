@@ -95,9 +95,8 @@ class RankClassificationModel(Model):
                 "recall": metric_args,
             }
 
-    @classmethod
     def _run_loglikelihood(
-        cls,
+        self,
         tuples: Sequence[Tuple[str, str]],
         model: _Model,
         tokenizer: _Tokenizer,
@@ -176,9 +175,8 @@ class EncoderDecoderRCModel(RankClassificationModel):
     def _make_model(cls, pretrained_model_name_or_path: str) -> T5ForConditionalGeneration:
         return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False)
 
-    @classmethod
     def _run_loglikelihood(
-        cls,
+        self,
         tuples: Sequence[Tuple[str, str]],
         model: _Model,
         tokenizer: _Tokenizer,
@@ -241,9 +239,8 @@ class DecoderOnlyRCModel(RankClassificationModel):
     def _make_model(cls, pretrained_model_name_or_path: str) -> GPT2LMHeadModel:
         return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False)
 
-    @classmethod
     def _run_loglikelihood(
-        cls,
+        self,
         tuples: Sequence[Tuple[str, str]],
         model: _Model,
         tokenizer: _Tokenizer,

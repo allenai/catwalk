@@ -55,6 +55,33 @@ class HFDatasetsTask(Task):
         ds = MappedSequence(lambda x: x, ds)
         return ds
 
+@dataclass
+class HFQAInstance:
+    id: str
+    question: str
+    context: str
+    answers: List[str]
+
+def hfqa_conversion(
+    *,
+    context_field: str,
+    question_field: str,
+    answers_field: str,
+    id_field: str,
+) -> InstanceConversion:
+    def convert(instance: Dict[str, Any]) -> HFQAInstance:
+        question = get_from_dict(instance, question_field).strip()
+        context = get_from_dict(instance, context_field)
+        answers = get_from_dict(instance, answers_field)
+        id = get_from_dict(instance, id_field)
+        
+        return HFQAInstance(
+            id=id,
+            context=context,
+            question=question,
+            answers=answers)
+        
+    return convert
 
 @dataclass
 class HFMCInstance:

@@ -263,8 +263,8 @@ class DecoderOnlyRCModel(RankClassificationModel):
                 self.indices_to_longest_prefix[index] = prefix
         return list(self.indices_to_longest_prefix.keys())
     
-    def _order_by_common_prefix(self, sequences: Sequence[Sequence[int]]) -> Dict[Sequence[int],Sequence[int]]:
-        longest_prefix_to_indices: Dict[Sequence[int],Sequence[int]] = {}
+    def _order_by_common_prefix(self, sequences: Sequence[Sequence[int]]) -> Dict[Sequence[Optional[int]],Sequence[int]]:
+        longest_prefix_to_indices: Dict[Sequence[Optional[int]],Sequence[int]] = {}
         trie = PrefixTrie(sequences)
         leaves = trie.get_leaf_nodes()
         leaves_sequences = [tuple(leaf.get_sequence()) for leaf in leaves]
@@ -290,9 +290,9 @@ class DecoderOnlyRCModel(RankClassificationModel):
         return torch.argsort(lengths, descending=True).tolist()
 
     def _reset_cache_variables(self):
-        self.cached_sequence: Sequence[int] = None
+        self.cached_sequence: Sequence[Optional[int]] = None
         self.cached_past_key_values: torch.Tensor = None
-        self.longest_prefix_to_indices: Dict[Sequence[int],Sequence[int]] = None
+        self.longest_prefix_to_indices: Dict[Sequence[Optional[int]],Sequence[int]] = None
         self.indices_to_longest_prefix: OrderedDict[int,Sequence[int]] = None
 
     def _get_inputs(self, batch_of_indices: Sequence[int], cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]], model: _Model):

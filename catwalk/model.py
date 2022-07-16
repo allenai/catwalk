@@ -89,6 +89,9 @@ class TrainableModel(Model, torch.nn.Module, ABC):
         """
         Takes a batch of instances and turns them into inputs to the forward method (usually tensors).
 
+        Usually you would call this method from a PyTorch DataLoader. If you don't use PyTorch, you might have to
+        do something else.
+
         :param instances: The instances to turn into tensors. Note that the input includes the task. Instances
                           could come from different tasks.
         :return: Input suitable for the trainable model's ``forward()`` method.

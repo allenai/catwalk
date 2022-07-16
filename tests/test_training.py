@@ -2,6 +2,7 @@ import torch
 from transformers import AdamW
 
 from catwalk import MODELS, TASKS
+from catwalk.steps import FinetuneStep, PredictStep, CalculateMetricsStep
 
 
 def test_training():
@@ -34,3 +35,14 @@ def test_training():
     for prediction_before, prediction_after in zip(predictions_before, predictions_after):
         assert not torch.allclose(prediction_before["acc"][0], prediction_after["acc"][0])
     assert metrics_before != metrics_after
+
+
+def test_training_step():
+    finetune_step = FinetuneStep(
+        model="rc::gpt2",
+        tasks=["piqa", "sst"],
+        training_steps=10,
+    )
+    predict_step = PredictStep(model=finetune_step, task="piqa", limit=10)
+    metrics_step = CalculateMetricsStep(model=finetune_step, task="piqa", predictions=predict_step)
+    metrics_step.result()

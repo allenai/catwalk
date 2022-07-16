@@ -97,6 +97,8 @@ class CalculateMetricsStep(Step):
 
 @Step.register("catwalk::finetune")
 class FinetuneStep(Step):
+    # TODO: The parameters that are the defaults in this step need some serious optimization.
+
     VERSION = "001"
     FORMAT = TorchFormat
 
@@ -187,7 +189,8 @@ class FinetuneStep(Step):
         data_loader = Lazy(
             DataLoader,
             collate_fn=trainable_model.collate_for_training,
-            batch_size=batch_size
+            batch_size=batch_size,
+            shuffle=True
         )
 
         if model_wrapper is None:

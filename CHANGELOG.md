@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds the ability to train models
 - Few-shot abilities
 - P3 tasks
 - Encoder-only QA models

@@ -14,7 +14,6 @@ def main():
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--task", type=str, nargs="+")
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--num_shots", type=int)
     parser.add_argument(
         "-d",
         "-w",
@@ -41,17 +40,11 @@ def main():
         except KeyError:
             tasks.add(task)
 
-    kwargs = {}
-    if args.num_shots is not None:
-        kwargs["num_shots"] = args.num_shots
-
     model_step = FinetuneStep(model=args.model, tasks=tasks)
 
     metric_task_dict = {}
     for task in tasks:
-        predictions = PredictStep(
-            model=model_step, task=task, batch_size=args.batch_size, **kwargs
-        )
+        predictions = PredictStep(model=model_step, task=task, batch_size=args.batch_size)
         metrics = CalculateMetricsStep(
             model=model_step, task=task, predictions=predictions
         )

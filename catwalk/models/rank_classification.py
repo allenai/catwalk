@@ -305,7 +305,7 @@ class DecoderOnlyRCModel(RankClassificationModel):
                 for i, instance_logits, input_length, instance_context, instance_continuation in z:
                     instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
                     instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1))
-                    results[i] = float(instance_logits.sum()) / len(tuples[i][1])
+                    results[i] = float(instance_logits.sum()) / len(tokenized_continuations.input_ids[i])
 
         assert None not in results
         return cast(Sequence[float], results)

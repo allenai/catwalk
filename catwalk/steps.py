@@ -1,5 +1,6 @@
 from typing import Union, Dict, Any, Optional, Sequence, Iterable
 from collections import defaultdict
+from random import Random
 
 from tango import Step, JsonFormat
 from tango.common.sequences import SqliteSparseSequence
@@ -33,6 +34,7 @@ class PredictStep(Step):
         task: Union[str, Task],
         split: Optional[str] = None,
         limit: Optional[int] = None,
+        random_subsample_seed: Optional[int] = None,
         **kwargs
     ) -> Sequence[Any]:
         if isinstance(model, str):
@@ -44,8 +46,8 @@ class PredictStep(Step):
 
         results = SqliteSparseSequence(self.work_dir_for_run / "result.sqlite")
         instances = task.get_split(split)
-        if limit is not None:
-            instances = instances[:limit]
+        if limit is not None and len(instances) > limit:
+            instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
         instances = instances[len(results):]
         for result in model.predict(task, instances, **kwargs):
             results.append(result)

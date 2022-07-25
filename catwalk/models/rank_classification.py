@@ -22,11 +22,12 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 class RankClassificationModel(Model):
     VERSION = "001nul"
 
-    def __init__(self, pretrained_model_name_or_path: str):
+    def __init__(self, pretrained_model_name_or_path: str, override_weights_file: str = None):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.override_weights_file = override_weights_file
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str) -> _Model:
+    def _make_model(cls, pretrained_model_name_or_path: str, override_weights_file: str = None) -> _Model:
         raise NotImplementedError
 
     def predict(  # type: ignore
@@ -40,7 +41,7 @@ class RankClassificationModel(Model):
         fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = self._make_model(self.pretrained_model_name_or_path).to(device).eval()
+        model = self._make_model(self.pretrained_model_name_or_path, self.override_weights_file).to(device).eval()
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
@@ -109,8 +110,8 @@ class RankClassificationModel(Model):
 @Model.register("rc::encoder_decoder")
 class EncoderDecoderRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str) -> T5ForConditionalGeneration:
-        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False)
+    def _make_model(cls, pretrained_model_name_or_path: str, override_weights_file: str = None) -> T5ForConditionalGeneration:
+        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False, override_weights_file=override_weights_file)
 
     def _run_loglikelihood(
         self,
@@ -172,14 +173,14 @@ class EncoderDecoderRCModel(RankClassificationModel):
 
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
-    def __init__(self, pretrained_model_name_or_path: str, *, prefix_caching: bool = False):
-        super().__init__(pretrained_model_name_or_path)
+    def __init__(self, pretrained_model_name_or_path: str, *, override_weights_file: str = None, prefix_caching: bool = False):
+        super().__init__(pretrained_model_name_or_path, override_weights_file=override_weights_file)
         self.prefix_caching = prefix_caching
         self._reset_cache_variables()
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str) -> GPT2LMHeadModel:
-        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False)
+    def _make_model(cls, pretrained_model_name_or_path: str, override_weights_file: str = None) -> GPT2LMHeadModel:
+        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False, override_weights_file=override_weights_file)
 
     def _run_loglikelihood(
         self,

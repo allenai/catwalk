@@ -238,10 +238,10 @@ class EncoderDecoderRCModel(RankClassificationModel):
 
 @dataclass
 class CacheData:
-    cached_sequence: Sequence[Optional[int]] = None
+    cached_sequence: Optional[Sequence[Optional[int]]] = None
     cached_past_key_values: torch.Tensor = None
-    longest_prefix_to_indices: Dict[Sequence[Optional[int]],Sequence[int]] = None
-    indices_to_longest_prefix: OrderedDict[int,Sequence[int]] = None
+    longest_prefix_to_indices: Optional[Dict[Sequence[Optional[int]],Sequence[int]]] = None
+    indices_to_longest_prefix: Optional[OrderedDict[int,Sequence[Optional[int]]]] = None
 
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
@@ -322,12 +322,12 @@ class DecoderOnlyRCModel(RankClassificationModel):
     
     def _reorder_instances(self, tokenized_contexts: BatchEncoding, tokenized_continuations: BatchEncoding, cache: CacheData = None) -> Sequence[int]:
         if self.prefix_caching:
+            assert cache is not None, 'prefix reordering requires a CacheData object'
             return self._reorder_by_prefix(tokenized_contexts, tokenized_continuations, cache)
         else:
             return self._reorder_by_longest(tokenized_contexts, tokenized_continuations)
     
     def _reorder_by_prefix(self, tokenized_contexts: BatchEncoding, tokenized_continuations: BatchEncoding, cache: CacheData) -> Sequence[int]:
-        assert cache is not None, 'prefix reordering requires a CacheData object'
         combined_ids = [context + continuation for context, continuation in zip(tokenized_contexts['input_ids'], tokenized_continuations['input_ids'])]
         cache.longest_prefix_to_indices = self._order_by_common_prefix(combined_ids)
         cache.indices_to_longest_prefix = OrderedDict()
@@ -365,13 +365,14 @@ class DecoderOnlyRCModel(RankClassificationModel):
 
     def _get_inputs(self, batch_of_indices: Sequence[int], cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]], model: _Model, cache: CacheData = None):
         if self.prefix_caching:
+            assert cache is not None
             return self._get_inputs_with_cache(batch_of_indices, cc_pairs, model, cache)
         else:
             return self._get_inputs_without_cache(batch_of_indices, cc_pairs, model)
             
 
     def _get_inputs_with_cache(self, batch_of_indices: Sequence[int], cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]], model: _Model, cache: CacheData):
-        assert cache is not None
+        assert cache.indices_to_longest_prefix is not None
         prefixes = [cache.indices_to_longest_prefix[index] for index in batch_of_indices]
         prefix2cache = OrderedDict()
 

@@ -15,13 +15,15 @@ class TransformerSpec:
     model_name: str
     override_weights_file: Optional[str] = None
     override_weights_strip_prefix: Optional[str] = None
+    load_weights: bool = True
 
     def __hash__(self):
         return hash((
             f"{self.cls.__module__}.{self.cls.__name__}",
             self.model_name,
             self.override_weights_file,
-            self.override_weights_strip_prefix
+            self.override_weights_strip_prefix,
+            self.load_weights
         ))
 
 
@@ -37,6 +39,7 @@ def get(
     make_copy: bool,
     override_weights_file: Optional[str] = None,
     override_weights_strip_prefix: Optional[str] = None,
+    load_weights: bool = True,
     **kwargs,
 ) -> T:
     """
@@ -69,6 +72,7 @@ def get(
         model_name,
         override_weights_file,
         override_weights_strip_prefix,
+        load_weights
     )
     transformer = _model_cache.get(spec, None)
     if transformer is None:
@@ -116,6 +120,10 @@ def get(
                 model_name,
                 **kwargs,
             )
+
+        if not load_weights:
+            transformer = cls.from_config(transformer.config)
+
         _model_cache[spec] = transformer
     if make_copy:
         import copy

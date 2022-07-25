@@ -1,4 +1,5 @@
 import collections
+from dataclasses import dataclass
 from typing import Dict, Any, List, OrderedDict, Tuple, Sequence, Iterator, Union, Mapping, Optional, cast, Callable
 
 import more_itertools
@@ -235,12 +236,18 @@ class EncoderDecoderRCModel(RankClassificationModel):
         return cast(Sequence[float], results)
 
 
+@dataclass
+class CacheData:
+    cached_sequence: Sequence[Optional[int]] = None
+    cached_past_key_values: torch.Tensor = None
+    longest_prefix_to_indices: Dict[Sequence[Optional[int]],Sequence[int]] = None
+    indices_to_longest_prefix: OrderedDict[int,Sequence[int]] = None
+
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
     def __init__(self, pretrained_model_name_or_path: str, *, override_weights_file: str = None, prefix_caching: bool = False):
         super().__init__(pretrained_model_name_or_path, override_weights_file=override_weights_file)
         self.prefix_caching = prefix_caching
-        self._reset_cache_variables()
 
     @classmethod
     def _make_model(cls, pretrained_model_name_or_path: str, override_weights_file: str = None) -> GPT2LMHeadModel:
@@ -253,6 +260,8 @@ class DecoderOnlyRCModel(RankClassificationModel):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
     ) -> Sequence[float]:
+        cache = CacheData() if self.prefix_caching else None
+
         tokenized_contexts = tokenizer([t[0] for t in tuples])
         tokenized_continuations = tokenizer([t[1] for t in tuples])
 
@@ -261,7 +270,7 @@ class DecoderOnlyRCModel(RankClassificationModel):
         )
 
         ordered_indices = self._reorder_instances(
-            tokenized_contexts, tokenized_continuations
+            tokenized_contexts, tokenized_continuations, cache
         )
 
         # transpose the token ids so we can access them one instance at a time
@@ -288,7 +297,7 @@ class DecoderOnlyRCModel(RankClassificationModel):
                 Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries"),
                 batch_size)
             for batch_of_indices in batches_of_indices:
-                inputs, input_lengths, batch_contexts, batch_continuations = self._get_inputs(batch_of_indices, cc_pairs, model)
+                inputs, input_lengths, batch_contexts, batch_continuations = self._get_inputs(batch_of_indices, cc_pairs, model, cache)
                 batch_logits = log_softmax(model(**inputs)[0], dim=-1).cpu()
                 z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
                 for i, instance_logits, input_length, instance_context, instance_continuation in z:
@@ -311,22 +320,22 @@ class DecoderOnlyRCModel(RankClassificationModel):
                 tokenized_contexts['input_ids'][i] = tokenized_contexts['input_ids'][i][-model_max_length + cont_len:]
                 tokenized_contexts['attention_mask'][i] = tokenized_contexts['attention_mask'][i][-model_max_length + cont_len:]
     
-    def _reorder_instances(self, tokenized_contexts: BatchEncoding, tokenized_continuations: BatchEncoding) -> Sequence[int]:
+    def _reorder_instances(self, tokenized_contexts: BatchEncoding, tokenized_continuations: BatchEncoding, cache: CacheData = None) -> Sequence[int]:
         if self.prefix_caching:
-            return self._reorder_by_prefix(tokenized_contexts, tokenized_continuations)
+            return self._reorder_by_prefix(tokenized_contexts, tokenized_continuations, cache)
         else:
             return self._reorder_by_longest(tokenized_contexts, tokenized_continuations)
     
-    def _reorder_by_prefix(self, tokenized_contexts: BatchEncoding, tokenized_continuations: BatchEncoding) -> Sequence[int]:
-        self._reset_cache_variables()
+    def _reorder_by_prefix(self, tokenized_contexts: BatchEncoding, tokenized_continuations: BatchEncoding, cache: CacheData) -> Sequence[int]:
+        assert cache is not None, 'prefix reordering requires a CacheData object'
         combined_ids = [context + continuation for context, continuation in zip(tokenized_contexts['input_ids'], tokenized_continuations['input_ids'])]
-        self.longest_prefix_to_indices = self._order_by_common_prefix(combined_ids)
-        self.indices_to_longest_prefix = OrderedDict()
-        for prefix in sorted(self.longest_prefix_to_indices.keys(), key = lambda x : -len(x)):
+        cache.longest_prefix_to_indices = self._order_by_common_prefix(combined_ids)
+        cache.indices_to_longest_prefix = OrderedDict()
+        for prefix in sorted(cache.longest_prefix_to_indices.keys(), key = lambda x : -len(x)):
             # indices for each prefix are already sorted by trie
-            for index in self.longest_prefix_to_indices[prefix]:
-                self.indices_to_longest_prefix[index] = prefix
-        return list(self.indices_to_longest_prefix.keys())
+            for index in cache.longest_prefix_to_indices[prefix]:
+                cache.indices_to_longest_prefix[index] = prefix
+        return list(cache.indices_to_longest_prefix.keys())
     
     def _order_by_common_prefix(self, sequences: Sequence[Sequence[int]]) -> Dict[Sequence[Optional[int]],Sequence[int]]:
         longest_prefix_to_indices: Dict[Sequence[Optional[int]],Sequence[int]] = {}
@@ -354,27 +363,22 @@ class DecoderOnlyRCModel(RankClassificationModel):
         ], dtype=torch.int)
         return torch.argsort(lengths, descending=True).tolist()
 
-    def _reset_cache_variables(self):
-        self.cached_sequence: Sequence[Optional[int]] = None
-        self.cached_past_key_values: torch.Tensor = None
-        self.longest_prefix_to_indices: Dict[Sequence[Optional[int]],Sequence[int]] = None
-        self.indices_to_longest_prefix: OrderedDict[int,Sequence[int]] = None
-
-    def _get_inputs(self, batch_of_indices: Sequence[int], cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]], model: _Model):
+    def _get_inputs(self, batch_of_indices: Sequence[int], cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]], model: _Model, cache: CacheData = None):
         if self.prefix_caching:
-            return self._get_inputs_with_cache(batch_of_indices, cc_pairs, model)
+            return self._get_inputs_with_cache(batch_of_indices, cc_pairs, model, cache)
         else:
             return self._get_inputs_without_cache(batch_of_indices, cc_pairs, model)
             
 
-    def _get_inputs_with_cache(self, batch_of_indices: Sequence[int], cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]], model: _Model):
-        prefixes = [self.indices_to_longest_prefix[index] for index in batch_of_indices]
+    def _get_inputs_with_cache(self, batch_of_indices: Sequence[int], cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]], model: _Model, cache: CacheData):
+        assert cache is not None
+        prefixes = [cache.indices_to_longest_prefix[index] for index in batch_of_indices]
         prefix2cache = OrderedDict()
 
         # compute prefixes
         for prefix in set(prefixes):
-            if prefix == self.cached_sequence:
-                past_key_values = self.cached_past_key_values
+            if prefix == cache.cached_sequence:
+                past_key_values = cache.cached_past_key_values
             else:
                 past_key_values = model(input_ids=torch.tensor(prefix).to(model.device)).past_key_values
                 # tensor(layers, keys/values, batch_size, num_heads, sequence_len, embed_size_per_head)
@@ -384,7 +388,7 @@ class DecoderOnlyRCModel(RankClassificationModel):
             prefix2cache[prefix] = past_key_values
 
         # update cache with last one retrieved since instances come in order by common prefix
-        self.cached_sequence, self.cached_past_key_values = list(prefix2cache.items())[-1]
+        cache.cached_sequence, cache.cached_past_key_values = list(prefix2cache.items())[-1]
 
         # pad and mask batched past_key_values
         unpadded_past_keys_values = [prefix2cache[prefix] for prefix in prefixes]

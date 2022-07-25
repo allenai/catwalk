@@ -1,10 +1,27 @@
-from typing import Union, Dict, Any, Optional, Sequence, Iterable
+from typing import (
+    Union,
+    Dict,
+    Any,
+    Optional,
+    Sequence,
+    Iterable,
+    List,
+)
 from collections import defaultdict
 from random import Random
 
+import tango
+import transformers.optimization
 from tango import Step, JsonFormat
+from tango.common import Lazy, DatasetDict
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
+from tango.integrations.torch import (
+    TorchFormat,
+    TorchTrainingEngine,
+    DataLoader, TrainingEngine, TrainConfig,
+)
+from tango.integrations.torch.model import Model as TangoModel
 import torch
 
 from catwalk.task import Task
@@ -78,6 +95,150 @@ class CalculateMetricsStep(Step):
             task = TASKS[task]
 
         return model.calculate_metrics(task, predictions)
+
+
+@Step.register("catwalk::finetune")
+class FinetuneStep(Step):
+    # TODO: The parameters that are the defaults in this step need some serious optimization.
+
+    VERSION = "001"
+    FORMAT = TorchFormat
+
+    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(kwargs["model"], str):
+            kwargs["model"] = MODELS[kwargs["model"]]
+        kwargs["tasks"] = [TASKS[task] if isinstance(task, str) else task for task in kwargs["tasks"]]
+
+        return kwargs
+
+    def run(
+        self,
+        model: Union[str, Model],
+        tasks: List[Union[str, Task]],
+        training_steps: int = 10000,
+        training_engine: Lazy[TrainingEngine] = Lazy(
+            TorchTrainingEngine,
+            lr_scheduler=Lazy(
+                transformers.optimization.get_linear_schedule_with_warmup,
+                num_warmup_steps=200,
+                num_training_steps=10000
+            ),
+            optimizer=Lazy(
+                transformers.optimization.AdamW,
+                lr=1e-5,
+                betas=[0.9, 0.999],
+                eps=1e-8,
+            )
+        ),
+        model_wrapper: Optional[Lazy[TangoModel]] = None,
+        random_seed: int = 42,
+        batch_size: int = 16,
+        grad_accum: int = 1,
+        device_count: int = 1,
+        distributed_port: int = 54761,
+        train_split: str = "train",
+    ) -> Model:  # type: ignore
+        if isinstance(model, str):
+            model = MODELS[model]
+        tasks_in_a_special_variable_because_mypy_is_insane = [
+            TASKS[task] if isinstance(task, str) else task for task in tasks
+        ]
+
+        devices: List[int]
+        if torch.cuda.is_available() and torch.cuda.device_count() >= device_count:
+            devices = list(range(device_count))
+            self.logger.info("Training on %d GPU%s", device_count, "s" if device_count > 1 else "")
+        else:
+            devices = [-1] * device_count
+            self.logger.info(
+                "Training on CPU with %d worker%s", device_count, "s" if device_count > 1 else ""
+            )
+
+        if devices and len(devices) > 1:
+            is_distributed = True
+            num_workers = len(devices)
+        else:
+            is_distributed = False
+            num_workers = 1
+
+        train_config = TrainConfig(
+            self.unique_id,
+            self.work_dir,
+            step_name=self.name,
+            seed=random_seed,
+            train_steps=training_steps,
+            train_split="train",
+            checkpoint_every=1000,
+            grad_accum=grad_accum,
+            is_distributed=is_distributed,
+            world_size=num_workers,
+            distributed_port=distributed_port,
+            devices=devices
+        )
+
+        dataset_dict = DatasetDict(
+            splits={
+                "train": [
+                    (task, i)
+                    for task in tasks_in_a_special_variable_because_mypy_is_insane
+                    for i in task.get_split(train_split)
+                ]
+            },
+            metadata={}
+        )
+
+        trainable_model = model.trainable_copy()
+        data_loader = Lazy(
+            DataLoader,
+            collate_fn=trainable_model.collate_for_training,
+            batch_size=batch_size,
+            shuffle=True
+        )
+
+        if model_wrapper is None:
+            wrapped_model = trainable_model
+        else:
+            wrapped_model = Lazy(model_wrapper.construct, model=trainable_model)
+
+        if is_distributed:
+            import torch.multiprocessing as mp
+            from tango.common.util import get_extra_imported_modules
+            mp.spawn(
+                tango.integrations.torch.train._train,
+                args=(
+                    self.workspace,
+                    train_config,
+                    wrapped_model,
+                    training_engine,
+                    dataset_dict,
+                    data_loader,
+                    None,
+                    [],
+                    get_extra_imported_modules(),
+                ),
+                nprocs=num_workers,
+            )
+        else:
+            tango.integrations.torch.train._train(
+                0,
+                self.workspace,
+                train_config,
+                wrapped_model,
+                training_engine,
+                dataset_dict,
+                data_loader,
+            )
+
+        # Load best checkpoint before returning model.
+        if train_config.final_weights_path.is_file():
+            self.logger.info(
+                f"Loading best weights from {str(train_config.final_weights_path.resolve())}"
+            )
+            state = torch.load(train_config.final_weights_path, map_location="cpu")
+            # We use `strict=False` because there might be missing keys due to weight tying.
+            trainable_model.load_state_dict(state, strict=False)
+
+        return trainable_model
 
 
 @Step.register("catwalk::tabulate_metrics")

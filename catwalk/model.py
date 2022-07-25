@@ -1,5 +1,6 @@
 import inspect
 from abc import ABC
+from copy import deepcopy
 from typing import Sequence, Dict, Any, Iterator, Tuple, List
 
 import torch
@@ -7,6 +8,9 @@ from tango.common import Registrable, Tqdm
 from tango.common.det_hash import DetHashWithVersion
 
 from catwalk.task import Task
+
+
+Instance = Dict[str, Any]
 
 
 class Model(Registrable, DetHashWithVersion, ABC):
@@ -54,6 +58,48 @@ class Model(Registrable, DetHashWithVersion, ABC):
     @property
     def supports_fewshot(self) -> bool:
         return "num_shots" in inspect.signature(self.predict).parameters
+
+    def trainable_copy(self) -> "TrainableModel":
+        """Returns a trainable version of this model.
+
+        Catwalk models by default are immutable. Trainable models are not, because they can be trained.
+
+        This is an optional method. Only implement it if you want to train your model through catwalk.
+        """
+        raise NotImplementedError("This model does not support training.")
+
+
+class TrainableModel(Model, torch.nn.Module, ABC):
+    """
+    This is a catwalk model that also supports utility functions to make it possible to train.
+    """
+
+    def __init__(self, inner_module: torch.nn.Module):
+        super().__init__()
+        self.inner_module = inner_module
+
+    def forward(self, *args, **kwargs):
+        """
+        This method takes the input created by the :meth:`collate()` method and returns a dictionary that contains
+        the loss under the key ``"loss"``.
+        """
+        return self.inner_module.forward(*args, **kwargs)
+
+    def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:
+        """
+        Takes a batch of instances and turns them into inputs to the forward method (usually tensors).
+
+        Usually you would call this method from a PyTorch DataLoader. If you don't use PyTorch, you might have to
+        do something else.
+
+        :param instances: The instances to turn into tensors. Note that the input includes the task. Instances
+                          could come from different tasks.
+        :return: Input suitable for the trainable model's ``forward()`` method.
+        """
+        raise NotImplementedError
+
+    def trainable_copy(self) -> "TrainableModel":
+        return deepcopy(self)
 
 
 class UnsupportedTaskError(Exception):

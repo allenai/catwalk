@@ -1,3 +1,4 @@
+import collections
 from typing import Dict, Any, List, OrderedDict, Tuple, Sequence, Iterator, Union, Mapping, Optional, cast, Callable
 
 import more_itertools

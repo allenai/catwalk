@@ -21,14 +21,14 @@ class PrefixTrie():
         self.track_after_depth = track_after_depth
         self.nodes: List['PrefixTrieNode'] = []
         for i, sequence in Tqdm.tqdm(enumerate(sequences), desc="Building PrefixTrie for caching", total=len(sequences)):
-            self.add_sequence(sequence=sequence, index=i)
-        # remove all indices and lenghts_covered at non-forking, non-leaf nodes
+            self._add_sequence(sequence=sequence, index=i)
+        # only need to track sequences at forks and terminations
         for node in self.nodes:
             if len(node.children) == 1:
                 node.indices = []
                 node.lengths_covered = []
     
-    def add_sequence(self, sequence: Sequence[int], index: int):
+    def _add_sequence(self, sequence: Sequence[int], index: int):
         seq_len = len(sequence)
         current_node = self.root
         for token_idx, token in enumerate(sequence):
@@ -52,6 +52,7 @@ class PrefixTrieNode():
         self.children: Dict[int,'PrefixTrieNode'] = {}
     
     def get_sequence(self) -> List[Optional[int]]:
+        """Returns the sequence associated with a node"""
         current_node = self
         sequence = []
         while current_node.parent is not None:
@@ -59,8 +60,16 @@ class PrefixTrieNode():
             current_node = current_node.parent
         return sequence[::-1]
     
-    def get_prefix_indices(self) -> Tuple[List[int], int]:
-        """Returns all indices for subsequences of the current node including itself starting with longest and decreasing"""
+    def get_subsequences(self) -> Tuple[List[int], int]:
+        """
+        Returns a tuple of:
+            - a list of all indices for subsequences of the current node including itself 
+            starting with longest and decreasing
+            - an int, the total number of tokens covered in all subsequences by this prefix
+
+        Note when a PrefixTrie with track_after_depth > 0, some subsequences will be intentionally
+        ignored here as their indices are not registered in low depth nodes. 
+        """
         current_node = self
         indices = []
         already_found = set()

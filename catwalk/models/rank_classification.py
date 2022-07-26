@@ -246,6 +246,19 @@ class CacheData:
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
     def __init__(self, pretrained_model_name_or_path: str, *, override_weights_file: str = None, prefix_caching: bool = False):
+        """
+        # Parameters
+
+        pretrained_model_name_or_path : `str`
+            The name of the transformer, for example `"gpt2-large"`
+        override_weights_file : `str`, optional (default = `None`)
+            If set, this specifies a file from which to load alternate weights that override the
+            weights from huggingface. The file is expected to contain a PyTorch `state_dict`, created
+            with `torch.save()`.
+        prefix_caching : `bool`, optional (default = `False`)
+            If set to True uses a caching strategy that improves performance when many inputs in a task 
+            share prefixes. This orders the dataset by common prefixes and caches the current shared prefix.
+        """
         super().__init__(pretrained_model_name_or_path, override_weights_file=override_weights_file)
         self.prefix_caching = prefix_caching
 
@@ -329,22 +342,27 @@ class DecoderOnlyRCModel(RankClassificationModel):
     
     def _reorder_by_prefix(self, tokenized_contexts: BatchEncoding, tokenized_continuations: BatchEncoding, cache: CacheData) -> Sequence[int]:
         combined_ids = [context + continuation for context, continuation in zip(tokenized_contexts['input_ids'], tokenized_continuations['input_ids'])]
-        cache.longest_prefix_to_indices = self._order_by_common_prefix(combined_ids)
+        cache.longest_prefix_to_indices = self._greedy_assign_prefix_by_total_coverage(combined_ids)
         cache.indices_to_longest_prefix = OrderedDict()
+        # secondarily sort by length so that largest batches that may cause memory overflow are likely come early
         for prefix in sorted(cache.longest_prefix_to_indices.keys(), key = lambda x : -len(x)):
-            # indices for each prefix are already sorted by trie
+            # sequence indices for each prefix are already sorted by length from reading trie from leaf to root
             for index in cache.longest_prefix_to_indices[prefix]:
                 cache.indices_to_longest_prefix[index] = prefix
         return list(cache.indices_to_longest_prefix.keys())
     
-    def _order_by_common_prefix(self, sequences: Sequence[Sequence[int]]) -> Dict[Sequence[Optional[int]],Sequence[int]]:
+    def _greedy_assign_prefix_by_total_coverage(self, sequences: Sequence[Sequence[int]]) -> Dict[Sequence[Optional[int]],Sequence[int]]:
+        """Returns a Dict of prefixes and the sequence indices assigned to them. Sorts possible prefixes by total tokens covered in 
+        subsequences and assigns sequences to the first prefix they appear in. PrefixTrie only tracks subsequences after a minimum 
+        track_after_depth so short coincidental overlaps are be ignored."""
         longest_prefix_to_indices: Dict[Sequence[Optional[int]],Sequence[int]] = {}
         trie = PrefixTrie(sequences)
         leaves = trie.get_leaf_nodes()
         leaves_sequences = [tuple(leaf.get_sequence()) for leaf in leaves]
         leaves_and_sequences = Tqdm.tqdm(zip(leaves_sequences, leaves), desc="Finding prefixes", total=len(leaves))
-        leaves2prefixes = {leaf_sequence:leaf.get_prefix_indices() for leaf_sequence, leaf in leaves_and_sequences}
+        leaves2prefixes = {leaf_sequence:leaf.get_subsequences() for leaf_sequence, leaf in leaves_and_sequences}
 
+        # greedily assign sequences to prefixes with top total coverage
         indices_already_assigned = set()
         for leaf_sequence in sorted(leaves_sequences, key=lambda leaf_sequence : -leaves2prefixes[leaf_sequence][1]):
             prefix_indices, _ = leaves2prefixes[leaf_sequence]

@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed bug causing few-shot to use more than specified number of shots
 - Fixed bug in cached_transformer.get() that prevented using override_weights_file arg
+- Fixed the `load_weights` arg in cached_transformers.get() which was documented but not implemented
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

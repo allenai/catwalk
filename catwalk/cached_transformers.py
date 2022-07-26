@@ -15,13 +15,15 @@ class TransformerSpec:
     model_name: str
     override_weights_file: Optional[str] = None
     override_weights_strip_prefix: Optional[str] = None
+    load_weights: bool = True
 
     def __hash__(self):
         return hash((
             f"{self.cls.__module__}.{self.cls.__name__}",
             self.model_name,
             self.override_weights_file,
-            self.override_weights_strip_prefix
+            self.override_weights_strip_prefix,
+            self.load_weights
         ))
 
 
@@ -37,6 +39,7 @@ def get(
     make_copy: bool,
     override_weights_file: Optional[str] = None,
     override_weights_strip_prefix: Optional[str] = None,
+    load_weights: bool = True,
     **kwargs,
 ) -> T:
     """
@@ -69,10 +72,14 @@ def get(
         model_name,
         override_weights_file,
         override_weights_strip_prefix,
+        load_weights
     )
     transformer = _model_cache.get(spec, None)
     if transformer is None:
-        if override_weights_file is not None:
+        if not load_weights:
+            config = transformers.AutoConfig.from_pretrained(model_name, **kwargs)
+            transformer = cls.from_config(config)   # type: ignore
+        elif override_weights_file is not None:
             override_weights_file = cached_path(override_weights_file)
             override_weights = torch.load(override_weights_file)
             if override_weights_strip_prefix is not None:
@@ -98,10 +105,9 @@ def get(
                     )
                 override_weights = {strip_prefix(k): override_weights[k] for k in valid_keys}
 
-            transformer = cls.from_pretrained(  # type: ignore
-                model_name,
-                **kwargs,
-            )
+            # load from config to avoid loading default weights
+            config = transformers.AutoConfig.from_pretrained(model_name, **kwargs)
+            transformer = cls.from_config(config)   # type: ignore
             # When DistributedDataParallel or DataParallel is used, the state dict of the
             # DistributedDataParallel/DataParallel wrapper prepends "module." to all parameters
             # of the actual model, since the actual model is stored within the module field.
@@ -116,6 +122,7 @@ def get(
                 model_name,
                 **kwargs,
             )
+
         _model_cache[spec] = transformer
     if make_copy:
         import copy

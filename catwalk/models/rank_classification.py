@@ -22,7 +22,7 @@ class RankClassificationModel(Model):
     VERSION = "001nul"
 
     def __init__(self, pretrained_model_name_or_path: str, *, likelihood_averaging: str = 'char'):
-        assert likelihood_avging in {'char', 'token'}
+        assert likelihood_averaging in {'char', 'token'}
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.likelihood_averaging = likelihood_averaging
 

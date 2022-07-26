@@ -76,7 +76,10 @@ def get(
     )
     transformer = _model_cache.get(spec, None)
     if transformer is None:
-        if override_weights_file is not None:
+        if not load_weights:
+            config = transformers.AutoConfig.from_pretrained(model_name, **kwargs)
+            transformer = cls.from_config(config)   # type: ignore
+        elif override_weights_file is not None:
             override_weights_file = cached_path(override_weights_file)
             override_weights = torch.load(override_weights_file)
             if override_weights_strip_prefix is not None:
@@ -119,9 +122,6 @@ def get(
                 model_name,
                 **kwargs,
             )
-
-        if not load_weights:
-            transformer = cls.from_config(transformer.config)
 
         _model_cache[spec] = transformer
     if make_copy:

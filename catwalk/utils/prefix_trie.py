@@ -1,7 +1,6 @@
 from typing import List, Optional, Sequence, Tuple, Dict
 from tango.common import Tqdm
 
-
 class PrefixTrie():
     def __init__(self, sequences: Sequence[Sequence[int]], track_after_depth: int = 10):
         """
@@ -25,8 +24,7 @@ class PrefixTrie():
         # only need to track sequences at forks and terminations
         for node in self.nodes:
             if len(node.children) == 1:
-                node.indices = []
-                node.lengths_covered = []
+                node.subsequences_on_this_path = node.subsequences_ending_here
     
     def _add_sequence(self, sequence: Sequence[int], index: int):
         seq_len = len(sequence)
@@ -37,8 +35,8 @@ class PrefixTrie():
                 self.nodes.append(current_node.children[token])
             current_node = current_node.children[token]
             if (token_idx + 1 >= self.track_after_depth) or (token_idx + 1 >= seq_len):
-                current_node.indices.append(index)
-                current_node.lengths_covered.append(token_idx + 1)
+                current_node.subsequences_on_this_path[index] = token_idx + 1
+        current_node.subsequences_ending_here[index] = len(sequence)
     
     def get_leaf_nodes(self) -> List['PrefixTrieNode']:
         return [node for node in self.nodes if len(node.children) == 0]
@@ -47,7 +45,8 @@ class PrefixTrieNode():
     def __init__(self, parent: 'PrefixTrieNode' = None, token: int = None):
         self.parent = parent
         self.token = token
-        self.indices: List[int] = []
+        self.subsequences_on_this_path: Dict[int,int] = {}
+        self.subsequences_ending_here: Dict[int,int] = {}
         self.lengths_covered: List[int] = []
         self.children: Dict[int,'PrefixTrieNode'] = {}
     
@@ -76,7 +75,7 @@ class PrefixTrieNode():
         total_lengths_covered = 0
         while current_node.parent is not None:
             new_indices = []
-            for index, length_covered in zip(current_node.indices, current_node.lengths_covered):
+            for index, length_covered in current_node.subsequences_on_this_path.items():
                 if index not in already_found:
                     new_indices.append(index)
                     total_lengths_covered += length_covered
@@ -84,12 +83,3 @@ class PrefixTrieNode():
             indices.extend(new_indices)
             current_node = current_node.parent
         return indices, total_lengths_covered
-
-if __name__ == "__main__":
-    sequences = [[1,2,3],[2,3,4],[1,2,3,4]]
-    trie = PrefixTrie(sequences, track_after_depth=1)
-    leaves = trie.get_leaf_nodes()
-    assert leaves[0].get_sequence() == [2,3,4]
-    assert leaves[1].get_sequence() == [1,2,3,4]
-    assert leaves[0].get_prefix_indices() == ([1], 3)
-    assert leaves[1].get_prefix_indices() == ([2,0], 7)

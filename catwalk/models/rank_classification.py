@@ -23,8 +23,23 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 class RankClassificationModel(Model):
     VERSION = "001nul"
 
-    def __init__(self, pretrained_model_name_or_path: str, override_weights_file: str = None):
+    def __init__(self, pretrained_model_name_or_path: str, *, likelihood_avging: str = 'char', override_weights_file: str = None):
+        """
+        # Parameters
+
+        pretrained_model_name_or_path : `str`
+            The name of the transformer, for example `"gpt2-large"`
+        likelihood_avging : `str`, optional (default = `char`)
+            The method for averaging the sum likelihood of the continuation. 'char' averages by 
+            character length, 'tok' averages by token length.
+        override_weights_file : `str`, optional (default = `None`)
+            If set, this specifies a file from which to load alternate weights that override the
+            weights from huggingface. The file is expected to contain a PyTorch `state_dict`, created
+            with `torch.save()`.
+        """
+        assert likelihood_avging in {'char', 'tok'}
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.likelihood_avging = likelihood_avging
         self.override_weights_file = override_weights_file
 
     @classmethod
@@ -230,7 +245,8 @@ class EncoderDecoderRCModel(RankClassificationModel):
                 for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
                     instance_logits = instance_logits[:len(decoder_input_ids)]
                     instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1))
-                    results[i] = float(instance_logits.sum()) / len(tuples[i][1])
+                    denom = len(tuples[i][1]) if self.likelihood_avging == 'char' else len(decoder_input_ids)
+                    results[i] = float(instance_logits.sum()) / denom
 
         assert None not in results
         return cast(Sequence[float], results)
@@ -245,12 +261,22 @@ class CacheData:
 
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
-    def __init__(self, pretrained_model_name_or_path: str, *, override_weights_file: str = None, prefix_caching: bool = False):
+    def __init__(
+        self,
+        pretrained_model_name_or_path: str,
+        *,
+        likelihood_avging: str = 'char',
+        override_weights_file: str = None,
+        prefix_caching: bool = False
+    ):
         """
         # Parameters
 
         pretrained_model_name_or_path : `str`
             The name of the transformer, for example `"gpt2-large"`
+        likelihood_avging : `str`, optional (default = `char`)
+            The method for averaging the sum likelihood of the continuation. 'char' averages by 
+            character length, 'tok' averages by token length.
         override_weights_file : `str`, optional (default = `None`)
             If set, this specifies a file from which to load alternate weights that override the
             weights from huggingface. The file is expected to contain a PyTorch `state_dict`, created
@@ -259,7 +285,7 @@ class DecoderOnlyRCModel(RankClassificationModel):
             If set to True uses a caching strategy that improves performance when many inputs in a task 
             share prefixes. This orders the dataset by common prefixes and caches the current shared prefix.
         """
-        super().__init__(pretrained_model_name_or_path, override_weights_file=override_weights_file)
+        super().__init__(pretrained_model_name_or_path, likelihood_avging=likelihood_avging, override_weights_file=override_weights_file)
         self.prefix_caching = prefix_caching
 
     @classmethod
@@ -317,7 +343,8 @@ class DecoderOnlyRCModel(RankClassificationModel):
                     assert input_length-len(instance_continuation) >=0
                     instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
                     instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1))
-                    results[i] = float(instance_logits.sum()) / len(tokenized_continuations.input_ids[i])
+                    denom = len(tuples[i][1]) if self.likelihood_avging == 'char' else len(instance_continuation)
+                    results[i] = float(instance_logits.sum()) / denom
 
         assert None not in results
         return cast(Sequence[float], results)

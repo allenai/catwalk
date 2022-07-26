@@ -21,12 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds a new MetaICLTask that supports the evaluation classification tasks in that benchmark
 - Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
 - Optional random_subsample_seed for PredictStep
+- An option for rank classification to average log likelihoods by token length
 - Prefix caching for DecoderOnlyRCModel that reuses overlapping prefixes between instances rather than recomputing them
+
 ### Fixed
 
 - Fixed bug causing few-shot to use more than specified number of shots
 - Fixed bug in cached_transformer.get() that prevented using override_weights_file arg
-- Fixed bug where rank classification log likelihoods were being averaged by choice character length rather than token length
+
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 
 ### Changed

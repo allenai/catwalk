@@ -16,13 +16,19 @@ class MetaICLModel(DecoderOnlyRCModel):
         self,
         pretrained_model_name_or_path: str,
         *,
+        likelihood_avging: str = 'tok',
         override_weights_file: str = None,
         prefix_caching: bool = True,
         max_length_per_example: int = 256,
         continuation_seperator: str = '\n',
         example_seperator: str = '\n\n\n'
     ):
-        super().__init__(pretrained_model_name_or_path, override_weights_file=override_weights_file, prefix_caching=prefix_caching)
+        super().__init__(
+            pretrained_model_name_or_path,
+            likelihood_avging=likelihood_avging,
+            override_weights_file=override_weights_file,
+            prefix_caching=prefix_caching
+        )
         self.max_length_per_example = max_length_per_example
         self.continuation_seperator = continuation_seperator
         self.example_seperator = example_seperator

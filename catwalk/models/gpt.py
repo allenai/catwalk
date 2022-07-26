@@ -4,11 +4,14 @@ from typing import Any, Dict, Iterator, List, Sequence, Tuple
 
 import more_itertools
 import torch
+from tango.common import Tqdm
+from tango.common.sequences import MappedSequence
+from tango.integrations.torch.util import resolve_device
+
 from catwalk import cached_transformers
 from catwalk.model import Model
 from catwalk.task import InstanceFormat, Task
-from tango.common import Tqdm
-from tango.integrations.torch.util import resolve_device
+
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -18,6 +21,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 class GPTModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        
+    def _convert_instances(self, instances: Sequence[Dict[str, Any]], instance_format, task) -> MappedSequence:
+        return MappedSequence(lambda instance: task.convert_instance(instance, instance_format), instances)
 
     def predict(  # type: ignore
         self,
@@ -45,13 +51,15 @@ class GPTModel(Model):
             AutoTokenizer, self.pretrained_model_name_or_path)
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = 'left'
+        
+        converted_instances = self._convert_instances(instances, InstanceFormat.HF_QA, task)
 
         def format_instance(instance: Dict[str, Any]) -> Tuple[str, str]:
             # TODO: Use promptsource to add more prompt options?
-            return instance['context'], f"\nQuestion:{instance['question']}\nAnswer:"
+            return instance.context, f"\nQuestion:{instance.question}\nAnswer:"
 
-        instances = Tqdm.tqdm(instances, desc="Processing instances")
-        for batch in more_itertools.chunked(instances, batch_size):
+        converted_instances = Tqdm.tqdm(converted_instances, desc="Processing instances")
+        for batch in more_itertools.chunked(converted_instances, batch_size):
             formatted_batch = [format_instance(instance) for instance in batch]
             encodings = tokenizer(formatted_batch,
                                   padding="max_length",
@@ -102,7 +110,7 @@ class GPTModel(Model):
 
             # Keep only the first sample for each instance that contains the answer.
             for example_idx in sample_to_example_idx.keys():
-                answers = batch[example_idx]["answers"]
+                answers = batch[example_idx].answers
                 for sample_idx in sample_to_example_idx[example_idx]:
                     for answer_idx in range(len(answers["text"])):
                         start_char = answers["answer_start"][answer_idx]
@@ -132,7 +140,7 @@ class GPTModel(Model):
 
             for instance, prediction in zip(batch, outputs):
                 yield {
-                    "squad_metrics": ({"id": instance["id"], "prediction_text": prediction}, {"id": instance["id"], "answers": instance["answers"]})
+                    "squad_metrics": ({"id": instance.id, "prediction_text": prediction}, {"id": instance.id, "answers": instance.answers})
                 }
 
     def _predict_preplixity(

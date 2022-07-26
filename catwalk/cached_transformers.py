@@ -102,10 +102,9 @@ def get(
                     )
                 override_weights = {strip_prefix(k): override_weights[k] for k in valid_keys}
 
-            transformer = cls.from_pretrained(  # type: ignore
-                model_name,
-                **kwargs,
-            )
+            # load from config to avoid loading default weights
+            config = transformers.AutoConfig.from_pretrained(model_name, **kwargs)
+            transformer = cls.from_config(config)   # type: ignore
             # When DistributedDataParallel or DataParallel is used, the state dict of the
             # DistributedDataParallel/DataParallel wrapper prepends "module." to all parameters
             # of the actual model, since the actual model is stored within the module field.

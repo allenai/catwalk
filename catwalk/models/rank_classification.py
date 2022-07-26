@@ -21,10 +21,10 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 class RankClassificationModel(Model):
     VERSION = "001nul"
 
-    def __init__(self, pretrained_model_name_or_path: str, *, likelihood_avging: str = 'char'):
-        assert likelihood_avging in {'char', 'tok'}
+    def __init__(self, pretrained_model_name_or_path: str, *, likelihood_averaging: str = 'char'):
+        assert likelihood_avging in {'char', 'token'}
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.likelihood_avging = likelihood_avging
+        self.likelihood_averaging = likelihood_averaging
 
     @classmethod
     def _make_model(cls, pretrained_model_name_or_path: str) -> _Model:
@@ -229,7 +229,7 @@ class EncoderDecoderRCModel(RankClassificationModel):
                 for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
                     instance_logits = instance_logits[:len(decoder_input_ids)]
                     instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1))
-                    denom = len(tuples[i][1]) if self.likelihood_avging == 'char' else len(decoder_input_ids)
+                    denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(decoder_input_ids)
                     results[i] = float(instance_logits.sum()) / denom
 
         assert None not in results
@@ -308,7 +308,7 @@ class DecoderOnlyRCModel(RankClassificationModel):
                 for i, instance_logits, input_length, instance_context, instance_continuation in z:
                     instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
                     instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1))
-                    denom = len(tuples[i][1]) if self.likelihood_avging == 'char' else len(instance_continuation)
+                    denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(instance_continuation)
                     results[i] = float(instance_logits.sum()) / denom
 
         assert None not in results

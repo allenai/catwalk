@@ -11,6 +11,7 @@ from tango.integrations.torch.util import resolve_device
 from catwalk import cached_transformers
 from catwalk.model import Model
 from catwalk.task import InstanceFormat, Task
+from catwalk.tasks.huggingface import HFQAInstance
 
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
@@ -35,7 +36,7 @@ class GPTModel(Model):
         if task.has_instance_conversion(InstanceFormat.HF_QA):
             return self._predict_qa(task, instances, batch_size=batch_size)
 
-        raise self._predict_preplixity(task, instances, batch_size=batch_size)
+        return self._predict_preplixity(task, instances, batch_size=batch_size)
 
     def _predict_qa(
             self,
@@ -54,7 +55,7 @@ class GPTModel(Model):
         
         converted_instances = self._convert_instances(instances, InstanceFormat.HF_QA, task)
 
-        def format_instance(instance: Dict[str, Any]) -> Tuple[str, str]:
+        def format_instance(instance: HFQAInstance) -> Tuple[str, str]:
             # TODO: Use promptsource to add more prompt options?
             return instance.context, f"\nQuestion:{instance.question}\nAnswer:"
 
@@ -79,7 +80,7 @@ class GPTModel(Model):
             for i, sample in enumerate(sample_map):
                 sample_to_example_idx[sample.item()].append(i)
 
-            filtered_encodings = {"input_ids": [], "attention_mask": []}
+            filtered_encodings: Dict[str, List] = {"input_ids": [], "attention_mask": []}
 
             # We need to use the offset mapping to get the actual start and end indices of the context.
             # To do this we need to find the index of the first/last token in the context.

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds a new MetaICLTask that supports the evaluation classification tasks in that benchmark
 - Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
 - Optional random_subsample_seed for PredictStep
+- Adds QA task support for autoregressive models
 
 ### Fixed
 

@@ -19,9 +19,14 @@ class MetaICLModel(DecoderOnlyRCModel):
         likelihood_averaging: str = 'token',
         max_length_per_example: int = 256,
         continuation_seperator: str = '\n',
-        example_seperator: str = '\n\n\n'
+        example_seperator: str = '\n\n\n',
+        **model_kwargs
     ):
-        super().__init__(pretrained_model_name_or_path, likelihood_averaging=likelihood_averaging)
+        super().__init__(
+            pretrained_model_name_or_path,
+            likelihood_averaging=likelihood_averaging,
+            **model_kwargs
+        )
         self.max_length_per_example = max_length_per_example
         self.continuation_seperator = continuation_seperator
         self.example_seperator = example_seperator

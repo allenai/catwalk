@@ -23,7 +23,14 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 class RankClassificationModel(Model):
     VERSION = "001nul"
 
-    def __init__(self, pretrained_model_name_or_path: str, *, likelihood_averaging: str = 'char', override_weights_file: str = None):
+    def __init__(
+        self,
+        pretrained_model_name_or_path: str,
+        *,
+        likelihood_averaging: str = 'char',
+        override_weights_file: str = None,
+        **model_kwargs
+    ):
         """
         # Parameters
 
@@ -36,14 +43,16 @@ class RankClassificationModel(Model):
             If set, this specifies a file from which to load alternate weights that override the
             weights from huggingface. The file is expected to contain a PyTorch `state_dict`, created
             with `torch.save()`.
+        model_kwargs:
+            Additional kwargs passed to the `_make_model` method.
         """
         assert likelihood_averaging in {'char', 'token'}
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.likelihood_averaging = likelihood_averaging
         self.override_weights_file = override_weights_file
+        self.model_kwargs = model_kwargs
 
-    @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, override_weights_file: str = None) -> _Model:
+    def _make_model(cls, pretrained_model_name_or_path: str, *, override_weights_file: str = None, **kwargs) -> _Model:
         raise NotImplementedError
 
     def predict(  # type: ignore
@@ -57,7 +66,7 @@ class RankClassificationModel(Model):
         fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = self._make_model(self.pretrained_model_name_or_path, self.override_weights_file).to(device).eval()
+        model = self._make_model(self.pretrained_model_name_or_path, override_weights_file=self.override_weights_file, **self.model_kwargs).to(device).eval()
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
@@ -190,7 +199,7 @@ class TrainableRankClassificationModel(TrainableModel):
 @Model.register("rc::encoder_decoder")
 class EncoderDecoderRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, override_weights_file: str = None) -> T5ForConditionalGeneration:
+    def _make_model(cls, pretrained_model_name_or_path: str, *, override_weights_file: str = None, **kwargs) -> T5ForConditionalGeneration:
         return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False, override_weights_file=override_weights_file)
 
     def _run_loglikelihood(
@@ -267,7 +276,8 @@ class DecoderOnlyRCModel(RankClassificationModel):
         *,
         likelihood_averaging: str = 'char',
         override_weights_file: str = None,
-        prefix_caching: bool = False
+        prefix_caching: bool = False,
+        **model_kwargs
     ):
         """
         # Parameters
@@ -284,12 +294,14 @@ class DecoderOnlyRCModel(RankClassificationModel):
         prefix_caching : `bool`, optional (default = `False`)
             If set to True uses a caching strategy that improves performance when many inputs in a task 
             share prefixes. This orders the dataset by common prefixes and caches the current shared prefix.
+        model_kwargs:
+            Additional kwargs passed to the `_make_model` method.
         """
-        super().__init__(pretrained_model_name_or_path, likelihood_averaging=likelihood_averaging, override_weights_file=override_weights_file)
+        super().__init__(pretrained_model_name_or_path, likelihood_averaging=likelihood_averaging, override_weights_file=override_weights_file, **model_kwargs)
         self.prefix_caching = prefix_caching
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, override_weights_file: str = None) -> GPT2LMHeadModel:
+    def _make_model(cls, pretrained_model_name_or_path: str, *, override_weights_file: str = None, **kwargs) -> GPT2LMHeadModel:
         return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False, override_weights_file=override_weights_file)
 
     def _run_loglikelihood(

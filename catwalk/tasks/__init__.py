@@ -9,6 +9,7 @@ from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conv
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
+from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
@@ -66,6 +67,105 @@ TASKS: Dict[str, Task] = {
             answers_field="answers",
             id_field="id"
         )   
+    ).add_metrics(QA_METRICS),
+    "mrqa::race": MrqaTask("mrqa", "race").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
+    "mrqa::newsqa": MrqaTask("mrqa", "newsqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
+    "mrqa::triviaqa": MrqaTask("mrqa", "triviaqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::searchqa": MrqaTask("mrqa", "searchqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::hotpotqa": MrqaTask("mrqa", "hotpotqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::naturalquestions": MrqaTask("mrqa", "naturalquestions").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::bioasq": MrqaTask("mrqa", "bioasq").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::drop": MrqaTask("mrqa", "drop").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::relationextraction": MrqaTask("mrqa", "relationextraction").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::textbookqa": MrqaTask("mrqa", "textbookqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "mrqa::duorc.paraphraserc": MrqaTask("mrqa", "duorc.paraphraserc").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(

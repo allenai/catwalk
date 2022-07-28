@@ -7,8 +7,10 @@ import catwalk.tasks
 import catwalk.models
 
 # There are too many P3 tasks, so we just pick one.
-task_names = [task for task in catwalk.tasks.TASKS.keys() if not task.startswith("p3::")]
+# MRQA dataset takes too long to load, so we skip it.
+task_names = [task for task in catwalk.tasks.TASKS.keys() if not task.startswith("p3::") and not task.startswith("mrqa::")]
 task_names.insert(0, "p3::wiki_qa_Is_This_True_")
+
 
 @pytest.mark.parametrize("task_name", task_names)
 def test_task(task_name: str):

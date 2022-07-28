@@ -68,7 +68,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )   
     ).add_metrics(QA_METRICS),
-    "race-mrqa": MrqaTask("mrqa", "race").add_instance_conversion(
+    "mrqa::race": MrqaTask("mrqa", "race").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -77,7 +77,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )   
     ).add_metrics(QA_METRICS),
-    "newsqa": MrqaTask("mrqa", "newsqa").add_instance_conversion(
+    "mrqa::newsqa": MrqaTask("mrqa", "newsqa").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -86,7 +86,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )   
     ).add_metrics(QA_METRICS),
-    "triviaqa-mrqa": MrqaTask("mrqa", "triviaqa").add_instance_conversion(
+    "mrqa::triviaqa": MrqaTask("mrqa", "triviaqa").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -95,7 +95,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "searchqa": MrqaTask("mrqa", "searchqa").add_instance_conversion(
+    "mrqa::searchqa": MrqaTask("mrqa", "searchqa").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -104,7 +104,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "hotpotqa": MrqaTask("mrqa", "hotpotqa").add_instance_conversion(
+    "mrqa::hotpotqa": MrqaTask("mrqa", "hotpotqa").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -113,7 +113,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "naturalquestions": MrqaTask("mrqa", "naturalquestions").add_instance_conversion(
+    "mrqa::naturalquestions": MrqaTask("mrqa", "naturalquestions").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -122,7 +122,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "bioasq": MrqaTask("mrqa", "bioasq").add_instance_conversion(
+    "mrqa::bioasq": MrqaTask("mrqa", "bioasq").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -131,7 +131,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "drop-mrqa": MrqaTask("mrqa", "drop").add_instance_conversion(
+    "mrqa::drop": MrqaTask("mrqa", "drop").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -140,7 +140,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "relationextraction": MrqaTask("mrqa", "relationextraction").add_instance_conversion(
+    "mrqa::relationextraction": MrqaTask("mrqa", "relationextraction").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -149,7 +149,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "textbookqa": MrqaTask("mrqa", "textbookqa").add_instance_conversion(
+    "mrqa::textbookqa": MrqaTask("mrqa", "textbookqa").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",
@@ -158,7 +158,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(QA_METRICS),
-    "duorc.paraphraserc": MrqaTask("mrqa", "duorc.paraphraserc").add_instance_conversion(
+    "mrqa::duorc.paraphraserc": MrqaTask("mrqa", "duorc.paraphraserc").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",

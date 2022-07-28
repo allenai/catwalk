@@ -5,14 +5,14 @@ from typing import Optional
 
 class MrqaTask(HFDatasetsTask):
     TEST_DATASETS = ["race", "drop", "bioasq", "relationextraction", "textbookqa", "duorc.paraphraserc"]
-    TAIN_AND_DEV_DATASETS = ["newsqa", "searchqa", "triviaqa", "naturalquestions", "hotpotqa"]
+    DEV_DATASETS = ["newsqa", "searchqa", "triviaqa", "naturalquestions", "hotpotqa"]
     
     @functools.lru_cache
     def has_split(self, split: str) -> bool:
         if self.dataset_name in self.TEST_DATASETS:
             return split == "test"
-        elif self.dataset_name in self.TAIN_AND_DEV_DATASETS:
-            return split in {"train", "validation"}
+        elif self.dataset_name in self.DEV_DATASETS:
+            return split == "validation"
 
         return False
 

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
 - Optional random_subsample_seed for PredictStep
 - An option for rank classification to average log likelihoods by token length
+- Added MRQA task
 
 ### Fixed
 

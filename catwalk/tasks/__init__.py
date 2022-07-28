@@ -9,6 +9,7 @@ from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conv
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
+from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
@@ -66,6 +67,105 @@ TASKS: Dict[str, Task] = {
             answers_field="answers",
             id_field="id"
         )   
+    ).add_metrics(QA_METRICS),
+    "race-mrqa": MrqaTask("mrqa", "race").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
+    "newsqa": MrqaTask("mrqa", "newsqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )   
+    ).add_metrics(QA_METRICS),
+    "triviaqa-mrqa": MrqaTask("mrqa", "triviaqa-mrqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "searchqa": MrqaTask("mrqa", "searchqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "hotpotqa": MrqaTask("mrqa", "hotpotqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "naturalquestions": MrqaTask("mrqa", "naturalquestions").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "bioasq": MrqaTask("mrqa", "bioasq").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "drop-mrqa": MrqaTask("mrqa", "drop").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "relationextraction": MrqaTask("mrqa", "relationextraction").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "textbookqa": MrqaTask("mrqa", "textbookqa").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
+    ).add_metrics(QA_METRICS),
+    "duorc.paraphraserc": MrqaTask("mrqa", "duorc.paraphraserc").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion(
+            context_field="context",
+            question_field="question",
+            answers_field="answers",
+            id_field="id"
+        )
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(

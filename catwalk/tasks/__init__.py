@@ -86,7 +86,7 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )   
     ).add_metrics(QA_METRICS),
-    "triviaqa-mrqa": MrqaTask("mrqa", "triviaqa-mrqa").add_instance_conversion(
+    "triviaqa-mrqa": MrqaTask("mrqa", "triviaqa").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion(
             context_field="context",

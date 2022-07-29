@@ -434,19 +434,25 @@ class DecoderOnlyRCModel(RankClassificationModel):
         prefix2cache = OrderedDict()
 
         # compute prefixes
-        for prefix in set(prefixes):
-            if prefix == cache.cached_sequence:
-                past_key_values = cache.cached_past_key_values
-            else:
-                past_key_values = model(input_ids=torch.tensor(prefix).to(model.device)).past_key_values
-                # tensor(layers, keys/values, batch_size, num_heads, sequence_len, embed_size_per_head)
-                past_key_values = torch.stack(tuple(torch.stack(past_key_values[i]) for i in range(len(past_key_values))))
+        if prefixes[0] == cache.cached_sequence:
+            prefix2cache[prefixes[0]] = cache.cached_past_key_values
+
+        uncached_prefixes = list(set(prefix for prefix in prefixes if prefix not in prefix2cache)) # ordering must be fixed
+        if len(uncached_prefixes) > 0:
+            unpadded_prefixes = [torch.tensor(prefix) for prefix in uncached_prefixes]
+            unpadded_prefix_mask = [torch.ones_like(prefix) for prefix in unpadded_prefixes]
+            padded_prefixes = pad_sequence(unpadded_prefixes, batch_first=True).to(model.device)
+            padded_prefix_masks = pad_sequence(unpadded_prefix_mask, batch_first=True, padding_value=0.0).to(model.device)
+            past_key_values = model(input_ids=padded_prefixes, attention_mask=padded_prefix_masks).past_key_values
+            # tensor(layers, keys/values, batch_size, num_heads, sequence_len, embed_size_per_head)
+            past_key_values = torch.stack(tuple(torch.stack(past_key_values[i]) for i in range(len(past_key_values))))
+            for i, prefix in enumerate(uncached_prefixes):
                 # tensor(layers, keys/values, num_heads, sequence_len, embed_size_per_head)
-                past_key_values = past_key_values.squeeze(2)
-            prefix2cache[prefix] = past_key_values
+                prefix2cache[prefix] = past_key_values[:,:,i,:,:len(prefix),:]
 
         # update cache with last one retrieved since instances come in order by common prefix
-        cache.cached_sequence, cache.cached_past_key_values = list(prefix2cache.items())[-1]
+        cache.cached_sequence = prefixes[-1]
+        cache.cached_past_key_values = prefix2cache[prefixes[-1]]
 
         # pad and mask batched past_key_values
         unpadded_past_keys_values = [prefix2cache[prefix] for prefix in prefixes]

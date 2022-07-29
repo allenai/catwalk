@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional random_subsample_seed for PredictStep
 - An option for rank classification to average log likelihoods by token length
 - Adds support for inference with IA3 adaptors loaded from a file on decoder only ranked classification models
+- Prefix caching for DecoderOnlyRCModel that reuses overlapping prefixes between instances rather than recomputing them
 
 ### Fixed
 

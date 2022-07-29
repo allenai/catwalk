@@ -11,8 +11,16 @@ from catwalk.models import MetaICLModel
 
 class DecoderOnlyIA3Mixin:
     @classmethod
-    def _make_model(self, pretrained_model_name_or_path: str, *, ia3_weights_file: str = None, **kwargs) -> GPT2LMHeadModel:
-        model = cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, True)
+    def _make_model(
+        
+        self,
+        pretrained_model_name_or_path: str,
+        *,
+        override_weights_file: str = None,
+        ia3_weights_file: str = None,
+        **kwargs
+    ) -> GPT2LMHeadModel:
+        model = cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, True, override_weights_file=override_weights_file)
         isinstance(model, GPT2LMHeadModel)
         config = IA3ForGPT2Config()
         model = modify_with_ia3(model, config)
@@ -27,6 +35,8 @@ class IA3MetaICLModel(DecoderOnlyIA3Mixin, MetaICLModel):
         pretrained_model_name_or_path: str,
         *,
         likelihood_averaging: str = 'token',
+        override_weights_file: str = None,
+        prefix_caching: bool = True,
         max_length_per_example: int = 256,
         continuation_seperator: str = '\n',
         example_seperator: str = '\n\n\n',
@@ -36,6 +46,8 @@ class IA3MetaICLModel(DecoderOnlyIA3Mixin, MetaICLModel):
         super().__init__(
             pretrained_model_name_or_path,
             likelihood_averaging=likelihood_averaging,
+            override_weights_file=override_weights_file,
+            prefix_caching=prefix_caching,
             max_length_per_example=max_length_per_example,
             continuation_seperator=continuation_seperator,
             example_seperator=example_seperator,

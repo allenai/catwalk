@@ -91,13 +91,13 @@ class MetaICLTask(Task):
             if as_rc.correct_choice is None:
                 raise ValueError("Could not determine correct choice in ranked classification instance.")
             correct_choice = as_rc.choices[as_rc.correct_choice]
-            prefix += f"{correct_choice[0].strip()}{continuation_seperator}{correct_choice[1].strip()}{example_seperator}"
+            prefix += correct_choice[0] + correct_choice[1] + example_seperator
 
         choices = [
             (prefix + instance['input'], continuation_seperator + option)
             for option in instance['options']
         ]
 
-        label = instance['options'].index(instance['output'].strip())
+        label = instance['options'].index(instance['output'])
         assert label < len(choices)
         return RankClassificationInstance(choices, label)

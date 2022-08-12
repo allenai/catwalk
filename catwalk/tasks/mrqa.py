@@ -19,7 +19,10 @@ class MrqaTask(HFDatasetsTask):
     @functools.lru_cache
     def dataset(self, split: str):
         assert self.dataset_name is not None, "MRQA requires a dataset name as it contains multiple subsets"
-
+assert_message = f"Specified task, {self.dataset_name}, is not in specified split, {split}." \
+    if split in {"validation", "test"} \
+    else f"No such split {split}."
+assert self.has_split(split), assert_message
         def filter_subset(example):
             return example["subset"].lower() == self.dataset_name
         

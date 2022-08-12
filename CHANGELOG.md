@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed progress bar for HFAutoModel QA evaluation by moving batching out of pipeline
 - Fixed bug causing few-shot to use more than specified number of shots
 - Fixed bug in cached_transformer.get() that prevented using override_weights_file arg
 - Fixed the `load_weights` arg in cached_transformers.get() which was documented but not implemented

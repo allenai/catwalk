@@ -63,9 +63,9 @@ class GPTModel(Model):
         for batch in more_itertools.chunked(converted_instances, batch_size):
             formatted_batch = [format_instance(instance) for instance in batch]
             encodings = tokenizer(formatted_batch,
-                                  padding="max_length",
+                                  padding="longest",
                                   truncation="only_first",
-                                  max_length=384,  # TODO: Make this configurable?
+                                  max_length=model.config.n_positions - model.config.task_specific_params['text-generation']['max_length'],  # TODO: Make this configurable?
                                   stride=128,
                                   return_overflowing_tokens=True,
                                   return_offsets_mapping=True,
@@ -76,9 +76,10 @@ class GPTModel(Model):
             offset_mapping = encodings.pop("offset_mapping")
             token_type_map = encodings.pop("token_type_ids")
 
-            sample_to_example_idx = defaultdict(list)
-            for i, sample in enumerate(sample_map):
-                sample_to_example_idx[sample.item()].append(i)
+            # each example in the batch may have multiple sampled windows due to truncation
+            example_idx_to_sample_idx = defaultdict(list)
+            for i, example_idx in enumerate(sample_map):
+                example_idx_to_sample_idx[example_idx.item()].append(i)
 
             filtered_encodings: Dict[str, List] = {"input_ids": [], "attention_mask": []}
 
@@ -110,9 +111,9 @@ class GPTModel(Model):
                 return offset[start_index][0] <= answer_indices[0] and answer_indices[1] <= offset[end_index][1]
 
             # Keep only the first sample for each instance that contains the answer.
-            for example_idx in sample_to_example_idx.keys():
+            for example_idx in example_idx_to_sample_idx.keys():
                 answers = batch[example_idx].answers
-                for sample_idx in sample_to_example_idx[example_idx]:
+                for sample_idx in example_idx_to_sample_idx[example_idx]:
                     for answer_idx in range(len(answers["text"])):
                         start_char = answers["answer_start"][answer_idx]
                         end_char = start_char + \
@@ -127,15 +128,17 @@ class GPTModel(Model):
                     # check if we found a sample that contains the answer and break out of the loop
                     if len(filtered_encodings["input_ids"])-1 == example_idx:
                         break
-
+            assert len(filtered_encodings["input_ids"]) > 0, "No answers were found in truncation samples in this batch; please try a different stride value"
+            
             with torch.inference_mode():
                 outputs = model.generate(input_ids=torch.stack(filtered_encodings["input_ids"]).to(device),
                                          attention_mask=torch.stack(
                                              filtered_encodings["attention_mask"]).to(device),
-                                         max_new_tokens=20,
+                                         max_new_tokens=model.config.task_specific_params['text-generation']['max_length'],
                                          pad_token_id=tokenizer.pad_token_id,
+                                         eos_token_id=tokenizer.encode('\n')[0],
                                          num_beams=1)
-            outputs = [output[384 + 1:] for output in outputs]
+            outputs = [output[len(filtered_encodings["input_ids"][0]) + 1:] for output in outputs]
             outputs = tokenizer.batch_decode(
                 outputs, skip_special_tokens=True, clean_up_tokenization_spaces=True)
 

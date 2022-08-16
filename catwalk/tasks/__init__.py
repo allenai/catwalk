@@ -25,147 +25,67 @@ TASKS: Dict[str, Task] = {
     ).add_metrics(MC_METRICS),
     "squad": HFDatasetsTask("squad").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "squadshifts-reddit": HFDatasetsTask("squadshifts", "reddit").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )   
+        hfqa_conversion()   
     ).add_metrics(QA_METRICS),
     "squadshifts-amazon": HFDatasetsTask("squadshifts", "amazon").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )   
+        hfqa_conversion()   
     ).add_metrics(QA_METRICS),
     "squadshifts-nyt": HFDatasetsTask("squadshifts", "nyt").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )   
+        hfqa_conversion()   
     ).add_metrics(QA_METRICS),
     "squadshifts-new-wiki": HFDatasetsTask("squadshifts", "new_wiki").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )   
+        hfqa_conversion()   
     ).add_metrics(QA_METRICS),
     "mrqa::race": MrqaTask("mrqa", "race").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )   
+        hfqa_conversion()   
     ).add_metrics(QA_METRICS),
     "mrqa::newsqa": MrqaTask("mrqa", "newsqa").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )   
+        hfqa_conversion()   
     ).add_metrics(QA_METRICS),
     "mrqa::triviaqa": MrqaTask("mrqa", "triviaqa").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::searchqa": MrqaTask("mrqa", "searchqa").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::hotpotqa": MrqaTask("mrqa", "hotpotqa").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::naturalquestions": MrqaTask("mrqa", "naturalquestions").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::bioasq": MrqaTask("mrqa", "bioasq").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::drop": MrqaTask("mrqa", "drop").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::relationextraction": MrqaTask("mrqa", "relationextraction").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::textbookqa": MrqaTask("mrqa", "textbookqa").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "mrqa::duorc.paraphraserc": MrqaTask("mrqa", "duorc.paraphraserc").add_instance_conversion(
         InstanceFormat.HF_QA,
-        hfqa_conversion(
-            context_field="context",
-            question_field="question",
-            answers_field="answers",
-            id_field="id"
-        )
+        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(

@@ -4,8 +4,8 @@ import functools
 from typing import Optional
 
 class MrqaTask(HFDatasetsTask):
-    TEST_DATASETS = ["race", "drop", "bioasq", "relationextraction", "textbookqa", "duorc.paraphraserc"]
-    DEV_DATASETS = ["newsqa", "searchqa", "triviaqa", "naturalquestions", "hotpotqa"]
+    TEST_DATASETS = {"race", "drop", "bioasq", "relationextraction", "textbookqa", "duorc.paraphraserc"}
+    DEV_DATASETS = {"newsqa", "searchqa", "triviaqa", "naturalquestions", "hotpotqa"}
     
     @functools.lru_cache
     def has_split(self, split: str) -> bool:
@@ -36,8 +36,8 @@ class MrqaTask(HFDatasetsTask):
         def preprocess_answers(example):
             example["answers"].update(
                 {'answer_start': [x["start"][0] for x in example["answers"]["char_spans"]]})
-            example["answers"].pop("char_spans")
-            example["answers"].pop("token_spans")
+            del example["answers"]["char_spans"]
+            del example["answers"]["token_spans"]
             return example
 
         loaded_dataset = loaded_dataset.map(preprocess_answers, load_from_cache_file=False)

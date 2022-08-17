@@ -124,10 +124,8 @@ class FinetuneStep(Step):
                 num_training_steps=10000
             ),
             optimizer=Lazy(
-                transformers.optimization.AdamW,
+                torch.optim.AdamW,
                 lr=1e-5,
-                betas=[0.9, 0.999],
-                eps=1e-8,
             )
         ),
         model_wrapper: Optional[Lazy[TangoModel]] = None,

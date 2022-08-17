@@ -55,6 +55,10 @@ def _shorten_hf_name(hf_name: str) -> str:
 MODELS: Dict[str, Model] = {
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),
+    "bert-large-uncased": HFAutoModel("bert-large-uncased"),
+    "bert-large-cased": HFAutoModel("bert-large-cased"),
+    "roberta-base": HFAutoModel("roberta-base"),
+    "roberta-large": HFAutoModel("roberta-large"),
     "tiny-bert": HFAutoModel("prajjwal1/bert-tiny"),
     "distilbert-base-cased-distilled-squad": HFAutoModel("distilbert-base-cased-distilled-squad"),
 }

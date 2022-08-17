@@ -39,7 +39,7 @@ def test_training():
 
 def test_training_step():
     finetune_step = FinetuneStep(
-        model="rc::gpt2",
+        model='rc::tiny-gpt2',
         tasks=["piqa", "sst"],
         training_steps=10,
     )

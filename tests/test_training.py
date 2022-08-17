@@ -37,10 +37,21 @@ def test_training():
     assert metrics_before != metrics_after
 
 
-def test_training_step():
+def test_training_step_gpt():
     finetune_step = FinetuneStep(
         model='rc::tiny-gpt2',
         tasks=["piqa", "sst"],
+        training_steps=10,
+    )
+    predict_step = PredictStep(model=finetune_step, task="piqa", limit=10)
+    metrics_step = CalculateMetricsStep(model=finetune_step, task="piqa", predictions=predict_step)
+    metrics_step.result()
+
+
+def test_training_step_hf():
+    finetune_step = FinetuneStep(
+        model='tiny-bert',
+        tasks=["piqa"],
         training_steps=10,
     )
     predict_step = PredictStep(model=finetune_step, task="piqa", limit=10)

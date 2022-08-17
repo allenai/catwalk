@@ -1,7 +1,7 @@
 import inspect
 from abc import ABC
 from copy import deepcopy
-from typing import Sequence, Dict, Any, Iterator, Tuple, List
+from typing import Sequence, Dict, Any, Iterator, Tuple, List, Optional
 
 import torch
 from tango.common import Registrable, Tqdm
@@ -74,7 +74,7 @@ class TrainableModel(Model, torch.nn.Module, ABC):
     This is a catwalk model that also supports utility functions to make it possible to train.
     """
 
-    def __init__(self, inner_module: torch.nn.Module):
+    def __init__(self, inner_module: Optional[torch.nn.Module]):
         super().__init__()
         self.inner_module = inner_module
 

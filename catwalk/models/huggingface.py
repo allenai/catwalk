@@ -186,12 +186,10 @@ class TrainableHFAutoModel(TrainableModel):
 
     def _forward_mc(self, *args, **kwargs) -> Dict[str, Any]:
         results = self.mc_model.forward(*args, **kwargs)
-        assert "loss" not in results or self.mc_model.training
         return results
 
     def _forward_qa(self, *args, **kwargs) -> Dict[str, Any]:
         results = self.qa_model.forward(*args, **kwargs)
-        assert "loss" not in results or self.qa_model.training
         return results
 
     def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:

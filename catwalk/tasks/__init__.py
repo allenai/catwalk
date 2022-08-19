@@ -38,7 +38,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squadshifts-amazon": HFDatasetsTask("squadshifts", "amazon").add_instance_conversion(
         InstanceFormat.HF_QA,
@@ -47,7 +47,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squadshifts-nyt": HFDatasetsTask("squadshifts", "nyt").add_instance_conversion(
         InstanceFormat.HF_QA,
@@ -56,7 +56,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squadshifts-new-wiki": HFDatasetsTask("squadshifts", "new_wiki").add_instance_conversion(
         InstanceFormat.HF_QA,
@@ -65,7 +65,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(
@@ -242,7 +242,7 @@ TASKS: Dict[str, Task] = {
     "metaicl::unifiedqa:mctest": MetaICLTask("unifiedqa:mctest").add_metrics(MC_METRICS),
     "metaicl::unifiedqa:ai2_science_middle": MetaICLTask("unifiedqa:ai2_science_middle").add_metrics(MC_METRICS),
 
-   "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
+    "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):

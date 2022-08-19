@@ -28,6 +28,7 @@ from catwalk.task import Task
 from catwalk.tasks import TASKS
 from catwalk.model import Model
 from catwalk.models import MODELS
+from catwalk.training_callback import CatwalkEvaluationCallback
 
 
 @Step.register("catwalk::predict")
@@ -99,8 +100,6 @@ class CalculateMetricsStep(Step):
 
 @Step.register("catwalk::finetune")
 class FinetuneStep(Step):
-    # TODO: The parameters that are the defaults in this step need some serious optimization.
-
     VERSION = "001"
     FORMAT = TorchFormat
 
@@ -115,7 +114,8 @@ class FinetuneStep(Step):
         self,
         model: Union[str, Model],
         tasks: List[Union[str, Task]],
-        training_steps: int = 10000,
+        train_steps: int = 10000,
+        validation_steps: int = 1000,
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
             lr_scheduler=Lazy(
@@ -135,7 +135,8 @@ class FinetuneStep(Step):
         device_count: int = 1,
         distributed_port: int = 54761,
         train_split: str = "train",
-        validation_split: Optional[str] = "validation"
+        validation_split: Optional[str] = "validation",
+        validate_every: Optional[int] = None
     ) -> Model:  # type: ignore
         if isinstance(model, str):
             model = MODELS[model]
@@ -165,9 +166,11 @@ class FinetuneStep(Step):
             self.work_dir,
             step_name=self.name,
             seed=random_seed,
-            train_steps=training_steps,
+            train_steps=train_steps,
+            validation_steps=validation_steps,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
+            validate_every=validate_every,
             checkpoint_every=1000,
             grad_accum=grad_accum,
             is_distributed=is_distributed,
@@ -209,7 +212,14 @@ class FinetuneStep(Step):
             # No point in stopping early when we don't have a validation set.
             callbacks = []
         else:
-            callbacks = [Lazy(StopEarlyCallback, patience=training_steps // 10)]
+            callbacks = [
+                Lazy(StopEarlyCallback, patience=train_steps // 10),
+                Lazy(
+                    CatwalkEvaluationCallback,
+                    tasks=tasks_in_a_special_variable_because_mypy_is_insane,
+                    eval_limit=validation_steps
+                )
+            ]
 
         if is_distributed:
             import torch.multiprocessing as mp

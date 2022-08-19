@@ -349,12 +349,12 @@ class DecoderOnlyRCModel(RankClassificationModel):
                 batch_size)
             for batch_of_indices in batches_of_indices:
                 inputs, input_lengths, batch_contexts, batch_continuations = self._get_inputs(batch_of_indices, cc_pairs, model, cache)
-                batch_logits = log_softmax(model(**inputs)[0], dim=-1).cpu()
+                batch_logits = log_softmax(model(**inputs)[0], dim=-1)
                 z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
                 for i, instance_logits, input_length, instance_context, instance_continuation in z:
                     assert input_length-len(instance_continuation) >=0
                     instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
-                    instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1))
+                    instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
                     denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(instance_continuation)
                     results[i] = float(instance_logits.sum()) / denom
 

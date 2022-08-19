@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import datasets
 
@@ -371,3 +371,10 @@ TASK_SETS = {
         "metaicl::tweet_eval-stance_feminist"
     }
 }
+
+
+def short_name_for_task_object(task: Task) -> Optional[str]:
+    for task_name, task_object in TASKS.items():
+        if id(task) == id(task_object):
+            return task_name
+    return None

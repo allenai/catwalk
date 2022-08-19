@@ -36,7 +36,7 @@ class GPTModel(Model):
         if task.has_instance_conversion(InstanceFormat.HF_QA):
             return self._predict_qa(task, instances, batch_size=batch_size)
 
-        return self._predict_preplixity(task, instances, batch_size=batch_size)
+        return self._predict_perplexity(task, instances, batch_size=batch_size)
 
     def _predict_qa(
             self,
@@ -65,80 +65,16 @@ class GPTModel(Model):
             encodings = tokenizer(formatted_batch,
                                   padding="longest",
                                   truncation="only_first",
-                                  max_length=model.config.n_positions - model.config.task_specific_params['text-generation']['max_length'],  # TODO: Make this configurable?
-                                  stride=128,
-                                  return_overflowing_tokens=True,
-                                  return_offsets_mapping=True,
-                                  return_token_type_ids=True,
-                                  return_tensors="pt"
-                                  )
-            sample_map = encodings.pop("overflow_to_sample_mapping")
-            offset_mapping = encodings.pop("offset_mapping")
-            token_type_map = encodings.pop("token_type_ids")
-
-            # each example in the batch may have multiple sampled windows due to truncation
-            example_idx_to_sample_idx = defaultdict(list)
-            for i, example_idx in enumerate(sample_map):
-                example_idx_to_sample_idx[example_idx.item()].append(i)
-
-            filtered_encodings: Dict[str, List] = {"input_ids": [], "attention_mask": []}
-
-            # We need to use the offset mapping to get the actual start and end indices of the context.
-            # To do this we need to find the index of the first/last token in the context.
-            # For example,
-            # Tokens:         PADDING CONTEXT QUESTION
-            # Token Type IDs:    0        0       1 (Used to find the last token of the context)
-            # Attention Mask:    0        1       1 (Used to find the first token of the context)
-
-            def get_token_bounds_for_context(sample_idx: int) -> Tuple[int, int]:
-                attention_mask = encodings["attention_mask"][sample_idx]
-                sequence_ids = token_type_map[sample_idx]
-
-                start_index = 0
-                while (attention_mask[start_index] == 0):
-                    start_index += 1
-
-                end_index = len(sequence_ids) - 1
-                while sequence_ids[end_index] != 0:
-                    end_index -= 1
-
-                return start_index, end_index
-
-            def contains_answer(sample_idx: int, answer_indices: Tuple[int, int]) -> bool:
-                start_index, end_index = get_token_bounds_for_context(
-                    sample_idx)
-                offset = offset_mapping[sample_idx]
-                return offset[start_index][0] <= answer_indices[0] and answer_indices[1] <= offset[end_index][1]
-
-            # Keep only the first sample for each instance that contains the answer.
-            for example_idx in example_idx_to_sample_idx.keys():
-                answers = batch[example_idx].answers
-                for sample_idx in example_idx_to_sample_idx[example_idx]:
-                    for answer_idx in range(len(answers["text"])):
-                        start_char = answers["answer_start"][answer_idx]
-                        end_char = start_char + \
-                            len(answers["text"][answer_idx].strip())
-                        if contains_answer(sample_idx, (start_char, end_char)):
-                            filtered_encodings["input_ids"].append(
-                                encodings["input_ids"][sample_idx])
-                            filtered_encodings["attention_mask"].append(
-                                encodings["attention_mask"][sample_idx])
-                            break # No need to check other answers for this example
-
-                    # check if we found a sample that contains the answer and break out of the loop
-                    if len(filtered_encodings["input_ids"])-1 == example_idx:
-                        break
-            assert len(filtered_encodings["input_ids"]) > 0, "No answers were found in truncation samples in this batch; please try a different stride value"
+                                  max_length=model.config.n_positions - model.config.task_specific_params['text-generation']['max_length'],
+                                  return_tensors="pt")
             
             with torch.inference_mode():
-                outputs = model.generate(input_ids=torch.stack(filtered_encodings["input_ids"]).to(device),
+                outputs = model.generate(input_ids=torch.stack(encodings["input_ids"]).to(device),
                                          attention_mask=torch.stack(
-                                             filtered_encodings["attention_mask"]).to(device),
-                                         max_new_tokens=model.config.task_specific_params['text-generation']['max_length'],
-                                         pad_token_id=tokenizer.pad_token_id,
-                                         eos_token_id=tokenizer.encode('\n')[0],
-                                         num_beams=1)
-            outputs = [output[len(filtered_encodings["input_ids"][0]) + 1:] for output in outputs]
+                                             encodings["attention_mask"]).to(device),
+                                         max_new_tokens=model.config.task_specific_params['text-generation']['max_length'])
+                
+            outputs = [output[len(encodings["input_ids"][0]) + 1:] for output in outputs]
             outputs = tokenizer.batch_decode(
                 outputs, skip_special_tokens=True, clean_up_tokenization_spaces=True)
 
@@ -147,7 +83,7 @@ class GPTModel(Model):
                     "squad_metrics": ({"id": instance.id, "prediction_text": prediction}, {"id": instance.id, "answers": instance.answers})
                 }
 
-    def _predict_preplixity(
+    def _predict_perplexity(
         self,
         task: Task,
         instances: Sequence[Dict[str, Any]],
@@ -248,3 +184,4 @@ class GPTModel(Model):
                 "byte_perplexity": (logprob, len(text)),
                 "bits_per_byte": (logprob, len(text))
             }
+

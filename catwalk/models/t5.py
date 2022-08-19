@@ -21,30 +21,35 @@ class T5Model(Model, ABC):
 
     def get_tokenizer(self) -> T5TokenizerFast:
         raise NotImplementedError
+    
+    def _predict_qa(self, task: Task, instances: Sequence[Dict[str, Any]], batch_size: int = 32) -> Iterator[Dict[str, Any]]:
+        qas = MappedSequence(task.instance_conversions[InstanceFormat.HF_QA], instances)
 
-    def predict(  # type: ignore
-        self,
-        task: Task,
-        instances: Sequence[Dict[str, Any]],
-        *,
-        batch_size: int = 32
-    ) -> Iterator[Dict[str, Any]]:
-        if not task.has_instance_conversion(InstanceFormat.T5_PROMPT):
-            raise UnsupportedTaskError(self, task)
+        model = self.get_model().eval()
+        tokenizer = self.get_tokenizer()
+        MAX_NEW_TOKENS = 20
+
+        with torch.inference_mode():
+            for batch in more_itertools.chunked(Tqdm.tqdm(qas, desc="Processing instances"), batch_size):
+                model_input = tokenizer([f"question:{i.question}" for i in batch],
+                                        [f"context:{i.context}" for i in batch],
+                                        truncation="only_second",
+                                        padding=True,
+                                        max_length=512 - MAX_NEW_TOKENS,
+                                        return_tensors="pt")
+                
+                model_output = model.generate(**model_input, max_new_tokens=MAX_NEW_TOKENS)
+                model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
+                for instance, prediction in zip(batch, model_output):
+                    yield {
+                        "squad_metrics": ({"id": instance.id, "prediction_text": prediction}, {"id": instance.id, "answers": instance.answers})
+                    }
+    
+    def _predict_prompt(self, task: Task, instances: Sequence[Dict[str, Any]], batch_size: int = 32) -> Iterator[Dict[str, Any]]:
         prompts = MappedSequence(task.instance_conversions[InstanceFormat.T5_PROMPT], instances)
 
         model = self.get_model().eval()
         tokenizer = self.get_tokenizer()
-
-        def strip_special_tokens(t: torch.Tensor) -> torch.Tensor:
-            # amazing that torch has no capability for this
-            start = 0
-            while start < len(t) and int(t[start]) in {0, tokenizer.eos_token_id, tokenizer.pad_token_id}:
-                start += 1
-            end = len(t)
-            while int(t[end - 1]) in {0, tokenizer.eos_token_id, tokenizer.pad_token_id} and end > start:
-                end -= 1
-            return t[start:end]
 
         with torch.inference_mode():
             for batch in more_itertools.chunked(Tqdm.tqdm(prompts, desc="Processing instances"), batch_size):
@@ -55,8 +60,7 @@ class T5Model(Model, ABC):
                     return_tensors="pt",
                     pad_to_multiple_of=8)
                 model_output = model.generate(**model_input)
-                model_output = [strip_special_tokens(t) for t in model_output]
-                model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True)
+                model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
                 for target, prediction in zip(batch, model_output):
                     target = target[1]
                     yield {
@@ -64,6 +68,21 @@ class T5Model(Model, ABC):
                         "bleu": ([prediction], [[target]]),
                         "rouge": ([prediction], [[target]])
                     }
+
+    def predict(  # type: ignore
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        *,
+        batch_size: int = 32
+    ) -> Iterator[Dict[str, Any]]:
+        if task.has_instance_conversion(InstanceFormat.T5_PROMPT):
+            return self._predict_prompt(task, instances, batch_size=batch_size)
+        elif task.has_instance_conversion(InstanceFormat.HF_QA):
+            return self._predict_qa(task, instances, batch_size=batch_size)
+        
+        raise UnsupportedTaskError(self, task)
+        
 
 
 @Model.register("catwalk::t5_from_pretrained")

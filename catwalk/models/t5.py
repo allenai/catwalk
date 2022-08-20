@@ -27,18 +27,17 @@ class T5Model(Model, ABC):
 
         model = self.get_model().eval()
         tokenizer = self.get_tokenizer()
-        MAX_NEW_TOKENS = 20
+        tokenizer.model_max_length = 1024 # We use this to be similar to the GPT truncation
 
         with torch.inference_mode():
             for batch in more_itertools.chunked(Tqdm.tqdm(qas, desc="Processing instances"), batch_size):
                 model_input = tokenizer([f"question:{i.question}" for i in batch],
                                         [f"context:{i.context}" for i in batch],
                                         truncation="only_second",
-                                        padding=True,
-                                        max_length=512 - MAX_NEW_TOKENS,
+                                        padding="longest",
                                         return_tensors="pt")
                 
-                model_output = model.generate(**model_input, max_new_tokens=MAX_NEW_TOKENS)
+                model_output = model.generate(**model_input, max_new_tokens=50) # 50 new tokens is also same as GPT evaluation
                 model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
                 for instance, prediction in zip(batch, model_output):
                     yield {

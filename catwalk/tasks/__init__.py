@@ -5,7 +5,7 @@ import datasets
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
-from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion
+from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
@@ -75,6 +75,12 @@ TASKS: Dict[str, Task] = {
             label_map={0: "entailment", 1: "not_entailment"},
             use_fields=["sentence1", "sentence2"]
         )
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="sentence1",
+            hypothesis_field="sentence2"
+        )
     ).add_metrics(ENTAILMENT_METRICS),
     "superglue::rte": HFDatasetsTask("super_glue", "rte").add_instance_conversion(
         InstanceFormat.T5_PROMPT,
@@ -85,7 +91,10 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(ENTAILMENT_METRICS),
     "cola": EleutherTask("cola", ranked_classification=True).add_metrics(classification_metrics(2)),
-    "mnli": EleutherTask("mnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "mnli": EleutherTask("mnli", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion()
+    ).add_metrics(ENTAILMENT_METRICS),
     "mnli_mismatched": EleutherTask("mnli_mismatched", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "mrpc": EleutherTask("mrpc", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "qnli": EleutherTask("qnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),

@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from random import Random
-from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Set, cast, FrozenSet, \
-    Iterable
+from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Iterable
 
 import torchmetrics
 from mypy_extensions import KwArg
@@ -20,9 +19,6 @@ MC_METRICS = {
 
 ENTAILMENT_METRICS = {
     "acc": torchmetrics.Accuracy,
-    "f1": torchmetrics.F1Score,
-    "precision": torchmetrics.Precision,
-    "recall": torchmetrics.Recall
 }
 
 BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
@@ -49,13 +45,14 @@ def classification_metrics(num_classes: int):
 
 class InstanceFormat(Enum):
     HF_DICT = 1
+    HF_MC = 2
+    HF_QA = 8
+    HF_CLASSIFICATION = 9
     ELEUTHER_DOC = 3
     ELEUTHER_CONTEXT = 4
     ELEUTHER_REQUESTS = 5
-    HF_MC = 2
     T5_PROMPT = 6
     RANK_CLASSIFICATION = 7
-    HF_QA = 8
 
 
 @dataclass

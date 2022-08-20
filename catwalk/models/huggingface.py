@@ -8,12 +8,13 @@ from tango.integrations.torch.util import resolve_device
 from transformers import (AutoModelForMultipleChoice,
                           AutoTokenizer,
                           AutoModelForQuestionAnswering,
-                          QuestionAnsweringPipeline, PreTrainedModel, PreTrainedTokenizer)
+                          QuestionAnsweringPipeline, PreTrainedModel, PreTrainedTokenizer,
+                          AutoModelForSequenceClassification, TextClassificationPipeline)
 
 from catwalk import cached_transformers
 from catwalk.model import Model, UnsupportedTaskError, TrainableModel, Instance
 from catwalk.task import Task, InstanceFormat
-from catwalk.tasks.huggingface import HFQAInstance, HFMCInstance
+from catwalk.tasks.huggingface import HFQAInstance, HFMCInstance, HFClassificationInstance
 
 
 @Model.register("catwalk::hf")
@@ -42,7 +43,17 @@ class HFAutoModel(Model):
             model = cached_transformers.get(AutoModelForQuestionAnswering, self.pretrained_model_name_or_path, False).to(device)
             tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
             return self._predict_qa(qa_instances, model, tokenizer, batch_size=batch_size)
-        
+        elif task.has_instance_conversion(InstanceFormat.HF_CLASSIFICATION):
+            classification_instances = cast(
+                Sequence[HFClassificationInstance],
+                self._convert_instances(instances, InstanceFormat.HF_CLASSIFICATION, task))
+            model = cached_transformers.get(
+                AutoModelForSequenceClassification,
+                self.pretrained_model_name_or_path, False
+            ).to(device)
+            tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
+            return self._predict_classification(classification_instances, model, tokenizer, batch_size=batch_size)
+
         raise UnsupportedTaskError(self, task)
 
     @classmethod
@@ -116,6 +127,38 @@ class HFAutoModel(Model):
                         "correct_answer_index": instance.correct_answer_index,
                         "logits": logits,
                         "acc": (logits, instance.correct_answer_index),
+                    }
+
+    def _predict_classification(
+        cls,
+        instances: Sequence[HFClassificationInstance],
+        model: PreTrainedModel,
+        tokenizer: PreTrainedTokenizer,
+        batch_size: int = 32
+    ) -> Iterator[Dict[str, Any]]:
+        # There is no Huggingface pipeline for this.
+        # HF's TextClassification pipeline only classifies single texts, not text pairs
+
+        instances = Tqdm.tqdm(instances, desc="Processing instances")
+        model.eval()
+        with torch.inference_mode():
+            for batch in more_itertools.chunked(instances, batch_size):
+                tensors = tokenizer.batch_encode_plus(
+                    [
+                        (instance.premise, instance.hypothesis)
+                        for instance in batch
+                    ],
+                    padding=True,
+                    truncation="only_first",
+                    return_tensors="pt",
+                    pad_to_multiple_of=8,
+                )
+                results = model(return_dict=True, **tensors)
+                for instance, logits in zip(batch, results.logits.detach().cpu()):
+                    yield {
+                        "label": instance.label,
+                        "logits": logits,
+                        "acc": (logits, instance.label),
                     }
 
     def trainable_copy(self) -> "TrainableHFAutoModel":

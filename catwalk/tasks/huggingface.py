@@ -137,3 +137,33 @@ def hfmc_conversion(
 ) -> InstanceConversion:
     # We're doing this in this stupid way because this makes the conversion function picklable.
     return functools.partial(hfmc_convert, **kwargs)
+
+
+@dataclass
+class HFClassificationInstance:
+    id: Optional[str]
+    premise: str
+    hypothesis: str
+    label: int
+
+
+def hfclassification_convert(
+    instance: Dict[str, Any],
+    *,
+    premise_field: str = "premise",
+    hypothesis_field: str = "hypothesis",
+    label_field: str = "label",
+    id_field: Optional[str] = None,
+) -> HFClassificationInstance:
+    return HFClassificationInstance(
+        id=str(get_from_dict(instance, id_field)) if id_field else None,
+        premise=get_from_dict(instance, premise_field).strip(),
+        hypothesis=get_from_dict(instance, hypothesis_field).strip(),
+        label=int(get_from_dict(instance, label_field)))
+
+
+def hfclassification_conversion(
+    **kwargs,
+) -> InstanceConversion:
+    # We're doing this in this stupid way because this makes the conversion function picklable.
+    return functools.partial(hfclassification_convert, **kwargs)

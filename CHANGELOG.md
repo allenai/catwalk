@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An option for rank classification to average log likelihoods by token length
 - Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
 - Added the ability to train `HFAutoModel`
+- Added the ability for `HFAutoModel` to run NLI tasks
 
 ### Fixed
 

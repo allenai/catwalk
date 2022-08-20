@@ -54,7 +54,7 @@ def test_training_step_hf():
     finetune_step = FinetuneStep(
         model='tiny-bert',
         tasks=["piqa"],
-        training_steps=10,
+        train_steps=10,
         validation_steps=10,
         validate_every=7
     )

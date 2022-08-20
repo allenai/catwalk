@@ -31,6 +31,8 @@ class HFAutoModel(Model):
         if task.has_instance_conversion(InstanceFormat.HF_MC):
             return self._predict_mc(task, instances, batch_size=batch_size)
         elif task.has_instance_conversion(InstanceFormat.HF_QA):
+            from catwalk.models.decoder_qa_models import add_decoder_qa_models
+            add_decoder_qa_models()
             return self._predict_qa(task, instances, batch_size=batch_size)
         
         raise UnsupportedTaskError(self, task)
@@ -50,7 +52,12 @@ class HFAutoModel(Model):
         device = resolve_device()
         model = cached_transformers.get(AutoModelForQuestionAnswering, self.pretrained_model_name_or_path, False)
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
-        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=device.index or torch.cuda.current_device() if device.type == "cuda" else -1)
+        
+        # check if no pad token is set and set it eos token as needed for GPT-2
+        if tokenizer.pad_token_id is None:
+            tokenizer.pad_token_id = tokenizer.eos_token_id
+        
+        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=device.index or torch.cuda.current_device() if device.type == "cuda" else -1, pad_token_id=tokenizer.pad_token_id)
         
         contexts = [instance.context for instance in converted_instances]
         questions = [instance.question for instance in converted_instances]

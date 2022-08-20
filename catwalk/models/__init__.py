@@ -56,6 +56,7 @@ MODELS: Dict[str, Model] = {
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),
     "distilbert-base-cased-distilled-squad": HFAutoModel("distilbert-base-cased-distilled-squad"),
+    "tiny-gpt2-qa": HFAutoModel("sshleifer/tiny-gpt2"), # randomly initialized qa model for testing
 }
 
 for hf_name in _ENCODER_DECODER_MODELS:

@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
 - Optional random_subsample_seed for PredictStep
 - Adds QA task support for autoregressive (previously only available with Eleuther task format)
-- Adds QA task support for seq2seq models
+- Adds QA task support for T5 models
 - An option for rank classification to average log likelihoods by token length
 
 ### Fixed

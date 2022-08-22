@@ -220,7 +220,7 @@ class TrainableHFAutoModel(TrainableModel):
         tensors = self.tokenizer.batch_encode_plus(
             texts,
             padding=True,
-            truncation="only_first",
+            truncation="longest_first",
             return_tensors="pt",
             pad_to_multiple_of=8,
         )

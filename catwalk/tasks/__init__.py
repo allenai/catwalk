@@ -4,7 +4,7 @@ import datasets
 
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
-from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
+from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
@@ -91,7 +91,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(ENTAILMENT_METRICS),
     "cola": EleutherTask("cola", ranked_classification=True).add_metrics(classification_metrics(2)),
-    "mnli": EleutherTask("mnli", ranked_classification=True).add_instance_conversion(
+    "mnli": EleutherTaskWithRenamedSplits("mnli", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion()
     ).add_metrics(ENTAILMENT_METRICS),
@@ -119,7 +119,7 @@ TASKS: Dict[str, Task] = {
     "lambada_mt_es": EleutherTask("lambada_mt_es"),
     "prost": EleutherTask("prost", ranked_classification=True).add_metrics(MC_METRICS),
     "mc_taco": EleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
-    "pubmedqa": PubmedqaEleutherTask().add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq", ranked_classification=True).add_metrics(MC_METRICS),
     "qa4mre_2011": EleutherTask("qa4mre_2011", ranked_classification=True).add_metrics(MC_METRICS),
     "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_metrics(MC_METRICS),

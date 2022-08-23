@@ -156,11 +156,20 @@ class RaceEleutherTask(EleutherTask):
         raise KeyError(split)
 
 
-@Task.register("eleuther::pubmedqa")
-class PubmedqaEleutherTask(EleutherTask):
+@Task.register("eleuther::renamed_splits")
+class EleutherTaskWithRenamedSplits(EleutherTask):
     """This task is different because EAI relabels the datasets."""
-    def __init__(self, *, version_override: Optional[str] = None):
-        super().__init__("pubmedqa", version_override=version_override)
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        version_override: Optional[str] = None,
+        ranked_classification: bool = False
+    ):
+        super().__init__(
+            eleuther_task,
+            version_override=version_override,
+            ranked_classification=ranked_classification)
 
     def has_split(self, split: str) -> bool:
         if split == "train":

@@ -18,7 +18,7 @@ from catwalk.tasks.huggingface import HFQAInstance, HFMCInstance
 
 @Model.register("catwalk::hf")
 class HFAutoModel(Model):
-    VERSION = "001"
+    VERSION = "002var"
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -121,6 +121,8 @@ class HFAutoModel(Model):
 
 
 class TrainableHFAutoModel(TrainableModel):
+    VERSION = "002var"
+
     def __init__(self, pretrained_model_name_or_path: str):
         super().__init__(None)
         self.tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, pretrained_model_name_or_path)

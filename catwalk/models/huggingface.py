@@ -85,18 +85,16 @@ class HFAutoModel(Model):
         model.eval()
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):
-                number_of_choices = None
+                number_of_choices = max(len(instance.answer_choices) for instance in batch)
                 texts: List[Tuple[str, str]] = []
                 labels = []
                 for instance in batch:
-                    if number_of_choices is None:
-                        number_of_choices = len(instance.answer_choices)
-                    else:
-                        assert len(instance.answer_choices) == number_of_choices
                     texts.extend(
                         (instance.question, choice)
                         for choice in instance.answer_choices
                     )
+                    while len(texts) % number_of_choices != 0:
+                        texts.append(("", ""))  # padding in the choices dimension
                     labels.append(instance.correct_answer_index)
                 tensors = tokenizer.batch_encode_plus(
                     texts,
@@ -204,18 +202,16 @@ class TrainableHFAutoModel(TrainableModel):
                 raise ValueError("I don't know how to handle this instance.")
 
         # build MC instances
-        number_of_choices = None
+        number_of_choices = max(len(mc_instance.answer_choices) for mc_instance in mc_instances)
         texts: List[Tuple[str, str]] = []
         labels = []
         for mc_instance in mc_instances:
-            if number_of_choices is None:
-                number_of_choices = len(mc_instance.answer_choices)
-            else:
-                assert len(mc_instance.answer_choices) == number_of_choices
             texts.extend(
                 (mc_instance.question, choice)
                 for choice in mc_instance.answer_choices
             )
+            while len(texts) % number_of_choices != 0:
+                texts.append(("", ""))  # padding in the choices dimension
             labels.append(mc_instance.correct_answer_index)
         tensors = self.tokenizer.batch_encode_plus(
             texts,

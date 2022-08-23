@@ -123,7 +123,8 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answer_choices_fields="choices.text",
             correct_answer_index_field="answerKey",
-            id_field="id"
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
     ).add_metrics(MC_METRICS),
     "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_instance_conversion(
@@ -133,7 +134,8 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answer_choices_fields="choices.text",
             correct_answer_index_field="answerKey",
-            id_field="id"
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
     ).add_metrics(MC_METRICS),
     "logiqa": EleutherTask("logiqa", ranked_classification=True).add_metrics(MC_METRICS),

@@ -19,7 +19,7 @@ from tango.format import SqliteSequenceFormat, TextFormat
 from tango.integrations.torch import (
     TorchFormat,
     TorchTrainingEngine,
-    DataLoader, TrainingEngine, TrainConfig, StopEarlyCallback,
+    DataLoader, TrainingEngine, TrainConfig,
 )
 from tango.integrations.torch.model import Model as TangoModel
 import torch
@@ -212,7 +212,6 @@ class FinetuneStep(Step):
             callbacks = []
         else:
             callbacks = [
-                Lazy(StopEarlyCallback, patience=train_steps // 10),
                 Lazy(
                     CatwalkEvaluationCallback,
                     tasks=tasks_in_a_special_variable_because_mypy_is_insane,

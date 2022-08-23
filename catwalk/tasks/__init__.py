@@ -125,11 +125,40 @@ TASKS: Dict[str, Task] = {
     "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_metrics(MC_METRICS),
     "qa4mre_2013": EleutherTask("qa4mre_2013", ranked_classification=True).add_metrics(MC_METRICS),
     "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
-    "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_metrics(MC_METRICS),
-    "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_metrics(MC_METRICS),
+    "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
+        )
+    ).add_metrics(MC_METRICS),
+    "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
+        )
+    ).add_metrics(MC_METRICS),
     "logiqa": EleutherTask("logiqa", ranked_classification=True).add_metrics(MC_METRICS),
     "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_metrics(MC_METRICS),
-    "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_metrics(MC_METRICS),
+    "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question_stem",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id"
+        )
+    ).add_metrics(MC_METRICS),
     "race": RaceEleutherTask().add_metrics(MC_METRICS),
     "headqa": EleutherTask("headqa", ranked_classification=True).add_metrics(MC_METRICS),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_metrics(MC_METRICS),

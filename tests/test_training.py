@@ -41,9 +41,8 @@ def test_training_step_gpt():
     finetune_step = FinetuneStep(
         model='rc::tiny-gpt2',
         tasks=["piqa", "sst"],
-        training_steps=10,
+        train_steps=10,
         validation_steps=10,
-        validate_every=7
     )
     predict_step = PredictStep(model=finetune_step, task="piqa", limit=10)
     metrics_step = CalculateMetricsStep(model=finetune_step, task="piqa", predictions=predict_step)
@@ -56,7 +55,6 @@ def test_training_step_hf():
         tasks=["piqa"],
         train_steps=10,
         validation_steps=10,
-        validate_every=7
     )
     predict_step = PredictStep(model=finetune_step, task="piqa", limit=10)
     metrics_step = CalculateMetricsStep(model=finetune_step, task="piqa", predictions=predict_step)

@@ -19,7 +19,7 @@ from catwalk.tasks.huggingface import HFQAInstance, HFMCInstance, HFClassificati
 
 @Model.register("catwalk::hf")
 class HFAutoModel(Model):
-    VERSION = "001"
+    VERSION = "003stp"
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -96,18 +96,16 @@ class HFAutoModel(Model):
         model.eval()
         with torch.inference_mode():
             for batch in more_itertools.chunked(instances, batch_size):
-                number_of_choices = None
+                number_of_choices = max(len(instance.answer_choices) for instance in batch)
                 texts: List[Tuple[str, str]] = []
                 labels = []
                 for instance in batch:
-                    if number_of_choices is None:
-                        number_of_choices = len(instance.answer_choices)
-                    else:
-                        assert len(instance.answer_choices) == number_of_choices
                     texts.extend(
                         (instance.question, choice)
                         for choice in instance.answer_choices
                     )
+                    while len(texts) % number_of_choices != 0:
+                        texts.append(("", ""))  # padding in the choices dimension
                     labels.append(instance.correct_answer_index)
                 tensors = tokenizer.batch_encode_plus(
                     texts,
@@ -166,6 +164,8 @@ class HFAutoModel(Model):
 
 
 class TrainableHFAutoModel(TrainableModel):
+    VERSION = "003stp"
+
     def __init__(self, pretrained_model_name_or_path: str):
         super().__init__(None)
         self.tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, pretrained_model_name_or_path)
@@ -247,23 +247,21 @@ class TrainableHFAutoModel(TrainableModel):
                 raise ValueError("I don't know how to handle this instance.")
 
         # build MC instances
-        number_of_choices = None
+        number_of_choices = max(len(mc_instance.answer_choices) for mc_instance in mc_instances)
         texts: List[Tuple[str, str]] = []
         labels = []
         for mc_instance in mc_instances:
-            if number_of_choices is None:
-                number_of_choices = len(mc_instance.answer_choices)
-            else:
-                assert len(mc_instance.answer_choices) == number_of_choices
             texts.extend(
                 (mc_instance.question, choice)
                 for choice in mc_instance.answer_choices
             )
+            while len(texts) % number_of_choices != 0:
+                texts.append(("", ""))  # padding in the choices dimension
             labels.append(mc_instance.correct_answer_index)
         tensors = self.tokenizer.batch_encode_plus(
             texts,
             padding=True,
-            truncation="only_first",
+            truncation="longest_first",
             return_tensors="pt",
             pad_to_multiple_of=8,
         )

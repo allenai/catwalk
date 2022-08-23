@@ -19,7 +19,7 @@ from tango.format import SqliteSequenceFormat, TextFormat
 from tango.integrations.torch import (
     TorchFormat,
     TorchTrainingEngine,
-    DataLoader, TrainingEngine, TrainConfig, StopEarlyCallback,
+    DataLoader, TrainingEngine, TrainConfig,
 )
 from tango.integrations.torch.model import Model as TangoModel
 import torch
@@ -136,7 +136,6 @@ class FinetuneStep(Step):
         distributed_port: int = 54761,
         train_split: str = "train",
         validation_split: Optional[str] = "validation",
-        validate_every: Optional[int] = None
     ) -> Model:  # type: ignore
         if isinstance(model, str):
             model = MODELS[model]
@@ -170,7 +169,7 @@ class FinetuneStep(Step):
             validation_steps=validation_steps,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
-            validate_every=validate_every,
+            validate_every=1000,
             checkpoint_every=1000,
             grad_accum=grad_accum,
             is_distributed=is_distributed,
@@ -213,7 +212,6 @@ class FinetuneStep(Step):
             callbacks = []
         else:
             callbacks = [
-                Lazy(StopEarlyCallback, patience=train_steps // 10),
                 Lazy(
                     CatwalkEvaluationCallback,
                     tasks=tasks_in_a_special_variable_because_mypy_is_insane,

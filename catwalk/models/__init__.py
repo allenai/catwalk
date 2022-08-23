@@ -61,6 +61,11 @@ MODELS: Dict[str, Model] = {
     "roberta-large": HFAutoModel("roberta-large"),
     "tiny-bert": HFAutoModel("prajjwal1/bert-tiny"),
     "distilbert-base-cased-distilled-squad": HFAutoModel("distilbert-base-cased-distilled-squad"),
+    "deberta-v3-base": HFAutoModel("microsoft/deberta-v3-base"),
+    "deberta-v3-small": HFAutoModel("microsoft/deberta-v3-small"),
+    "deberta-v3-large": HFAutoModel("microsoft/deberta-v3-large"),
+    "deberta-v2-xlarge": HFAutoModel("microsoft/deberta-v2-xlarge"),
+    "deberta-v2-xxlarge": HFAutoModel("microsoft/deberta-v2-xxlarge"),
 }
 
 for hf_name in _ENCODER_DECODER_MODELS:

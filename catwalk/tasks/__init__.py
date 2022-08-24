@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import datasets
 
@@ -38,7 +38,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squadshifts-amazon": HFDatasetsTask("squadshifts", "amazon").add_instance_conversion(
         InstanceFormat.HF_QA,
@@ -47,7 +47,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squadshifts-nyt": HFDatasetsTask("squadshifts", "nyt").add_instance_conversion(
         InstanceFormat.HF_QA,
@@ -56,7 +56,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squadshifts-new-wiki": HFDatasetsTask("squadshifts", "new_wiki").add_instance_conversion(
         InstanceFormat.HF_QA,
@@ -65,7 +65,7 @@ TASKS: Dict[str, Task] = {
             question_field="question",
             answers_field="answers",
             id_field="id"
-        )   
+        )
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(
@@ -90,7 +90,7 @@ TASKS: Dict[str, Task] = {
     "mrpc": EleutherTask("mrpc", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "qnli": EleutherTask("qnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "qqp": EleutherTask("qqp", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "sst": EleutherTask("sst", ranked_classification=True).add_metrics(classification_metrics(5)),
+    "sst": EleutherTask("sst", ranked_classification=True).add_metrics(classification_metrics(2)),
     "wnli": EleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "boolq": EleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
     "cb": EleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
@@ -116,11 +116,40 @@ TASKS: Dict[str, Task] = {
     "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_metrics(MC_METRICS),
     "qa4mre_2013": EleutherTask("qa4mre_2013", ranked_classification=True).add_metrics(MC_METRICS),
     "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
-    "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_metrics(MC_METRICS),
-    "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_metrics(MC_METRICS),
+    "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
+        )
+    ).add_metrics(MC_METRICS),
+    "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
+        )
+    ).add_metrics(MC_METRICS),
     "logiqa": EleutherTask("logiqa", ranked_classification=True).add_metrics(MC_METRICS),
     "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_metrics(MC_METRICS),
-    "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_metrics(MC_METRICS),
+    "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question_stem",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id"
+        )
+    ).add_metrics(MC_METRICS),
     "race": RaceEleutherTask().add_metrics(MC_METRICS),
     "headqa": EleutherTask("headqa", ranked_classification=True).add_metrics(MC_METRICS),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_metrics(MC_METRICS),
@@ -242,7 +271,7 @@ TASKS: Dict[str, Task] = {
     "metaicl::unifiedqa:mctest": MetaICLTask("unifiedqa:mctest").add_metrics(MC_METRICS),
     "metaicl::unifiedqa:ai2_science_middle": MetaICLTask("unifiedqa:ai2_science_middle").add_metrics(MC_METRICS),
 
-   "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
+    "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):
@@ -371,3 +400,10 @@ TASK_SETS = {
         "metaicl::tweet_eval-stance_feminist"
     }
 }
+
+
+def short_name_for_task_object(task: Task) -> Optional[str]:
+    for task_name, task_object in TASKS.items():
+        if id(task) == id(task_object):
+            return task_name
+    return None

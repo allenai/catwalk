@@ -1,10 +1,12 @@
 from typing import Dict, Any
 import re
+from catwalk.model import TrainableModel
+from catwalk.models.rank_classification import DecoderOnlyRCModel, TrainableRankClassificationModel
 
 import torch
 import torch.nn as nn
 from transformers.modeling_utils import Conv1D
-from transformers import AutoModelForCausalLM, GPT2LMHeadModel
+from transformers import AutoModelForCausalLM, GPT2LMHeadModel, AutoTokenizer
 
 from catwalk import cached_transformers
 from catwalk.models import MetaICLModel
@@ -16,10 +18,40 @@ class DecoderOnlyIA3Mixin:
         isinstance(model, GPT2LMHeadModel)
         config = IA3ForGPT2Config()
         model = modify_with_ia3(model, config)
-        state_dict = torch.load(ia3_weights_file)
-        model.load_state_dict(state_dict, strict=False)
+        if ia3_weights_file is not None:
+            state_dict = torch.load(ia3_weights_file)
+            model.load_state_dict(state_dict, strict=False)
+
+        model.requires_grad_(False)
+        for p_name, v in dict(model.named_parameters()).items():
+            if re.fullmatch(config.trainable_param_names, p_name):
+                v.requires_grad_(True)
+        
         return model
 
+    def trainable_copy(self) -> TrainableModel:
+        return TrainableRankClassificationModel(
+            self._make_model(self.pretrained_model_name_or_path),
+            cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
+            self.predict_chunk
+        )
+
+
+class IA3DecoderOnlyRCModel(DecoderOnlyIA3Mixin, DecoderOnlyRCModel):
+    def __init__(
+        self,
+        pretrained_model_name_or_path: str,
+        *,
+        likelihood_averaging: str = 'char',
+        ia3_weights_file: str = None,
+        **model_kwargs
+    ):
+        super().__init__(
+            pretrained_model_name_or_path,
+            likelihood_averaging=likelihood_averaging,
+            ia3_weights_file=ia3_weights_file,
+            **model_kwargs
+        )
 
 class IA3MetaICLModel(DecoderOnlyIA3Mixin, MetaICLModel):
     def __init__(
@@ -42,8 +74,6 @@ class IA3MetaICLModel(DecoderOnlyIA3Mixin, MetaICLModel):
             ia3_weights_file=ia3_weights_file,
             **model_kwargs
         )
-        assert ia3_weights_file is not None
-
 
 #### Code from allenai/hn-icl by Qinyuan Yu, used with permission ####
 

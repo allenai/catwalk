@@ -126,7 +126,7 @@ class RankClassificationModel(Model):
 
     def trainable_copy(self) -> TrainableModel:
         return TrainableRankClassificationModel(
-            self._make_model(self.pretrained_model_name_or_path),
+            self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs),
             cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
             self.predict_chunk
         )

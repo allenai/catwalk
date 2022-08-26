@@ -87,17 +87,17 @@ class MetaICLTask(Task):
             fewshot_instances = []
         prefix = ""
         for fewshot_instance in fewshot_instances:
-            as_rc = self.instance_as_rank_classification(fewshot_instance)
+            as_rc = self.instance_as_rank_classification(fewshot_instance, continuation_seperator=continuation_seperator, example_seperator=example_seperator)
             if as_rc.correct_choice is None:
                 raise ValueError("Could not determine correct choice in ranked classification instance.")
             correct_choice = as_rc.choices[as_rc.correct_choice]
-            prefix += f"{correct_choice[0].strip()}{continuation_seperator}{correct_choice[1].strip()}{example_seperator}"
+            prefix += correct_choice[0] + correct_choice[1] + example_seperator
 
         choices = [
             (prefix + instance['input'], continuation_seperator + option)
             for option in instance['options']
         ]
 
-        label = instance['options'].index(instance['output'].strip())
+        label = instance['options'].index(instance['output'])
         assert label < len(choices)
         return RankClassificationInstance(choices, label)

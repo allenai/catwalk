@@ -21,13 +21,31 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 class RankClassificationModel(Model):
     VERSION = "001nul"
 
-    def __init__(self, pretrained_model_name_or_path: str, *, likelihood_averaging: str = 'char'):
+    def __init__(
+        self,
+        pretrained_model_name_or_path: str,
+        *,
+        likelihood_averaging: str = 'char',
+        **model_kwargs
+    ):
+        """
+        # Parameters
+
+        pretrained_model_name_or_path : `str`
+            The name of the transformer, for example `"gpt2-large"`
+        likelihood_averaging : `str`, optional (default = `char`)
+            The method for averaging the sum likelihood of the continuation. 'char' averages by 
+            character length, 'token' averages by token length.
+        model_kwargs:
+            Additional kwargs passed to the `_make_model` method.
+        """
         assert likelihood_averaging in {'char', 'token'}
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.likelihood_averaging = likelihood_averaging
+        self.model_kwargs = model_kwargs
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str) -> _Model:
+    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> _Model:
         raise NotImplementedError
 
     def predict(  # type: ignore
@@ -41,7 +59,7 @@ class RankClassificationModel(Model):
         fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = self._make_model(self.pretrained_model_name_or_path).to(device).eval()
+        model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).to(device).eval()
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
@@ -174,7 +192,7 @@ class TrainableRankClassificationModel(TrainableModel):
 @Model.register("rc::encoder_decoder")
 class EncoderDecoderRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str) -> T5ForConditionalGeneration:
+    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> T5ForConditionalGeneration:
         return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False)
 
     def _run_loglikelihood(
@@ -239,7 +257,7 @@ class EncoderDecoderRCModel(RankClassificationModel):
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str) -> GPT2LMHeadModel:
+    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> GPT2LMHeadModel:
         return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False)
 
     def _run_loglikelihood(

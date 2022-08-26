@@ -19,9 +19,14 @@ class MetaICLModel(DecoderOnlyRCModel):
         likelihood_averaging: str = 'token',
         max_length_per_example: int = 256,
         continuation_seperator: str = '\n',
-        example_seperator: str = '\n\n\n'
+        example_seperator: str = '\n\n\n',
+        **model_kwargs
     ):
-        super().__init__(pretrained_model_name_or_path, likelihood_averaging=likelihood_averaging)
+        super().__init__(
+            pretrained_model_name_or_path,
+            likelihood_averaging=likelihood_averaging,
+            **model_kwargs
+        )
         self.max_length_per_example = max_length_per_example
         self.continuation_seperator = continuation_seperator
         self.example_seperator = example_seperator
@@ -46,7 +51,7 @@ class MetaICLModel(DecoderOnlyRCModel):
         rc_instances: List[RankClassificationInstance] = []
         for i, instance in enumerate(instances):
             # pre-instance processing (both fewshot and test example)
-            instance['input'] = self._apply_meta_icl_per_instance_truncation(instance, tokenizer, is_icl_demonstration=False)
+            instance['input'] = self._apply_meta_icl_per_instance_truncation(instance, tokenizer, is_icl_demonstration=False, is_first= not bool(num_shots))
             fewshot_instances=task.get_fewshot_instances(num_shots, random_seed=fewshot_seed if fewshot_seed is not None else i, exceptions=instance)
             truncated_fewshot_instances = []
             for i, fewshot_instance in enumerate(fewshot_instances):
@@ -105,7 +110,7 @@ class MetaICLModel(DecoderOnlyRCModel):
             if len(input_tokens)>=self.max_length_per_example - 2 - option_length:
                 input_tokens = input_tokens[:self.max_length_per_example - 2 - option_length]
 
-        return tokenizer.decode(input_tokens).strip()
+        return tokenizer.decode(input_tokens)[0 if is_first else len(self.example_seperator):]
 
     def _apply_meta_icl_concatenated_input_truncation(self, instance: RankClassificationInstance, tokenizer: _Tokenizer) -> RankClassificationInstance:
         """Applies identical truncation as in metaicl.data.py.MetaICLData.prepro_sentence_pair_single"""

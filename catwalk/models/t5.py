@@ -27,8 +27,8 @@ class T5Model(Model, ABC):
 
         model = self.get_model().eval()
         tokenizer = self.get_tokenizer()
-        tokenizer.model_max_length = 1024 # We use this to be similar to the GPT truncation
-
+        tokenizer.model_max_length = model.config.n_positions
+        
         with torch.inference_mode():
             for batch in more_itertools.chunked(Tqdm.tqdm(qas, desc="Processing instances"), batch_size):
                 model_input = tokenizer([f"question:{i.question}" for i in batch],

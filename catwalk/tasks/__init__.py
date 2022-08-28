@@ -51,7 +51,7 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_QA,
         hfqa_conversion()   
     ).add_metrics(QA_METRICS),
-    "mrqa::triviaqa": MrqaTask("mrqa", "triviaqa").add_instance_conversion(
+    "mrqa::triviaqa": MrqaTask("mrqa", "triviaqa-web").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion()
     ).add_metrics(QA_METRICS),
@@ -63,7 +63,7 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_QA,
         hfqa_conversion()
     ).add_metrics(QA_METRICS),
-    "mrqa::naturalquestions": MrqaTask("mrqa", "naturalquestions").add_instance_conversion(
+    "mrqa::naturalquestions": MrqaTask("mrqa", "naturalquestionsshort").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion()
     ).add_metrics(QA_METRICS),

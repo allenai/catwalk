@@ -5,7 +5,7 @@ from typing import Optional
 
 class MrqaTask(HFDatasetsTask):
     TEST_DATASETS = {"race", "drop", "bioasq", "relationextraction", "textbookqa", "duorc.paraphraserc"}
-    DEV_DATASETS = {"newsqa", "searchqa", "triviaqa", "naturalquestions", "hotpotqa"}
+    DEV_DATASETS = {"newsqa", "searchqa", "triviaqa-web", "naturalquestionsshort", "hotpotqa"}
     
     @functools.lru_cache
     def has_split(self, split: str) -> bool:

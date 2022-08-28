@@ -14,7 +14,6 @@ from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
 
 
-
 MC_METRICS = {
     "acc": torchmetrics.Accuracy,
 }
@@ -37,6 +36,7 @@ PERPLEXITY_METRICS = {
 QA_METRICS = {
     "squad_metrics": torchmetrics.SQuAD,
 }
+
 
 def classification_metrics(num_classes: int):
     return {

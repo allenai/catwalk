@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - MetaICLTask now supports fewshots less than 16 and only support getting the test split
 - set default logging level to `"WARNING"` instead of `"ERROR"` when invoking `python -m catwalk`
+- changed MetaICLModel formatting to always preserve whitespace, to reproduce MetaICL results
 
 ### Added
 
@@ -18,12 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - P3 tasks
 - Encoder-only QA models
 - SQuAD and SQuADShifts tasks
-- Adds a new MetaICLTask that supports the evaluation classification tasks in that benchmark
+- Adds a new MetaICLTask that supports all evaluation tasks in that benchmark
 - Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
-- Optional random_subsample_seed for PredictStep
+- Optional `random_subsample_seed` for PredictStep
 - An option for rank classification to average log likelihoods by token length
 - Added MRQA task
-- Adds support for inference with IA3 adaptors loaded from a file on decoder only ranked classification models
+- Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
+- Added the ability to train `HFAutoModel`
 
 ### Fixed
 

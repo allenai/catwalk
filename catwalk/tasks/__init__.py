@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import datasets
 
@@ -110,7 +110,7 @@ TASKS: Dict[str, Task] = {
     "mrpc": EleutherTask("mrpc", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "qnli": EleutherTask("qnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "qqp": EleutherTask("qqp", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "sst": EleutherTask("sst", ranked_classification=True).add_metrics(classification_metrics(5)),
+    "sst": EleutherTask("sst", ranked_classification=True).add_metrics(classification_metrics(2)),
     "wnli": EleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "boolq": EleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
     "cb": EleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
@@ -136,11 +136,40 @@ TASKS: Dict[str, Task] = {
     "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_metrics(MC_METRICS),
     "qa4mre_2013": EleutherTask("qa4mre_2013", ranked_classification=True).add_metrics(MC_METRICS),
     "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
-    "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_metrics(MC_METRICS),
-    "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_metrics(MC_METRICS),
+    "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
+        )
+    ).add_metrics(MC_METRICS),
+    "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id",
+            answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
+        )
+    ).add_metrics(MC_METRICS),
     "logiqa": EleutherTask("logiqa", ranked_classification=True).add_metrics(MC_METRICS),
     "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_metrics(MC_METRICS),
-    "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_metrics(MC_METRICS),
+    "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question_stem",
+            answer_choices_fields="choices.text",
+            correct_answer_index_field="answerKey",
+            id_field="id"
+        )
+    ).add_metrics(MC_METRICS),
     "race": RaceEleutherTask().add_metrics(MC_METRICS),
     "headqa": EleutherTask("headqa", ranked_classification=True).add_metrics(MC_METRICS),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_metrics(MC_METRICS),
@@ -199,9 +228,11 @@ TASKS: Dict[str, Task] = {
     "raft::terms_of_service": RaftTask("terms_of_service"),
     "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
+
     # MetaICL
     "metaicl::piqa": MetaICLTask("piqa").add_metrics(MC_METRICS),
     "metaicl::boolq": MetaICLTask("boolq").add_metrics(classification_metrics(2)),
+
     "metaicl::tweet_eval-stance_feminist": MetaICLTask("tweet_eval-stance_feminist").add_metrics(classification_metrics(3)),
     "metaicl::ethos-national_origin": MetaICLTask("ethos-national_origin").add_metrics(classification_metrics(2)),
     "metaicl::tweet_eval-hate": MetaICLTask("tweet_eval-hate").add_metrics(classification_metrics(2)),
@@ -222,6 +253,45 @@ TASKS: Dict[str, Task] = {
     "metaicl::tab_fact": MetaICLTask("tab_fact").add_metrics(classification_metrics(2)),
     "metaicl::anli": MetaICLTask("anli").add_metrics(classification_metrics(3)),
     "metaicl::ethos-race": MetaICLTask("ethos-race").add_metrics(classification_metrics(2)),
+
+    "metaicl::glue-mrpc": MetaICLTask("glue-mrpc").add_metrics(classification_metrics(2)),
+    "metaicl::glue-qqp": MetaICLTask("glue-qqp").add_metrics(classification_metrics(2)),
+    # "metaicl::medical_questions_pairs": MetaICLTask("medical_questions_pairs").add_metrics(classification_metrics(2)),
+    "metaicl::paws": MetaICLTask("paws").add_metrics(classification_metrics(2)),
+
+    # "metaicl::anli": MetaICLTask("anli").add_metrics(classification_metrics(3)),
+    "metaicl::glue-mnli": MetaICLTask("glue-mnli").add_metrics(classification_metrics(3)),
+    "metaicl::glue-qnli": MetaICLTask("glue-qnli").add_metrics(classification_metrics(2)),
+    "metaicl::glue-rte": MetaICLTask("glue-rte").add_metrics(classification_metrics(2)),
+    "metaicl::glue-wnli": MetaICLTask("glue-wnli").add_metrics(classification_metrics(2)),
+    "metaicl::scitail": MetaICLTask("scitail").add_metrics(classification_metrics(2)),
+    "metaicl::sick": MetaICLTask("sick").add_metrics(classification_metrics(3)),
+    # "metaicl::superglue-cb": MetaICLTask("superglue-cb").add_metrics(classification_metrics(3)),
+
+    "metaicl::ai2_arc": MetaICLTask("ai2_arc").add_metrics(MC_METRICS),
+    "metaicl::codah": MetaICLTask("codah").add_metrics(MC_METRICS),
+    "metaicl::cosmos_qa": MetaICLTask("cosmos_qa").add_metrics(MC_METRICS),
+    "metaicl::dream": MetaICLTask("dream").add_metrics(MC_METRICS),
+    "metaicl::hellaswag": MetaICLTask("hellaswag").add_metrics(MC_METRICS),
+    "metaicl::openbookqa": MetaICLTask("openbookqa").add_metrics(MC_METRICS),
+    "metaicl::qasc": MetaICLTask("qasc").add_metrics(MC_METRICS),
+    "metaicl::quail": MetaICLTask("quail").add_metrics(MC_METRICS),
+    "metaicl::quarel": MetaICLTask("quarel").add_metrics(MC_METRICS),
+    "metaicl::quartz-no_knowledge": MetaICLTask("quartz-no_knowledge").add_metrics(MC_METRICS),
+    "metaicl::quartz-with_knowledge": MetaICLTask("quartz-with_knowledge").add_metrics(MC_METRICS),
+    "metaicl::sciq": MetaICLTask("sciq").add_metrics(MC_METRICS),
+    "metaicl::superglue-copa": MetaICLTask("superglue-copa").add_metrics(MC_METRICS),
+    "metaicl::swag": MetaICLTask("swag").add_metrics(MC_METRICS),
+    "metaicl::wino_grande": MetaICLTask("wino_grande").add_metrics(MC_METRICS),
+    "metaicl::wiqa": MetaICLTask("wiqa").add_metrics(MC_METRICS),
+    "metaicl::unifiedqa:qasc": MetaICLTask("unifiedqa:qasc").add_metrics(MC_METRICS),
+    "metaicl::unifiedqa:qasc_with_ir": MetaICLTask("unifiedqa:qasc_with_ir").add_metrics(MC_METRICS),
+    "metaicl::unifiedqa:openbookqa": MetaICLTask("unifiedqa:openbookqa").add_metrics(MC_METRICS),
+    "metaicl::unifiedqa:openbookqa_with_ir": MetaICLTask("unifiedqa:openbookqa_with_ir").add_metrics(MC_METRICS),
+    "metaicl::unifiedqa:mctest": MetaICLTask("unifiedqa:mctest").add_metrics(MC_METRICS),
+    "metaicl::unifiedqa:ai2_science_middle": MetaICLTask("unifiedqa:ai2_science_middle").add_metrics(MC_METRICS),
+
+    "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):
@@ -281,4 +351,79 @@ TASK_SETS = {
         "metaicl::anli",
         "metaicl::ethos-race"
     },
+    "metaicl-paraphrase-eval": {
+        "metaicl::glue-mrpc",
+        "metaicl::glue-qqp",
+        "metaicl::medical_questions_pairs",
+        "metaicl::paws"
+    },
+    "metaicl-nli-eval": {
+        "metaicl::anli",
+        "metaicl::glue-mnli",
+        "metaicl::glue-qnli",
+        "metaicl::glue-rte",
+        "metaicl::glue-wnli",
+        "metaicl::scitail",
+        "metaicl::sick",
+        "metaicl::superglue-cb"
+    },
+    "metaicl-qa-eval": {
+        "metaicl::ai2_arc",
+        "metaicl::codah",
+        "metaicl::cosmos_qa",
+        "metaicl::dream",
+        "metaicl::hellaswag",
+        "metaicl::openbookqa",
+        "metaicl::qasc",
+        "metaicl::quail",
+        "metaicl::quarel",
+        "metaicl::quartz-no_knowledge",
+        "metaicl::quartz-with_knowledge",
+        "metaicl::sciq",
+        "metaicl::superglue-copa",
+        "metaicl::swag",
+        "metaicl::wino_grande",
+        "metaicl::wiqa",
+        "metaicl::unifiedqa:qasc",
+        "metaicl::unifiedqa:qasc_with_ir",
+        "metaicl::unifiedqa:openbookqa",
+        "metaicl::unifiedqa:openbookqa_with_ir",
+        "metaicl::unifiedqa:mctest",
+        "metaicl::unifiedqa:ai2_science_middle"
+    },
+    "metaicl-lr-eval": {
+        "metaicl::quarel",
+        "metaicl::financial_phrasebank",
+        "metaicl::openbookqa",
+        "metaicl::codah",
+        "metaicl::qasc",
+        "metaicl::glue-mrpc",
+        "metaicl::dream",
+        "metaicl::sick",
+        "metaicl::commonsense_qa",
+        "metaicl::medical_questions_pairs",
+        "metaicl::quartz-with_knowledge",
+        "metaicl::poem_sentiment",
+        "metaicl::quartz-no_knowledge",
+        "metaicl::glue-wnli",
+        "metaicl::climate_fever",
+        "metaicl::ethos-national_origin",
+        "metaicl::ethos-race",
+        "metaicl::ethos-religion",
+        "metaicl::ai2_arc",
+        "metaicl::hate_speech18",
+        "metaicl::glue-rte",
+        "metaicl::superglue-cb",
+        "metaicl::superglue-copa",
+        "metaicl::tweet_eval-hate",
+        "metaicl::tweet_eval-stance_atheism",
+        "metaicl::tweet_eval-stance_feminist"
+    }
 }
+
+
+def short_name_for_task_object(task: Task) -> Optional[str]:
+    for task_name, task_object in TASKS.items():
+        if id(task) == id(task_object):
+            return task_name
+    return None

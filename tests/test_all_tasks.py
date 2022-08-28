@@ -1,10 +1,12 @@
 import inspect
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 import pytest
 
 import catwalk.tasks
 import catwalk.models
+from catwalk.task import InstanceFormat
+from catwalk.tasks.huggingface import HFMCInstance
 
 # There are too many P3 tasks, so we just pick one.
 # MRQA dataset takes too long to load, so we skip it.
@@ -27,6 +29,28 @@ def test_task(task_name: str):
             try:
                 if "fewshot_instances" in signature.parameters:
                     kwargs["fewshot_instances"] = task.get_fewshot_instances(2, exceptions=instance)
-            except ValueError: # This task doesn't support fewshot for the chosen split.
+            except ValueError:  # This task doesn't support fewshot for the chosen split.
                 kwargs = {}
             assert conversion(instance, **kwargs) is not None
+
+
+mc_tasks = [
+    task_name
+    for task_name, task in catwalk.tasks.TASKS.items()
+    if task.has_instance_conversion(InstanceFormat.HF_MC)
+]
+
+
+@pytest.mark.parametrize("task_name", mc_tasks)
+def test_mc_tasks(task_name):
+    task = catwalk.tasks.TASKS[task_name]
+    if not task.has_instance_conversion(InstanceFormat.HF_MC):
+        return
+    for split in ["train", "validation", "test"]:
+        if not task.has_split(split):
+            continue
+        for instance in task.get_split(split):
+            mc_instance = cast(HFMCInstance, task.convert_instance(instance, InstanceFormat.HF_MC))
+            if mc_instance.correct_answer_index is not None:
+                assert mc_instance.correct_answer_index >= 0
+                assert mc_instance.correct_answer_index < len(mc_instance.answer_choices)

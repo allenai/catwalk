@@ -7,6 +7,7 @@ from catwalk.models.huggingface import HFAutoModel
 from catwalk.models.rank_classification import EncoderDecoderRCModel, DecoderOnlyRCModel
 from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 from catwalk.models.metaicl import MetaICLModel
+from catwalk.models.ia3 import IA3MetaICLModel
 
 _ENCODER_DECODER_MODELS = {
     "t5-small",
@@ -54,7 +55,17 @@ def _shorten_hf_name(hf_name: str) -> str:
 MODELS: Dict[str, Model] = {
     "bert-base-uncased": HFAutoModel("bert-base-uncased"),
     "bert-base-cased": HFAutoModel("bert-base-cased"),
+    "bert-large-uncased": HFAutoModel("bert-large-uncased"),
+    "bert-large-cased": HFAutoModel("bert-large-cased"),
+    "roberta-base": HFAutoModel("roberta-base"),
+    "roberta-large": HFAutoModel("roberta-large"),
+    "tiny-bert": HFAutoModel("prajjwal1/bert-tiny"),
     "distilbert-base-cased-distilled-squad": HFAutoModel("distilbert-base-cased-distilled-squad"),
+    "deberta-v3-base": HFAutoModel("microsoft/deberta-v3-base"),
+    "deberta-v3-small": HFAutoModel("microsoft/deberta-v3-small"),
+    "deberta-v3-large": HFAutoModel("microsoft/deberta-v3-large"),
+    "deberta-v2-xlarge": HFAutoModel("microsoft/deberta-v2-xlarge"),
+    "deberta-v2-xxlarge": HFAutoModel("microsoft/deberta-v2-xxlarge"),
 }
 
 for hf_name in _ENCODER_DECODER_MODELS:

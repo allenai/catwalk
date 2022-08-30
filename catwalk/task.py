@@ -37,13 +37,12 @@ QA_METRICS = {
     "squad_metrics": torchmetrics.SQuAD,
 }
 
-
-def classification_metrics(num_classes: int):
+def classification_metrics(num_classes: int, *, average = None):
     return {
         "acc": torchmetrics.Accuracy,
-        "f1": partial(torchmetrics.F1Score, num_classes=num_classes, average=None),
-        "precision": partial(torchmetrics.Precision, num_classes=num_classes, average=None),
-        "recall": partial(torchmetrics.Recall, num_classes=num_classes, average=None)
+        "f1": partial(torchmetrics.F1Score, num_classes=num_classes, average=average),
+        "precision": partial(torchmetrics.Precision, num_classes=num_classes, average=average),
+        "recall": partial(torchmetrics.Recall, num_classes=num_classes, average=average)
     }
 
 

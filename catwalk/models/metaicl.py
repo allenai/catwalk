@@ -17,6 +17,8 @@ class MetaICLModel(DecoderOnlyRCModel):
         pretrained_model_name_or_path: str,
         *,
         likelihood_averaging: str = 'token',
+        override_weights_file: str = None,
+        prefix_caching: bool = True,
         max_length_per_example: int = 256,
         continuation_seperator: str = '\n',
         example_seperator: str = '\n\n\n',
@@ -25,6 +27,8 @@ class MetaICLModel(DecoderOnlyRCModel):
         super().__init__(
             pretrained_model_name_or_path,
             likelihood_averaging=likelihood_averaging,
+            override_weights_file=override_weights_file,
+            prefix_caching=prefix_caching,
             **model_kwargs
         )
         self.max_length_per_example = max_length_per_example

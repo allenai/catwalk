@@ -17,7 +17,13 @@ class Model(Registrable, DetHashWithVersion, ABC):
     def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError()
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+    def calculate_metrics(
+        self,
+        task: Task,
+        predictions: Sequence[Dict[str, Any]],
+        *,
+        disable_torchmetrics_distributed_sync: bool = False,
+        ) -> Dict[str, torch.Tensor]:
         # Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
         # into tensors.
         def tensor_args(args: Tuple[Any]) -> Tuple[Any, ...]:
@@ -40,7 +46,9 @@ class Model(Registrable, DetHashWithVersion, ABC):
                     fixed_args.append(arg)
             return tuple(fixed_args)
 
-        metrics = task.make_metrics()
+        metrics = task.make_metrics(
+            disable_torchmetrics_distributed_sync=disable_torchmetrics_distributed_sync
+            )
         for prediction in Tqdm.tqdm(predictions, desc="Calculating metrics"):
             for metric_name, metric_args in prediction.items():
                 try:

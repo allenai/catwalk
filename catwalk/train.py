@@ -15,6 +15,7 @@ def main():
     parser.add_argument("--task", type=str, nargs="+")
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--grad_acc", type=int, default=1)
+    parser.add_argument("--device_count", type=int, default=1)
     parser.add_argument(
         "-d",
         "-w",
@@ -41,7 +42,13 @@ def main():
         except KeyError:
             tasks.add(task)
 
-    model_step = FinetuneStep(model=args.model, tasks=tasks, batch_size=args.batch_size, grad_accum=args.grad_acc)
+    model_step = FinetuneStep(
+            model=args.model,
+            tasks=tasks,
+            batch_size=args.batch_size,
+            grad_accum=args.grad_acc,
+            device_count=args.device_count
+        )
 
     metric_task_dict = {}
     for task in tasks:

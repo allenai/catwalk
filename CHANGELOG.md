@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MetaICLTask now supports fewshots less than 16 and only support getting the test split
 - set default logging level to `"WARNING"` instead of `"ERROR"` when invoking `python -m catwalk`
 - changed MetaICLModel formatting to always preserve whitespace, to reproduce MetaICL results
+- improved speed of rank classification models by aggregating sequence logits on GPU rather than on CPU
 
 ### Added
 
@@ -21,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SQuAD and SQuADShifts tasks
 - Adds a new MetaICLTask that supports all evaluation tasks in that benchmark
 - Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
+- An option for rank classification to average log likelihoods by token length
+- Adds QA task support for autoregressive (previously only available with Eleuther task format)
+- Adds QA task support for T5 models
 - Optional `random_subsample_seed` for PredictStep
 - An option for rank classification to average log likelihoods by token length
 - Added MRQA task

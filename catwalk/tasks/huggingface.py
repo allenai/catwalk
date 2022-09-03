@@ -64,22 +64,17 @@ class HFQAInstance:
 
 def hfqa_conversion(
     *,
-    context_field: str,
-    question_field: str,
-    answers_field: str,
-    id_field: str,
+    context_field: str="context",
+    question_field: str="question",
+    answers_field: str="answers",
+    id_field: str="id",
 ) -> InstanceConversion:
     def convert(instance: Dict[str, Any]) -> HFQAInstance:
-        question = get_from_dict(instance, question_field).strip()
-        context = get_from_dict(instance, context_field)
-        answers = get_from_dict(instance, answers_field)
-        id = get_from_dict(instance, id_field)
-        
         return HFQAInstance(
-            id=id,
-            context=context,
-            question=question,
-            answers=answers)
+            id=get_from_dict(instance, id_field),
+            context=get_from_dict(instance, context_field),
+            question=get_from_dict(instance, question_field).strip(),
+            answers=get_from_dict(instance, answers_field))
         
     return convert
 
@@ -88,22 +83,23 @@ class HFMCInstance:
     id: Optional[str]
     question: str
     answer_choices: List[str]
-    correct_answer_index: int
+    correct_answer_index: Optional[int]
 
 
-def normalize_answers(answer: Any) -> int:
-    if isinstance(answer, int):
-        return answer
-    if isinstance(answer, str):
-        try:
-            return int(answer)
-        except ValueError:
+def normalize_answers(answer: Any, answer_mappings: Optional[Dict[str, int]] = None) -> int:
+    if answer_mappings is None:
+        if isinstance(answer, int):
+            return answer
+        if isinstance(answer, str):
             if len(answer) == 1:
                 answer = answer.lower()
-                return ord(answer[0]) - ord('a')
-            else:
-                raise
-    raise TypeError
+                answer_index = ord(answer[0])
+                if ord('a') <= answer_index <= ord('z'):
+                    return answer_index - ord('a')
+            raise ValueError(f"Don't know how to make an index from answer '{answer}'.")
+        raise ValueError(f"Don't know how to make an index from answer of type {answer.__class__}.")
+    else:
+        return answer_mappings[answer]
 
 
 def hfmc_convert(
@@ -114,6 +110,7 @@ def hfmc_convert(
     answer_choices_fields: Union[str, List[str]],
     correct_answer_index_field: str,
     id_field: Optional[str] = None,
+    answer_mappings: Optional[Dict[str, int]] = None
 ) -> HFMCInstance:
     if isinstance(answer_choices_fields, str):
         answer_choices = get_from_dict(instance, answer_choices_fields)
@@ -125,11 +122,15 @@ def hfmc_convert(
     if context_field is not None:
         question = get_from_dict(instance, context_field).strip() + " " + question
 
+    correct_answer_index: Optional[int] = normalize_answers(instance[correct_answer_index_field], answer_mappings)
+    if correct_answer_index == -1:
+        correct_answer_index = None
+
     return HFMCInstance(
         id=str(get_from_dict(instance, id_field)) if id_field else None,
         question=question,
         answer_choices=answer_choices,
-        correct_answer_index=normalize_answers(instance[correct_answer_index_field]))
+        correct_answer_index=correct_answer_index)
 
 
 def hfmc_conversion(

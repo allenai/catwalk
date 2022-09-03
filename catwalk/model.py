@@ -1,7 +1,7 @@
 import inspect
 from abc import ABC
 from copy import deepcopy
-from typing import Sequence, Dict, Any, Iterator, Tuple, List
+from typing import Sequence, Dict, Any, Iterator, Tuple, List, Optional
 
 import torch
 from tango.common import Registrable, Tqdm
@@ -17,7 +17,7 @@ class Model(Registrable, DetHashWithVersion, ABC):
     def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError()
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
+    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
         # Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
         # into tensors.
         def tensor_args(args: Tuple[Any]) -> Tuple[Any, ...]:
@@ -74,7 +74,7 @@ class TrainableModel(Model, torch.nn.Module, ABC):
     This is a catwalk model that also supports utility functions to make it possible to train.
     """
 
-    def __init__(self, inner_module: torch.nn.Module):
+    def __init__(self, inner_module: Optional[torch.nn.Module]):
         super().__init__()
         self.inner_module = inner_module
 

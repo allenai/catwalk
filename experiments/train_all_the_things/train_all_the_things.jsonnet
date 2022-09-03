@@ -20,7 +20,13 @@ local models = [
     #"deberta-v2-xxlarge",
 ];
 
-local random_seeds = if debug then [42, 1] else [42, 1337, 2147483647, 1, 1985];
+local random_seeds = if debug then [42, 1] else [
+    42,
+    1337,
+    2147483647,
+#    1,
+#    1985
+];
 
 
 local effective_batch_size = if debug then 6 else 32;

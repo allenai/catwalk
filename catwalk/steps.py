@@ -114,14 +114,15 @@ class FinetuneStep(Step):
         self,
         model: Union[str, Model],
         tasks: List[Union[str, Task]],
-        train_steps: int = 10000,
+        train_steps: int = 2600,
         validation_steps: int = 1000,
+        validate_every: int = 200,
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
             lr_scheduler=Lazy(
                 transformers.optimization.get_linear_schedule_with_warmup,
                 num_warmup_steps=200,
-                num_training_steps=10000
+                num_training_steps=2600
             ),
             optimizer=Lazy(
                 torch.optim.AdamW,
@@ -169,8 +170,8 @@ class FinetuneStep(Step):
             validation_steps=validation_steps,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
-            validate_every=1000,
-            checkpoint_every=1000,
+            validate_every=validate_every,
+            checkpoint_every=validate_every,
             grad_accum=grad_accum,
             is_distributed=is_distributed,
             world_size=num_workers,

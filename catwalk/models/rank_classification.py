@@ -178,11 +178,16 @@ class TrainableRankClassificationModel(TrainableModel):
             truncation=True,
             pad_to_multiple_of=8,
             return_tensors='pt',
-            is_split_into_words=False)
+            is_split_into_words=False,
+            return_token_type_ids=True,
+            )
         tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
         for i, label in enumerate(tokenized_strings.labels):
-            mask = [s == 1 for s in tokenized_strings.sequence_ids(i)]
+            mask = [bool(s == 1) for s in tokenized_strings['token_type_ids'][i]]
+            # have to account for any special tokens added to each of the two inputs
+            mask = [False] * self.tokenizer.num_special_tokens_to_add(pair=True) + mask
             label[mask] = tokenized_strings.input_ids[i, mask]
+        del tokenized_strings['token_type_ids']
         return {
             key: tensor.to(self.model.device)
             for key, tensor in tokenized_strings.items()

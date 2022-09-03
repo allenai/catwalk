@@ -23,11 +23,15 @@ local models = [
 local random_seeds = if debug then [42, 1] else [42, 1337, 2147483647, 1, 1985];
 
 
+local effective_batch_size = if debug then 6 else 32;
+
 local batch_size_for_model(model) =
-    if debug then 3 else
-    if std.length(std.findSubstr("xxl", model)) > 0 then 8 else
-    if std.length(std.findSubstr("xl", model)) > 0 then 16 else
-    32;
+    std.min(effective_batch_size,
+        if debug then 3 else
+        if std.length(std.findSubstr("xxl", model)) > 0 then 4 else
+        if std.length(std.findSubstr("xl", model)) > 0 then 8 else
+        if std.length(std.findSubstr("large", model)) > 0 then 16 else
+        effective_batch_size);
 
 
 local trained_model_step_name(task, model, seed) = "trained_model_" + task + "_" + model + "_" + seed;
@@ -40,6 +44,7 @@ local trained_model(task, model, seed) = {
         tasks: [task],
         random_seed: seed,
         batch_size: batch_size_for_model(model),
+        grad_accum: effective_batch_size / self.batch_size,
         [if debug then "train_steps"]: 10,
         [if debug then "validation_steps"]: 5
     }

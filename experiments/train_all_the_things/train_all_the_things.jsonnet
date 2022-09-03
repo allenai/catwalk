@@ -9,6 +9,15 @@ local tasks = [
 local models = [
     "bert-base-uncased",
     "bert-base-cased",
+    #"bert-large-uncased",
+    #"bert-large-cased",
+    #"roberta-base",
+    #"roberta-large",
+    #"deberta-v3-base",
+    #"deberta-v3-small",
+    #"deberta-v3-large",
+    #"deberta-v2-xlarge",
+    #"deberta-v2-xxlarge",
 ];
 
 local random_seeds = if debug then [42, 1] else [42, 1337, 2147483647, 1, 1985];

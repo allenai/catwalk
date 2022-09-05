@@ -116,7 +116,7 @@ class FinetuneStep(Step):
         tasks: List[Union[str, Task]],
         train_steps: int = 2600,
         validation_steps: int = 1000,
-        validate_every: int = 200,
+        validate_every: int = 1000,
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
             lr_scheduler=Lazy(

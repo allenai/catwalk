@@ -53,8 +53,6 @@ local trained_model(task, model, seed) = {
         grad_accum: effective_batch_size / self.batch_size,
         [if debug then "train_steps"]: 10,
         [if debug then "validation_steps"]: 5,
-        train_steps: 10000,
-        validate_every: 1000
     }
 };
 

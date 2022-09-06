@@ -64,10 +64,10 @@ class HFQAInstance:
 
 def hfqa_conversion(
     *,
-    context_field: str,
-    question_field: str,
-    answers_field: str,
-    id_field: str,
+    context_field: str="context",
+    question_field: str="question",
+    answers_field: str="answers",
+    id_field: str="id",
 ) -> InstanceConversion:
     def convert(instance: Dict[str, Any]) -> HFQAInstance:
         return HFQAInstance(

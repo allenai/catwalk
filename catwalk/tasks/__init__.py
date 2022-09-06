@@ -290,7 +290,11 @@ TASKS: Dict[str, Task] = {
     "metaicl::unifiedqa:openbookqa_with_ir": MetaICLTask("unifiedqa:openbookqa_with_ir").add_metrics(MC_METRICS),
     "metaicl::unifiedqa:mctest": MetaICLTask("unifiedqa:mctest").add_metrics(MC_METRICS),
     "metaicl::unifiedqa:ai2_science_middle": MetaICLTask("unifiedqa:ai2_science_middle").add_metrics(MC_METRICS),
+    
+    "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
 
+    "metaicl::numer_sense": MetaICLTask("numer_sense").add_metrics(classification_metrics(12)),
+    "metaicl::race-high": MetaICLTask("race-high").add_metrics(MC_METRICS),
     "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
 }
 

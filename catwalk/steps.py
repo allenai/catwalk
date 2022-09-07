@@ -168,6 +168,8 @@ class FinetuneStep(Step):
             seed=random_seed,
             train_steps=train_steps,
             validation_steps=validation_steps,
+            val_metric_name="acc",
+            minimize_val_metric=False,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
             validate_every=validate_every,

@@ -32,5 +32,5 @@ include_package:
   - catwalk/steps.py
 
 # Adjust the log level as you want. "info" is probably a good place to start.
-log_level: info
+log_level: debug
 

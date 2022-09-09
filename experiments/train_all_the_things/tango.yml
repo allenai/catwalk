@@ -28,6 +28,10 @@ executor:
     - source:
         host_path: /net/nfs.allennlp/dirkg/cache
       mount_path: /root/.cache
+  env_vars:
+    - name: WANDB_API_KEY
+      secret: WANDB_API_KEY
+
 
 # This tells Tango where to look for your custom step classes.
 # Each item in the list can be a path to a directory or Python file, or a Python

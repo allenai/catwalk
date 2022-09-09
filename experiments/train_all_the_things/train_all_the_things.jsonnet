@@ -54,6 +54,8 @@ local trained_model(task, model, seed) = {
         grad_accum: effective_batch_size / self.batch_size,
         [if debug then "train_steps"]: 10,
         [if debug then "validation_steps"]: 5,
+        wandb_entity: "allennlp",
+        wandb_project: "catwalk"
     }
 };
 

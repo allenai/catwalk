@@ -14,6 +14,7 @@ import tango
 import transformers.optimization
 from tango import Step, JsonFormat
 from tango.common import Lazy, DatasetDict
+from tango.common.exceptions import ConfigurationError
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
 from tango.integrations.torch import (
@@ -26,8 +27,10 @@ import torch
 
 from catwalk.task import Task
 from catwalk.tasks import TASKS
+from catwalk.tasks import short_name_for_task_object
 from catwalk.model import Model
 from catwalk.models import MODELS
+from catwalk.models import short_name_for_model_object
 from catwalk.training_callback import CatwalkEvaluationCallback
 
 
@@ -137,6 +140,8 @@ class FinetuneStep(Step):
         distributed_port: int = 54761,
         train_split: str = "train",
         validation_split: Optional[str] = "validation",
+        wandb_entity: Optional[str] = None,
+        wandb_project: Optional[str] = None
     ) -> Model:  # type: ignore
         if isinstance(model, str):
             model = MODELS[model]
@@ -210,17 +215,30 @@ class FinetuneStep(Step):
         else:
             wrapped_model = Lazy(model_wrapper.construct, model=trainable_model)
 
-        if validation_split is None:
-            # No point in stopping early when we don't have a validation set.
-            callbacks = []
-        else:
-            callbacks = [
+        callbacks = []
+        if validation_split is not None:
+            callbacks.append(
                 Lazy(
                     CatwalkEvaluationCallback,
                     tasks=tasks_in_a_special_variable_because_mypy_is_insane,
                     eval_limit=validation_steps
                 )
-            ]
+            )
+        if wandb_entity is not None or wandb_project is not None:
+            if wandb_entity is None or wandb_project is None:
+                raise ConfigurationError("You have to set wandb_entity and wandp_project together.")
+            from tango.integrations.wandb import WandbTrainCallback
+            tags = [short_name_for_task_object(task) for task in tasks_in_a_special_variable_because_mypy_is_insane]
+            tags.append(short_name_for_model_object(model))
+            tags.append(f"seed={random_seed}")
+            callbacks.append(
+                Lazy(
+                    WandbTrainCallback,
+                    project=wandb_project,
+                    entity=wandb_entity,
+                    tags=[t for t in tags if t is not None]
+                )
+            )
 
         if is_distributed:
             import torch.multiprocessing as mp

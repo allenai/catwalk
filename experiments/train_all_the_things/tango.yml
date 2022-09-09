@@ -23,7 +23,7 @@ executor:
     - ai2/general-cirrascale
     - ai2/allennlp-elanding-a100-80g
     - ai2/mosaic-cirrascale-a100
-  priority: preemtible
+  priority: preemptible
   datasets:
     - source:
         host_path: /net/nfs.allennlp/dirkg/cache

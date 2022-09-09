@@ -22,10 +22,10 @@ local models = [
 
 local random_seeds = if debug then [42, 1] else [
     42,
-    1337,
-    2147483647,
-    1,
-    1985
+    #1337,
+    #2147483647,
+    #1,
+    #1985
 ];
 
 

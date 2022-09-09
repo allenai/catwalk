@@ -36,7 +36,8 @@ local batch_size_for_model(model) =
         if debug then 3 else
         if std.length(std.findSubstr("xxl", model)) > 0 then 4 else
         if std.length(std.findSubstr("xl", model)) > 0 then 8 else
-        if std.length(std.findSubstr("large", model)) > 0 then 16 else
+        if std.length(std.findSubstr("large", model)) > 0 then
+            (if std.length(std.findSubstr("deberta", model)) > 0 then 8 else 16) else
         effective_batch_size);
 
 

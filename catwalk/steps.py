@@ -119,7 +119,7 @@ class FinetuneStep(Step):
         self,
         model: Union[str, Model],
         tasks: List[Union[str, Task]],
-        train_steps: int = 5000,
+        train_steps: int = 2600,
         validation_steps: int = 1000,
         validate_every: int = 100,
         training_engine: Lazy[TrainingEngine] = Lazy(
@@ -127,7 +127,7 @@ class FinetuneStep(Step):
             lr_scheduler=Lazy(
                 transformers.optimization.get_linear_schedule_with_warmup,
                 num_warmup_steps=200,
-                num_training_steps=5000
+                num_training_steps=2600
             ),
             optimizer=Lazy(
                 torch.optim.AdamW,

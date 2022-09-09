@@ -106,6 +106,8 @@ class FinetuneStep(Step):
     VERSION = "001"
     FORMAT = TorchFormat
 
+    SKIP_ID_ARGUMENTS = {"wandb_entity", "wandb_project"}
+
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
             kwargs["model"] = MODELS[kwargs["model"]]

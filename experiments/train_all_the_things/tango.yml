@@ -26,7 +26,7 @@ executor:
   priority: preemptible
   datasets:
     - source:
-        host_path: /net/nfs.allennlp/dirkg/cache
+        host_path: /net/nfs/allennlp/dirkg/cache
       mount_path: /root/.cache
   env_vars:
     - name: WANDB_API_KEY

@@ -23,7 +23,6 @@ executor:
     - ai2/allennlp-cirrascale
     - ai2/general-cirrascale
     - ai2/allennlp-elanding-a100-80g
-    - ai2/general-gcp
 
 # This tells Tango where to look for your custom step classes.
 # Each item in the list can be a path to a directory or Python file, or a Python

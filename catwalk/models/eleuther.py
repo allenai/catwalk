@@ -29,6 +29,12 @@ class EAIGPT(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
+    @property
+    def model(self) -> GPT2LMHeadModel:
+        return cached_transformers.get(
+            AutoModelForCausalLM, self.pretrained_model_name_or_path, False
+        ).eval()
+
     def predict(  # type: ignore
         self,
         task: Task,
@@ -40,7 +46,7 @@ class EAIGPT(Model):
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = cached_transformers.get(AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        model = self.model.to(device)
         tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):

@@ -30,10 +30,10 @@ executor:
     - ai2/s2-elanding
     - ai2/s2-cirrascale
   priority: preemptible
-  datasets:
-    - source:
-        host_path: /net/nfs/allennlp/dirkg/cache
-      mount_path: /root/.cache
+  #datasets:
+  #  - source:
+  #      host_path: /net/nfs/allennlp/dirkg/cache
+  #    mount_path: /root/.cache
   env_vars:
     - name: WANDB_API_KEY
       secret: WANDB_API_KEY

@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.9', '3.10']
+        python: ['3.8', '3.9', '3.10']
         task:
           - name: Build
             run: python setup.py check && python setup.py bdist_wheel sdist
@@ -59,6 +59,7 @@ jobs:
         run: |
           . .venv/bin/activate
           ${{ matrix.task.run }}
+
       - name: Upload package distribution files
         if: matrix.task.name == 'Build'
         uses: actions/upload-artifact@v3
@@ -89,10 +90,12 @@ jobs:
         run: |
           pip install --upgrade pip setuptools wheel
           pip install -r dev-requirements.txt
+
       - name: Prepare environment
         run: |
           echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: Download package distribution files
         uses: actions/download-artifact@v3
         with:
@@ -102,9 +105,11 @@ jobs:
       - name: Generate release notes
         run: |
           python scripts/release_notes.py > ${{ github.workspace }}-RELEASE_NOTES.md
+
       - name: Publish package to PyPI
         run: |
           twine upload -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} dist/*
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v1
         env:

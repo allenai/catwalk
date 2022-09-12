@@ -1,3 +1,4 @@
+import math
 from typing import (
     Union,
     Dict,
@@ -31,7 +32,6 @@ from catwalk.tasks import short_name_for_task_object
 from catwalk.model import Model
 from catwalk.models import MODELS
 from catwalk.models import short_name_for_model_object
-from catwalk.training_callback import CatwalkEvaluationCallback
 
 
 @Step.register("catwalk::predict")
@@ -119,20 +119,11 @@ class FinetuneStep(Step):
         self,
         model: Union[str, Model],
         tasks: List[Union[str, Task]],
-        train_steps: int = 2600,
-        validation_steps: int = 1000,
+        train_epochs: int = 25,
         validate_every: int = 100,
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
-            lr_scheduler=Lazy(
-                transformers.optimization.get_linear_schedule_with_warmup,
-                num_warmup_steps=200,
-                num_training_steps=2600
-            ),
-            optimizer=Lazy(
-                torch.optim.AdamW,
-                lr=1e-5,
-            )
+            optimizer=Lazy(torch.optim.AdamW, lr=1e-5,)
         ),
         model_wrapper: Optional[Lazy[TangoModel]] = None,
         random_seed: int = 42,
@@ -173,8 +164,7 @@ class FinetuneStep(Step):
             self.work_dir,
             step_name=self.name,
             seed=random_seed,
-            train_steps=train_steps,
-            validation_steps=validation_steps,
+            train_epochs=train_epochs,
             val_metric_name="acc",
             minimize_val_metric=False,
             train_split="train",
@@ -218,14 +208,6 @@ class FinetuneStep(Step):
             wrapped_model = Lazy(model_wrapper.construct, model=trainable_model)
 
         callbacks = []
-        if validation_split is not None:
-            callbacks.append(
-                Lazy(
-                    CatwalkEvaluationCallback,
-                    tasks=tasks_in_a_special_variable_because_mypy_is_insane,
-                    eval_limit=validation_steps
-                )
-            )
         if wandb_entity is not None or wandb_project is not None:
             if wandb_entity is None or wandb_project is None:
                 raise ConfigurationError("You have to set wandb_entity and wandp_project together.")
@@ -241,6 +223,17 @@ class FinetuneStep(Step):
                     tags=[t for t in tags if t is not None]
                 )
             )
+
+        # Hack a default LR scheduler into the training engine
+        if training_engine._constructor == TorchTrainingEngine:
+            if "lr_scheduler" not in training_engine._constructor_extras:
+                training_engine._constructor_extras["lr_scheduler"] = Lazy(
+                    transformers.optimization.get_linear_schedule_with_warmup,
+                    num_warmup_steps=200,
+                    num_training_steps=train_epochs * math.ceil(
+                        len(splits["train"]) / (device_count * grad_accum * batch_size)
+                    )
+                )
 
         if is_distributed:
             import torch.multiprocessing as mp

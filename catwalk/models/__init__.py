@@ -40,7 +40,7 @@ _ENCODER_DECODER_MODELS = {
 
 _DECODER_ONLY_MODELS = {
     "gpt2",
-    # "facebook/opt-125m", # not supported yet due to lack of fast tokenizer for OPT
+    "facebook/opt-125m",
     "bigscience/bloom-560m",
     "sshleifer/tiny-gpt2",
     "EleutherAI/gpt-j-6B",

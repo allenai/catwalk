@@ -119,7 +119,8 @@ class FinetuneStep(Step):
         self,
         model: Union[str, Model],
         tasks: List[Union[str, Task]],
-        train_epochs: int = 25,
+        train_epochs: Optional[int] = 25,
+        train_steps: Optional[int] = None,
         validate_every: int = 100,
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
@@ -164,6 +165,7 @@ class FinetuneStep(Step):
             self.work_dir,
             step_name=self.name,
             seed=random_seed,
+            train_steps=train_steps,
             train_epochs=train_epochs,
             val_metric_name="acc",
             minimize_val_metric=False,
@@ -225,14 +227,16 @@ class FinetuneStep(Step):
             )
 
         # Hack a default LR scheduler into the training engine
+        if train_steps is None:
+            train_steps = train_epochs * math.ceil(
+                len(splits["train"]) / (device_count * grad_accum * batch_size)
+            )
         if training_engine._constructor == TorchTrainingEngine:
             if "lr_scheduler" not in training_engine._constructor_extras:
                 training_engine._constructor_extras["lr_scheduler"] = Lazy(
                     transformers.optimization.get_linear_schedule_with_warmup,
                     num_warmup_steps=200,
-                    num_training_steps=train_epochs * math.ceil(
-                        len(splits["train"]) / (device_count * grad_accum * batch_size)
-                    )
+                    num_training_steps=train_steps
                 )
 
         if is_distributed:

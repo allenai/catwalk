@@ -43,8 +43,6 @@ mc_tasks = [
 @pytest.mark.parametrize("task_name", mc_tasks)
 def test_mc_tasks(task_name):
     task = catwalk.tasks.TASKS[task_name]
-    if not task.has_instance_conversion(InstanceFormat.HF_MC):
-        return
     for split in ["train", "validation", "test"]:
         if not task.has_split(split):
             continue

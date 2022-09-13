@@ -7,7 +7,6 @@ from catwalk.models.huggingface import HFAutoModel
 from catwalk.models.rank_classification import EncoderDecoderRCModel, DecoderOnlyRCModel
 from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 from catwalk.models.metaicl import MetaICLModel
-from catwalk.models.ia3 import IA3DecoderOnlyRCModel, IA3MetaICLModel
 
 _ENCODER_DECODER_MODELS = {
     "t5-small",
@@ -81,5 +80,4 @@ for hf_name in _DECODER_ONLY_MODELS:
     MODELS[name] = GPTModel(hf_name)
     MODELS[f"eai::{name}"] = EAIGPT(hf_name)
     MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
-    MODELS[f"ia3_rc::{name}"] = IA3DecoderOnlyRCModel(hf_name)
     MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name)

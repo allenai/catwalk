@@ -16,8 +16,8 @@ local models = [
     "deberta-v3-base",
     "deberta-v3-small",
     "deberta-v3-large",
-    "deberta-v2-xlarge",
-    "deberta-v2-xxlarge",
+    #"deberta-v2-xlarge",
+    #"deberta-v2-xxlarge",
 ];
 
 local random_seeds = if debug then [42, 1] else [

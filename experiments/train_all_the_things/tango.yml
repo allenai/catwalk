@@ -24,16 +24,6 @@ executor:
     - ai2/allennlp-elanding-a100-40g
     - ai2/allennlp-elanding-a100-80g
     - ai2/allennlp-elanding-rtx8000
-    - ai2/mosaic-cirrascale
-    - ai2/mosaic-cirrascale-a100
-    - ai2/aristo-cirrascale
-    - ai2/s2-elanding
-    - ai2/s2-cirrascale
-  priority: preemptible
-  #datasets:
-  #  - source:
-  #      host_path: /net/nfs/allennlp/dirkg/cache
-  #    mount_path: /root/.cache
   env_vars:
     - name: WANDB_API_KEY
       secret: WANDB_API_KEY

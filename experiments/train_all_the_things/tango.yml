@@ -19,12 +19,12 @@ executor:
   # Tango will inspect all of the clusters in this list at runtime and pick
   # the first one with enough free resources for your jobs.
   clusters:
-    - ai2/general-cirrascale
+    #- ai2/general-cirrascale
     - ai2/allennlp-cirrascale
-    - ai2/allennlp-elanding-a100-40g
+    #- ai2/allennlp-elanding-a100-40g
     - ai2/allennlp-elanding-a100-80g
-    - ai2/allennlp-elanding-rtx8000
-    - ai2/dirkg-1gpu
+    #- ai2/allennlp-elanding-rtx8000
+    #- ai2/dirkg-1gpu
   env_vars:
     - name: WANDB_API_KEY
       secret: WANDB_API_KEY

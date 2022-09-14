@@ -1,5 +1,7 @@
 import argparse
 
+from tango.integrations.torch.util import resolve_device
+
 from tango import Workspace
 from tango.common.logging import initialize_logging
 
@@ -50,6 +52,8 @@ def main():
             device_count=args.device_count
         )
 
+    # Resolve to single device, because distributed evaluation is not supported
+    model_step = model_step.result().to(resolve_device())
     metric_task_dict = {}
     for task in tasks:
         predictions = PredictStep(model=model_step, task=task, batch_size=args.batch_size)

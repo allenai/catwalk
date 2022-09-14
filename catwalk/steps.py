@@ -260,8 +260,6 @@ class FinetuneStep(Step):
             state = torch.load(train_config.final_weights_path, map_location="cpu")
             # We use `strict=False` because there might be missing keys due to weight tying.
             trainable_model.load_state_dict(state, strict=False)
-            # if distributed, this model hasn't been sent to device yet
-            trainable_model.to(resolve_device())
 
         return trainable_model
 

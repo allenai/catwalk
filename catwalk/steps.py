@@ -22,6 +22,7 @@ from tango.integrations.torch import (
     DataLoader, TrainingEngine, TrainConfig,
 )
 from tango.integrations.torch.model import Model as TangoModel
+from tango.integrations.torch.util import resolve_device
 import torch
 
 from catwalk.task import Task
@@ -136,6 +137,8 @@ class FinetuneStep(Step):
         distributed_port: int = 54761,
         train_split: str = "train",
         validation_split: Optional[str] = "validation",
+        validate_every: int = 1000,
+        checkpoint_every: int = 1000
     ) -> Model:  # type: ignore
         if isinstance(model, str):
             model = MODELS[model]
@@ -169,8 +172,8 @@ class FinetuneStep(Step):
             validation_steps=validation_steps,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
-            validate_every=1000,
-            checkpoint_every=1000,
+            validate_every=validate_every,
+            checkpoint_every=checkpoint_every,
             grad_accum=grad_accum,
             is_distributed=is_distributed,
             world_size=num_workers,

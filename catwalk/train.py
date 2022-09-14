@@ -1,5 +1,7 @@
 import argparse
 
+from tango.integrations.torch.util import resolve_device
+
 from tango import Workspace
 from tango.common.logging import initialize_logging
 
@@ -15,6 +17,7 @@ def main():
     parser.add_argument("--task", type=str, nargs="+")
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--grad_acc", type=int, default=1)
+    parser.add_argument("--device_count", type=int, default=1)
     parser.add_argument(
         "-d",
         "-w",
@@ -41,8 +44,16 @@ def main():
         except KeyError:
             tasks.add(task)
 
-    model_step = FinetuneStep(model=args.model, tasks=tasks, batch_size=args.batch_size, grad_accum=args.grad_acc)
+    model_step = FinetuneStep(
+            model=args.model,
+            tasks=tasks,
+            batch_size=args.batch_size,
+            grad_accum=args.grad_acc,
+            device_count=args.device_count
+        )
 
+    # Resolve to single device, because distributed evaluation is not supported
+    model_step = model_step.result().to(resolve_device())
     metric_task_dict = {}
     for task in tasks:
         predictions = PredictStep(model=model_step, task=task, batch_size=args.batch_size)

@@ -23,7 +23,6 @@ class Model(Registrable, DetHashWithVersion, ABC):
         predictions: Sequence[Dict[str, Any]],
         *,
         disable_torchmetrics_distributed_sync: bool = False,
-        **kwargs
         ) -> Dict[str, torch.Tensor]:
         # Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
         # into tensors.

@@ -254,7 +254,7 @@ class EAIGPT(Model):
 
         return results
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]], **kwargs) -> Dict[str, float]:
+    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
         return {
             key: fn([p[key] for p in predictions])
@@ -431,7 +431,7 @@ class EAIT5(Model):
     ) -> Sequence:
         raise NotImplementedError
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]], **kwargs) -> Dict[str, float]:
+    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
         assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
         return {
             key: fn([p[key] for p in predictions])

@@ -75,7 +75,7 @@ class Task(Registrable, ABC):
     def __init__(self, *, version_override: Optional[str] = None):
         if version_override is not None:
             self.VERSION = version_override
-        self.metrics: Dict[str, Callable[..., torchmetrics.Metric]] = {}
+        self.metrics: Dict[str, Callable[[], torchmetrics.Metric]] = {}
         self.instance_conversions: Dict[InstanceFormat, InstanceConversion] = {}
 
     def det_hash_object(self) -> Any:

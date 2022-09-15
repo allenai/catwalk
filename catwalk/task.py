@@ -106,13 +106,9 @@ class Task(Registrable, ABC):
                 return split_name
         raise ValueError("This task has no split to take fewshot instances from.")
 
-    def make_metrics(
-            self,
-            *,
-            disable_torchmetrics_distributed_sync: bool = False
-        ) -> Dict[str, torchmetrics.Metric]:
+    def make_metrics(self) -> Dict[str, torchmetrics.Metric]:
         return {
-            name: metric_fn(sync_on_compute= not disable_torchmetrics_distributed_sync)
+            name: metric_fn()
             for name, metric_fn in self.metrics.items()
         }
 

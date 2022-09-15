@@ -23,19 +23,16 @@ class CatwalkEvaluationCallback(TrainCallback):
     def post_val_loop(
         self, step: int, epoch: int, val_metric: float, best_val_metric: float
     ) -> None:
-        if not self.is_local_main_process:
-            return
-
         model_was_training = self.model.training
         self.model.eval()
         try:
-            catwalk_model = cast(Model, self.model.module) if hasattr(self.model, "module") else cast(Model, self.model) 
+            catwalk_model = cast(Model, self.model)
             for task in self.tasks:
                 instances = task.get_split(self.eval_split)
                 if self.eval_limit is not None:
                     instances = instances[:self.eval_limit]
                 predictions = catwalk_model.predict(task, instances)
-                metrics = catwalk_model.calculate_metrics(task, list(predictions), disable_torchmetrics_distributed_sync=True)
+                metrics = catwalk_model.calculate_metrics(task, list(predictions))
                 metrics_string = []
                 for metric_name, metric_value in metrics.items():
                     if len(metric_value.shape) > 0:

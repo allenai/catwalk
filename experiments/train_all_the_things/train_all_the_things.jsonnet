@@ -4,6 +4,13 @@ local tasks = [
     "arc_challenge",
     "arc_easy",
     "piqa",
+    "copa",
+    "sciq",
+    "logiqa",
+    "hellaswag",
+    "openbookqa",
+    "headqa_en",
+    "winogrande"
 ];
 
 local models = [

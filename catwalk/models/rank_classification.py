@@ -45,7 +45,7 @@ class RankClassificationModel(Model):
         self.model_kwargs = model_kwargs
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> _Model:
+    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> _Model:
         raise NotImplementedError
 
     def predict(  # type: ignore
@@ -126,7 +126,7 @@ class RankClassificationModel(Model):
 
     def trainable_copy(self) -> TrainableModel:
         return TrainableRankClassificationModel(
-            self._make_model(self.pretrained_model_name_or_path),
+            self._make_model(self.pretrained_model_name_or_path, make_copy=True, **self.model_kwargs),
             cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
             self.predict_chunk
         )
@@ -192,8 +192,8 @@ class TrainableRankClassificationModel(TrainableModel):
 @Model.register("rc::encoder_decoder")
 class EncoderDecoderRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> T5ForConditionalGeneration:
-        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False)
+    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> T5ForConditionalGeneration:
+        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, make_copy=make_copy, **kwargs)
 
     def _run_loglikelihood(
         self,
@@ -257,8 +257,8 @@ class EncoderDecoderRCModel(RankClassificationModel):
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> GPT2LMHeadModel:
-        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False)
+    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> GPT2LMHeadModel:
+        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, make_copy=make_copy, **kwargs)
 
     def _run_loglikelihood(
         self,

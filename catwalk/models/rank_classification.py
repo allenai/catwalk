@@ -247,11 +247,11 @@ class EncoderDecoderRCModel(RankClassificationModel):
                     for field_name, tensors in unpadded_batch.items()
                 }
 
-                batch_logits = log_softmax(model(**padded_batch).logits, dim=-1).cpu()
+                batch_logits = log_softmax(model(**padded_batch).logits, dim=-1)
 
                 for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
                     instance_logits = instance_logits[:len(decoder_input_ids)]
-                    instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1))
+                    instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1).to(model.device))
                     denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(decoder_input_ids)
                     results[i] = float(instance_logits.sum()) / denom
 
@@ -326,11 +326,11 @@ class DecoderOnlyRCModel(RankClassificationModel):
                     for field_name, tensors in unpadded_batch.items()
                 }
 
-                batch_logits = log_softmax(model(**padded_batch)[0], dim=-1).cpu()
+                batch_logits = log_softmax(model(**padded_batch)[0], dim=-1)
                 z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
                 for i, instance_logits, input_length, instance_context, instance_continuation in z:
                     instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
-                    instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1))
+                    instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
                     denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(instance_continuation)
                     results[i] = float(instance_logits.sum()) / denom
 

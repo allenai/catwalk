@@ -39,11 +39,26 @@ _ENCODER_DECODER_MODELS = {
 }
 
 _DECODER_ONLY_MODELS = {
-    "gpt2",
     "sshleifer/tiny-gpt2",
+    "gpt2",
+    "gpt2-medium",
+    "gpt2-large",
+    "gpt2-xl",
+    "bigscience/bloom-560m",
+    "bigscience/bloom-1b1",
+    "bigscience/bloom-1b7",
+    "bigscience/bloom-3b",
+    "bigscience/bloom-7b1",
+    "bigscience/bloom",
     "facebook/opt-125m",
+    "facebook/opt-350m",
+    "facebook/opt-1.3b",
+    "facebook/opt-2.7b",
+    "facebook/opt-6.7b",
+    "facebook/opt-13b",
+    "facebook/opt-30b",
+    "facebook/opt-66b",
     "EleutherAI/gpt-j-6B",
-    "gpt2-xl"
 }
 
 

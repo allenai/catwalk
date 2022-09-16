@@ -59,7 +59,13 @@ class RankClassificationModel(Model):
         fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).to(device).eval()
+        try:
+            model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).to(device).eval()
+        except RuntimeError as e:
+            if not str(e).startswith('CUDA out of memory.'):
+                raise e
+            self.model_kwargs['device_map'] = "auto"
+            model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).eval()
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):

@@ -184,8 +184,11 @@ class TrainableRankClassificationModel(TrainableModel):
         tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
         for i, label in enumerate(tokenized_strings.labels):
             mask = [bool(s == 1) for s in tokenized_strings['token_type_ids'][i]]
-            # have to account for any special tokens added to each of the two inputs
-            mask = [False] * self.tokenizer.num_special_tokens_to_add(pair=True) + mask
+            # This is a work around because token_type_ids does not correctly account
+            # for special tokens that are added by the tokenizer, causing this sequence
+            # to be shorter than the actual input_ids sequence. We simply pad with false
+            # at the beginning assuming that special tokens will be added at the beginning
+            mask = [False] * (len(tokenized_strings.input_ids[0]) - len(mask)) + mask
             label[mask] = tokenized_strings.input_ids[i, mask]
         del tokenized_strings['token_type_ids']
         return {

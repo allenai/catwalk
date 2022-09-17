@@ -48,7 +48,7 @@ local batch_size_for_model(model, task) =
                 (if std.length(std.findSubstr("deberta", model)) > 0 then 4 else 8) else
             effective_batch_size)
         ) / (
-            if std.length(std.findSubstr("logiqa", task)) > 0 || std.length(std.findSubstr("logiqa", task)) > 0 then 2 else 1
+            if std.length(std.findSubstr("headqa", task)) > 0 || std.length(std.findSubstr("logiqa", task)) > 0 then 2 else 1
         );
 
 

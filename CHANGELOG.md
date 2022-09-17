@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added MRQA task
 - Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
 - Added the ability to train `HFAutoModel`
+- Adds ability to backoff to auto device_map on out of memory error for ranked classification models
 
 ### Fixed
 

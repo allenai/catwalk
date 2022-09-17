@@ -3,7 +3,7 @@ import argparse
 
 from tango import Workspace
 from tango.common.logging import initialize_logging
-from tango.integrations.transformers.ia3 import modify_with_ia3, MODEL_NAME_TO_CONFIG
+from tango.integrations.transformers.ia3 import modify_with_ia3
 
 from catwalk import cached_transformers
 from catwalk.models.rank_classification import DecoderOnlyRCModel
@@ -19,9 +19,7 @@ class DecoderOnlyIA3Mixin:
     @classmethod
     def _make_model(self, pretrained_model_name_or_path: str, *, ia3_weights_file: str = None, make_copy: bool = True, **kwargs) -> GPT2LMHeadModel:
         model = cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, make_copy=make_copy, **kwargs)
-        assert pretrained_model_name_or_path in MODEL_NAME_TO_CONFIG, f"{pretrained_model_name_or_path} not in built in IA3 configs. Please add your own IA3ForGPT2Config."
-        config = MODEL_NAME_TO_CONFIG[pretrained_model_name_or_path]
-        model = modify_with_ia3(model, config)
+        model = modify_with_ia3(model)
         if ia3_weights_file is not None:
             state_dict = torch.load(ia3_weights_file)
             model.load_state_dict(state_dict, strict=False)

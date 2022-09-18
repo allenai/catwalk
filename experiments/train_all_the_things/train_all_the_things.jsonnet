@@ -1,30 +1,30 @@
 local debug = false;
 
 local tasks = [
-    #"arc_challenge",
-    #"arc_easy",
-    #"piqa",
-    #"copa",
-    #"sciq",
+    "arc_challenge",
+    "arc_easy",
+    "piqa",
+    "copa",
+    "sciq",
     "logiqa",
-    #"hellaswag",
-    #"openbookqa",
+    "hellaswag",
+    "openbookqa",
     "headqa_en",
-    #"winogrande"
+    "winogrande"
 ];
 
 local models = [
-    "bert-base-uncased",
-    "bert-base-cased",
-    "bert-large-uncased",
-    "bert-large-cased",
-    "roberta-base",
-    "roberta-large",
-    "deberta-v3-base",
-    "deberta-v3-small",
-    "deberta-v3-large",
-    #"deberta-v2-xlarge",
-    #"deberta-v2-xxlarge",
+    #"bert-base-uncased",
+    #"bert-base-cased",
+    #"bert-large-uncased",
+    #"bert-large-cased",
+    #"roberta-base",
+    #"roberta-large",
+    #"deberta-v3-base",
+    #"deberta-v3-small",
+    #"deberta-v3-large",
+    "deberta-v2-xlarge",
+    "deberta-v2-xxlarge",
 ];
 
 local random_seeds = if debug then [42, 1] else [

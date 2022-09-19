@@ -155,6 +155,10 @@ def get_tokenizer(cls: Type[T], model_name: str, **kwargs) -> T:
     global _tokenizer_cache
     tokenizer = _tokenizer_cache.get(cache_key, None)
     if tokenizer is None:
+        # Currenty GPT2's fast tokenizer does NOT support adding a BOS token.                                                                                      
+        # This issue will be fixed soon, see: https://github.com/huggingface/tokenizers/pull/1005. so that the fast tokenizer works correctly.  
+        if model_name.startswith('facebook/opt'):
+            kwargs['use_fast'] = False
         tokenizer = cls.from_pretrained(  # type: ignore
             model_name,
             **kwargs,

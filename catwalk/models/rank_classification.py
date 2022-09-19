@@ -45,7 +45,7 @@ class RankClassificationModel(Model):
         self.model_kwargs = model_kwargs
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> _Model:
+    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> _Model:
         raise NotImplementedError
 
     def predict(  # type: ignore
@@ -59,7 +59,13 @@ class RankClassificationModel(Model):
         fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).to(device).eval()
+        try:
+            model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).to(device).eval()
+        except RuntimeError as e:
+            if not str(e).startswith('CUDA out of memory.'):
+                raise e
+            self.model_kwargs['device_map'] = "auto"
+            model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).eval()
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
@@ -126,7 +132,7 @@ class RankClassificationModel(Model):
 
     def trainable_copy(self) -> TrainableModel:
         return TrainableRankClassificationModel(
-            self._make_model(self.pretrained_model_name_or_path),
+            self._make_model(self.pretrained_model_name_or_path, make_copy=True, **self.model_kwargs),
             cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
             self.predict_chunk
         )
@@ -178,11 +184,19 @@ class TrainableRankClassificationModel(TrainableModel):
             truncation=True,
             pad_to_multiple_of=8,
             return_tensors='pt',
-            is_split_into_words=False)
+            is_split_into_words=False,
+            return_token_type_ids=True,
+            )
         tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
         for i, label in enumerate(tokenized_strings.labels):
-            mask = [s == 1 for s in tokenized_strings.sequence_ids(i)]
+            mask = [bool(s == 1) for s in tokenized_strings['token_type_ids'][i]]
+            # This is a work around because token_type_ids does not correctly account
+            # for special tokens that are added by the tokenizer, causing this sequence
+            # to be shorter than the actual input_ids sequence. We simply pad with false
+            # at the beginning assuming that special tokens will be added at the beginning
+            mask = [False] * (len(tokenized_strings.input_ids[0]) - len(mask)) + mask
             label[mask] = tokenized_strings.input_ids[i, mask]
+        del tokenized_strings['token_type_ids']
         return {
             key: tensor.to(self.model.device)
             for key, tensor in tokenized_strings.items()
@@ -192,8 +206,8 @@ class TrainableRankClassificationModel(TrainableModel):
 @Model.register("rc::encoder_decoder")
 class EncoderDecoderRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> T5ForConditionalGeneration:
-        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, False)
+    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> T5ForConditionalGeneration:
+        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, make_copy=make_copy, **kwargs)
 
     def _run_loglikelihood(
         self,
@@ -257,8 +271,8 @@ class EncoderDecoderRCModel(RankClassificationModel):
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, **kwargs) -> GPT2LMHeadModel:
-        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, False)
+    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> GPT2LMHeadModel:
+        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, make_copy=make_copy, **kwargs)
 
     def _run_loglikelihood(
         self,

@@ -7,6 +7,7 @@ more_itertools
 spacy>=3.0.0
 wget
 datasets>=2.1.0
+accelerate
 
 #git+https://github.com/EleutherAI/lm-evaluation-harness.git
 git+https://github.com/dirkgr/lm-evaluation-harness.git@NumexprDependency

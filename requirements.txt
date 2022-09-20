@@ -1,6 +1,6 @@
-#ai2-tango[all]
-ai2-tango[all] @ git+https://github.com/allenai/tango.git@main
-git+https://github.com/allenai/beaker-py.git@main
+ai2-tango[all]
+#ai2-tango[all] @ git+https://github.com/allenai/tango.git@main
+#git+https://github.com/allenai/beaker-py.git@main
 
 torchmetrics==0.9.3
 more_itertools

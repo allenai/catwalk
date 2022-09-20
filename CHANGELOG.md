@@ -23,14 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds a new MetaICLTask that supports all evaluation tasks in that benchmark
 - Adds a new MetaICLModel that replicates the formatting and truncation used by MetaICL for few shot evaluation
 - An option for rank classification to average log likelihoods by token length
-- Adds support for inference with IA3 adaptors loaded from a file on decoder only ranked classification models
+- Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
 - Add support for MetaICL's race-high and numer_sense tasks
 - Adds QA task support for autoregressive (previously only available with Eleuther task format)
 - Adds QA task support for T5 models
 - Optional `random_subsample_seed` for PredictStep
 - An option for rank classification to average log likelihoods by token length
 - Added MRQA task
-- Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
+- Adds an example experiment that uses IA3 adapters from Tango with catwalk training
 - Added the ability to train `HFAutoModel`
 - Adds ability to backoff to auto device_map on out of memory error for ranked classification models
 

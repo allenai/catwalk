@@ -7,7 +7,6 @@ from catwalk.models.huggingface import HFAutoModel
 from catwalk.models.rank_classification import EncoderDecoderRCModel, DecoderOnlyRCModel
 from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 from catwalk.models.metaicl import MetaICLModel
-from catwalk.models.ia3 import IA3MetaICLModel
 
 _ENCODER_DECODER_MODELS = {
     "t5-small",

@@ -22,7 +22,7 @@ def promptsource_conversion(
         assert all(len(correct_answer) == 1 for (prompt, correct_answer), answer_choices in prompts.values())
         return {
             template_name: RankClassificationInstance(
-                [(prompt, choice) for choice in answer_choices],
+                [(prompt, " " + choice) for choice in answer_choices],
                 answer_choices.index(correct_answer[0]) if answer_choices is not None else None
             ) for template_name, ((prompt, correct_answer), answer_choices) in prompts.items()
         }

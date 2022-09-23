@@ -8,6 +8,7 @@ from catwalk.models.rank_classification import EncoderDecoderRCModel, DecoderOnl
 from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 from catwalk.models.metaicl import MetaICLModel
 from catwalk.models.ia3 import IA3MetaICLModel
+from catwalk.models.promptsource import PromptsourceEncoderDecoderRCModel, PromptsourceDecoderOnlyRCModel
 
 _ENCODER_DECODER_MODELS = {
     "t5-small",
@@ -89,6 +90,7 @@ for hf_name in _ENCODER_DECODER_MODELS:
     MODELS[name] = T5ModelFromPretrained(hf_name)
     MODELS[f"eai::{name}"] = EAIT5(hf_name)
     MODELS[f"rc::{name}"] = EncoderDecoderRCModel(hf_name)
+    MODELS[f"promptsource::{name}"] = PromptsourceEncoderDecoderRCModel(hf_name)
 
 for hf_name in _DECODER_ONLY_MODELS:
     name = _shorten_hf_name(hf_name)
@@ -96,3 +98,4 @@ for hf_name in _DECODER_ONLY_MODELS:
     MODELS[f"eai::{name}"] = EAIGPT(hf_name)
     MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
     MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name)
+    MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name)

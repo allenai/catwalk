@@ -40,6 +40,12 @@ class HFDatasetsTask(Task):
         self.dataset_name = dataset_name
         self.add_instance_conversion(InstanceFormat.HF_DICT, lambda x: x)
 
+        from catwalk.tasks.promptsource import promptsource_conversion, promptsource_templates_for_task
+        promptsource_templates = promptsource_templates_for_task(self)
+        if promptsource_templates is not None:
+            self.add_instance_conversion(InstanceFormat.PROMPTSOURCE, promptsource_conversion(
+                dataset_templates=promptsource_templates))
+
     @functools.lru_cache
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)

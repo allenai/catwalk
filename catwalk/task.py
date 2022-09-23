@@ -56,6 +56,7 @@ class InstanceFormat(Enum):
     T5_PROMPT = 6
     RANK_CLASSIFICATION = 7
     HF_QA = 8
+    PROMPTSOURCE = 9
 
 
 @dataclass

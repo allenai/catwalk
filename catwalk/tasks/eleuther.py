@@ -31,8 +31,14 @@ class EleutherTask(Task):
             # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to
             # make this lazy.
             self.eleuther_task_fn = lm_eval.tasks.get_task(eleuther_task)
+            self.dataset_name = self.eleuther_task_fn.DATASET_NAME
+            self.dataset_path = self.eleuther_task_fn.DATASET_PATH
+            self.eleuther_task: Optional[EAITask] = None
         else:
             self.eleuther_task_fn = eleuther_task
+            self.eleuther_task: Optional[EAITask] = eleuther_task()
+            self.dataset_name = self.eleuther_task.DATASET_NAME
+            self.dataset_path = self.eleuther_task.DATASET_PATH
 
         self.eleuther_task: Optional[EAITask] = None
 
@@ -42,6 +48,12 @@ class EleutherTask(Task):
         self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
         if ranked_classification:
             self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
+
+        from catwalk.tasks.promptsource import promptsource_conversion, promptsource_templates_for_task
+        promptsource_templates = promptsource_templates_for_task(self)
+        if promptsource_templates is not None:
+            self.add_instance_conversion(InstanceFormat.PROMPTSOURCE, promptsource_conversion(
+                dataset_templates=promptsource_templates))
 
     def __getstate__(self):
         result = self.__dict__.copy()

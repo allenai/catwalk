@@ -73,7 +73,7 @@ class EleutherTask(Task):
         ds = self.inner_task.dataset[split]
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
-        ds = MappedSequence(lambda x: x, ds)
+        ds = MappedSequence(_identity, ds)
         return ds
 
     @property

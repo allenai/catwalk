@@ -171,7 +171,6 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(MC_METRICS),
     "race": RaceEleutherTask().add_metrics(MC_METRICS),
-    "headqa": EleutherTask("headqa", ranked_classification=True).add_metrics(MC_METRICS),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_metrics(MC_METRICS),
     "headqa_en": EleutherTask("headqa_en", ranked_classification=True).add_metrics(MC_METRICS),
     "mathqa": EleutherTask("mathqa", ranked_classification=True).add_metrics(MC_METRICS),
@@ -307,7 +306,7 @@ TASK_SETS = {
         "arc_easy",
         "boolq",
         "copa",
-        #"headqa_en",       # Headqa is broken as of 2022-05-05
+        "headqa_en",
         "hellaswag",
         "lambada",
         "logiqa",

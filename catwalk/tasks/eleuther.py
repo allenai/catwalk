@@ -147,6 +147,7 @@ class RaceEleutherTask(EleutherTask):
     def __init__(self, *, version_override: Optional[str] = None):
         super().__init__("race", version_override=version_override)
         del self.instance_conversions[InstanceFormat.HF_DICT]
+        del self.instance_conversions[InstanceFormat.PROMPTSOURCE]
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, lambda x: x)
 
     def has_split(self, split: str) -> bool:

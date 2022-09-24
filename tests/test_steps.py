@@ -7,7 +7,7 @@ task_names = [
     "arc_challenge",
     "boolq",
     "copa",
-    "headqa",
+    "headqa_en",
     "hellaswag",
     "lambada",
     "mc_taco",

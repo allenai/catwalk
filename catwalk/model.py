@@ -42,6 +42,8 @@ def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any, ...]:
 
 
 class Model(Registrable, DetHashWithVersion, ABC):
+    VERSION = "002lst"
+
     def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError()
 

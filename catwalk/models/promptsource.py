@@ -12,6 +12,8 @@ from catwalk.model import tensor_args, unsqueeze_args
 
 
 class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
+    VERSION = "002lst"
+
     def predict_chunk(
         self: RankClassificationModel,
         task: Task,

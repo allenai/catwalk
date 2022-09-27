@@ -231,6 +231,8 @@ class FinetuneStep(Step):
 
         # Hack a default LR scheduler into the training engine
         if train_steps is None:
+            if train_epochs is None:
+                raise ConfigurationError("You have to set either train_steps or train_epochs.")
             train_steps = train_epochs * math.ceil(
                 len(splits["train"]) / (device_count * grad_accum * batch_size)
             )

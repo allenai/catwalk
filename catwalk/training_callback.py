@@ -35,10 +35,13 @@ class CatwalkEvaluationCallback(TrainCallback):
                 metrics = catwalk_model.calculate_metrics(task, list(predictions))
                 metrics_string = []
                 for metric_name, metric_value in metrics.items():
-                    if len(metric_value.shape) > 0:
+                    try:
                         metric_value_string = ", ".join(f"{v:.3f}" for v in metric_value)
-                    else:
-                        metric_value_string = f"{metric_value:.3f}"
+                    except TypeError as e:
+                        if "object is not iterable" in str(e):
+                            metric_value_string = f"{metric_value:.3f}"
+                        else:
+                            raise
                     metrics_string.append(f"{metric_name}: {metric_value_string}")
                 task_name = short_name_for_task_object(task) or str(task)
                 print(f"Metrics for {task_name}: {' '.join(metrics_string)}")

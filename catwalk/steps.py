@@ -103,7 +103,7 @@ class CalculateMetricsStep(Step):
 
 @Step.register("catwalk::finetune")
 class FinetuneStep(Step):
-    VERSION = "001"
+    VERSION = "002vmn"
     FORMAT = TorchFormat
 
     SKIP_ID_ARGUMENTS = {"wandb_entity", "wandb_project"}
@@ -122,6 +122,8 @@ class FinetuneStep(Step):
         train_epochs: Optional[int] = 25,
         train_steps: Optional[int] = None,
         validate_every: int = 100,
+        validation_steps: Optional[int] = None,
+        val_metric_name: str = "loss",
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
             optimizer=Lazy(torch.optim.AdamW, lr=1e-5,)
@@ -167,12 +169,13 @@ class FinetuneStep(Step):
             seed=random_seed,
             train_steps=train_steps,
             train_epochs=train_epochs,
-            val_metric_name="acc",
+            val_metric_name=val_metric_name,
             minimize_val_metric=False,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
             validate_every=validate_every,
             checkpoint_every=validate_every,
+            validation_steps=validation_steps,
             grad_accum=grad_accum,
             is_distributed=is_distributed,
             world_size=num_workers,

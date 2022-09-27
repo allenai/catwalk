@@ -1,4 +1,5 @@
 import collections
+import logging
 from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List
 
 import torch
@@ -9,6 +10,9 @@ from catwalk.models.rank_classification import RankClassificationModel, _Model, 
 from catwalk.task import RankClassificationInstance, InstanceFormat, Task
 from catwalk.tasks.promptsource import promptsource_templates_for_task
 from catwalk.model import tensor_args, unsqueeze_args
+
+
+logger = logging.getLogger(__name__)
 
 
 class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
@@ -77,6 +81,7 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
             for metric_name, metric_object in original_metrics.items():
                 metrics[template_name + "_" + metric_name] = metric_object.clone()
 
+        metrics_seen = set()
         for prediction in Tqdm.tqdm(predictions, desc="Calculating metrics"):
             for metric_name, metric_args in prediction.items():
                 try:
@@ -86,9 +91,14 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
                 metric_args = tensor_args(metric_args)
                 metric_args = unsqueeze_args(metric_args)
                 metric.update(*metric_args)
+                metrics_seen.add(metric_name)
+        for metric_name in metrics.keys():
+            if metric_name not in metrics_seen:
+                logger.warning("Metric %s was not seen in predictions.", metric_name)
         return {
             metric_name: metric.compute().tolist()
             for metric_name, metric in metrics.items()
+            if metric_name in metrics_seen
         }
 
 

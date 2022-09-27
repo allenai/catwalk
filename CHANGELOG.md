@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added MRQA task
 - Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
 - Added the ability to train `HFAutoModel`
+- Adds ability to backoff to auto device_map on out of memory error for ranked classification models
 
 ### Fixed
 
@@ -39,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug causing few-shot to use more than specified number of shots
 - Fixed bug in cached_transformer.get() that prevented using override_weights_file arg
 - Fixed the `load_weights` arg in cached_transformers.get() which was documented but not implemented
+- Fixed support for training with OPT models
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

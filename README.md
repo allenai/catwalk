@@ -7,7 +7,7 @@ practice, some combinations are not possible, but many are.
 
 <details>
 <summary>Here is the current list of tasks we have implemented.
-This lis is not showing the `metaicl` and `p3` categories of tasks, because those are
+This list is not showing the `metaicl` and `p3` categories of tasks, because those are
 largely variants of the other tasks.
 </summary>
 

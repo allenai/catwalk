@@ -1,5 +1,17 @@
 import collections
-from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple, Protocol
+from copy import deepcopy
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+)
 
 import more_itertools
 import torch
@@ -8,12 +20,18 @@ from tango.common import Tqdm
 from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel, \
-    AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForSeq2SeqLM,
+    GPT2LMHeadModel,
+    GPT2Tokenizer,
+    T5ForConditionalGeneration,
+    T5TokenizerFast,
+)
 
 from catwalk import cached_transformers
-from catwalk.task import Task, InstanceFormat
 from catwalk.model import Model
+from catwalk.task import InstanceFormat, Task
 from catwalk.tasks.eleuther import EleutherTask
 
 
@@ -26,14 +44,25 @@ class EAIGPT(Model):
     This is the decoder-only variant. There is also an encoder/decoder variant at :class:`.EAIT5`.
     """
 
-    def __init__(self, pretrained_model_name_or_path: str):
+    def __init__(self, pretrained_model_name_or_path: str, **model_kwargs):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.model_kwargs = model_kwargs
+        self._model: Optional[GPT2LMHeadModel] = None
+        self._original_model_kwargs = deepcopy(model_kwargs)
 
-    @property
-    def model(self) -> GPT2LMHeadModel:
-        return cached_transformers.get(
-            AutoModelForCausalLM, self.pretrained_model_name_or_path, False
-        ).eval()
+    def get_model(self) -> GPT2LMHeadModel:
+        if self._model is None or self.model_kwargs != self._original_model_kwargs:
+            model = cached_transformers.get(
+                AutoModelForCausalLM,
+                self.pretrained_model_name_or_path,
+                make_copy=False,
+                **self.model_kwargs,
+            ).eval()
+            self._model = model
+            self._original_model_kwargs = deepcopy(self.model_kwargs)
+            return model
+        else:
+            return self._model
 
     def predict(  # type: ignore
         self,
@@ -46,10 +75,14 @@ class EAIGPT(Model):
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = self.model.to(device)
-        tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
+        model = self.get_model().to(device)
+        tokenizer = cached_transformers.get_tokenizer(
+            GPT2Tokenizer, self.pretrained_model_name_or_path
+        )
 
-        for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
+        for instance_chunk in more_itertools.chunked(
+            instances, max_instances_in_memory
+        ):
             yield from self.predict_chunk(
                 task,
                 instance_chunk,
@@ -57,7 +90,8 @@ class EAIGPT(Model):
                 tokenizer,
                 batch_size=batch_size,
                 max_gen_toks=max_gen_toks,
-                num_shots=num_shots)
+                num_shots=num_shots,
+            )
 
     def predict_chunk(
         self,
@@ -69,46 +103,60 @@ class EAIGPT(Model):
         num_shots: int = 0,
         **kwargs
     ) -> Iterator[Dict[str, Any]]:
-        instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
-            collections.defaultdict(lambda: collections.defaultdict(list))
+        instance_index_to_request_indices: Mapping[
+            int, Mapping[str, List[int]]
+        ] = collections.defaultdict(lambda: collections.defaultdict(list))
         requests: Mapping[str, List[Request]] = collections.defaultdict(list)
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
             instance_requests = task.convert_instance(
-                instance,
-                InstanceFormat.ELEUTHER_REQUESTS,
-                num_fewshot=num_shots)
+                instance, InstanceFormat.ELEUTHER_REQUESTS, num_fewshot=num_shots
+            )
             if not isinstance(instance_requests, (list, tuple)):
                 instance_requests = [instance_requests]
             for instance_request in instance_requests:
                 request_type = instance_request.request_type
-                instance_index_to_request_indices[instance_index][request_type].append(len(requests[request_type]))
+                instance_index_to_request_indices[instance_index][request_type].append(
+                    len(requests[request_type])
+                )
                 requests[request_type].append(instance_request)
 
         # run the requests
         results: Dict[str, Sequence] = {}
+
         class InferenceFunc(Protocol):
-            def __call__(self, requests: Sequence[Request], model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, **kwargs) -> Sequence: ...
+            def __call__(
+                self,
+                requests: Sequence[Request],
+                model: GPT2LMHeadModel,
+                tokenizer: GPT2Tokenizer,
+                **kwargs
+            ) -> Sequence:
+                ...
+
         request_type_to_fn: Mapping[str, InferenceFunc] = {
             "loglikelihood": self._run_loglikelihood,
             "loglikelihood_rolling": self._run_loglikelihood_rolling,
-            "greedy_until": self._run_greedy_until
+            "greedy_until": self._run_greedy_until,
         }
         for request_type, requests_per_type in requests.items():
             results[request_type] = request_type_to_fn[request_type](
-                requests_per_type,
-                model,
-                tokenizer,
-                **kwargs
+                requests_per_type, model, tokenizer, **kwargs
             )
-        assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
+        assert isinstance(
+            task, EleutherTask
+        ), "We can only calculate metrics for EleutherTasks."
         for instance_index, instance in enumerate(instances):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
 
             results_for_instance: List = []
-            for request_type, request_indices in instance_index_to_request_indices[instance_index].items():
-                results_for_instance.extend(results[request_type][i] for i in request_indices)
+            for request_type, request_indices in instance_index_to_request_indices[
+                instance_index
+            ].items():
+                results_for_instance.extend(
+                    results[request_type][i] for i in request_indices
+                )
 
             yield task.inner_task.process_results(doc, results_for_instance)
 
@@ -137,14 +185,17 @@ class EAIGPT(Model):
                     context = [tokenizer.eos_token_id]
                 cc_pairs[i][field_name] = (
                     torch.tensor(context, dtype=torch.long),
-                    torch.tensor(continuation, dtype=torch.long)
+                    torch.tensor(continuation, dtype=torch.long),
                 )
 
         # find out the order to process sequences in
-        lengths = torch.tensor([
-            len(cc_pair["input_ids"][0]) + len(cc_pair["input_ids"][1])
-            for cc_pair in cc_pairs
-        ], dtype=torch.int)
+        lengths = torch.tensor(
+            [
+                len(cc_pair["input_ids"][0]) + len(cc_pair["input_ids"][1])
+                for cc_pair in cc_pairs
+            ],
+            dtype=torch.int,
+        )
         ordered_indices = torch.argsort(lengths, descending=True)
         del lengths
 
@@ -153,16 +204,19 @@ class EAIGPT(Model):
         with torch.inference_mode():
             batches_of_indices = more_itertools.chunked(
                 Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries"),
-                batch_size)
+                batch_size,
+            )
             for batch_of_indices in batches_of_indices:
                 unpadded_batch = collections.defaultdict(list)
                 input_lengths = []
                 batch_contexts = []
                 batch_continuations = []
                 for index in batch_of_indices:
-                    for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
+                    for field_name, (context_ids, continuation_ids) in cc_pairs[
+                        index
+                    ].items():
                         ids = torch.cat([context_ids, continuation_ids])
-                        ids = ids[-(tokenizer.model_max_length+1):][:-1]
+                        ids = ids[-(tokenizer.model_max_length + 1) :][:-1]
                         unpadded_batch[field_name].append(ids)
 
                     input_lengths.append(len(unpadded_batch["input_ids"][-1]))
@@ -175,17 +229,36 @@ class EAIGPT(Model):
                 }
 
                 batch_logits = log_softmax(model(**padded_batch)[0], dim=-1).cpu()
-                z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
-                for i, instance_logits, input_length, instance_context, instance_continuation in z:
-                    instance_logits = instance_logits[input_length-len(instance_continuation):input_length].unsqueeze(0)
+                z = zip(
+                    batch_of_indices,
+                    batch_logits,
+                    input_lengths,
+                    batch_contexts,
+                    batch_continuations,
+                )
+                for (
+                    i,
+                    instance_logits,
+                    input_length,
+                    instance_context,
+                    instance_continuation,
+                ) in z:
+                    instance_logits = instance_logits[
+                        input_length - len(instance_continuation) : input_length
+                    ].unsqueeze(0)
 
                     greedy_tokens = instance_logits.argmax(dim=-1)
                     instance_continuation = instance_continuation.unsqueeze(0)
                     max_equal = (greedy_tokens == instance_continuation).all()
 
-                    instance_logits = torch.gather(instance_logits, 2, instance_continuation.unsqueeze(-1)).squeeze(-1)
+                    instance_logits = torch.gather(
+                        instance_logits, 2, instance_continuation.unsqueeze(-1)
+                    ).squeeze(-1)
 
-                    instance_result: Any = (float(instance_logits.sum()), bool(max_equal))
+                    instance_result: Any = (
+                        float(instance_logits.sum()),
+                        bool(max_equal),
+                    )
                     if requests[i].index is not None:
                         instance_result = instance_result[requests[i].index]
                     results[i] = instance_result
@@ -214,9 +287,7 @@ class EAIGPT(Model):
 
         tokenized_contexts = tokenizer([r.args[0] for r in requests])["input_ids"]
         # the stop generation phrases
-        untils_per_instance = [
-            r.args[1] for r in requests
-        ]
+        untils_per_instance = [r.args[1] for r in requests]
 
         results = []
         for tokenized_context, untils in Tqdm.tqdm(
@@ -235,9 +306,7 @@ class EAIGPT(Model):
 
             # truncate from left if no room for generation
             context_tensor = torch.tensor(
-                [
-                    tokenized_context[max_gen_toks - model.config.n_positions :]
-                ]
+                [tokenized_context[max_gen_toks - model.config.n_positions :]]
             ).to(model.device)
 
             full_text_tensor = model.generate(
@@ -245,7 +314,7 @@ class EAIGPT(Model):
                 max_length=context_tensor.shape[1] + max_gen_toks,
                 eos_token_id=primary_until,
                 do_sample=False,
-                pad_token_id=primary_until, # temporary hack to suppress irrelevant warning until batch processing is added
+                pad_token_id=primary_until,  # temporary hack to suppress irrelevant warning until batch processing is added
             )
 
             continuation_tensor = full_text_tensor[0, context_tensor.shape[1] :]
@@ -260,8 +329,12 @@ class EAIGPT(Model):
 
         return results
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
-        assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
+    def calculate_metrics(
+        self, task: Task, predictions: Sequence[Dict[str, Any]]
+    ) -> Dict[str, float]:
+        assert isinstance(
+            task, EleutherTask
+        ), "We can only calculate metrics for EleutherTasks."
         return {
             key: fn([p[key] for p in predictions])
             for key, fn in task.inner_task.aggregation().items()
@@ -292,17 +365,28 @@ class EAIT5(Model):
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = cached_transformers.get(AutoModelForSeq2SeqLM, self.pretrained_model_name_or_path, False).eval().to(device)
-        tokenizer = cached_transformers.get_tokenizer(T5TokenizerFast, self.pretrained_model_name_or_path)
+        model = (
+            cached_transformers.get(
+                AutoModelForSeq2SeqLM, self.pretrained_model_name_or_path, False
+            )
+            .eval()
+            .to(device)
+        )
+        tokenizer = cached_transformers.get_tokenizer(
+            T5TokenizerFast, self.pretrained_model_name_or_path
+        )
 
-        for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
+        for instance_chunk in more_itertools.chunked(
+            instances, max_instances_in_memory
+        ):
             yield from self.predict_chunk(
                 task,
                 instance_chunk,
                 model,
                 tokenizer,
                 batch_size=batch_size,
-                num_shots=num_shots)
+                num_shots=num_shots,
+            )
 
     def predict_chunk(
         self,
@@ -314,45 +398,56 @@ class EAIT5(Model):
         batch_size: int = 32,
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
-        instance_index_to_request_indices: Mapping[int, Mapping[str, List[int]]] = \
-            collections.defaultdict(lambda: collections.defaultdict(list))
+        instance_index_to_request_indices: Mapping[
+            int, Mapping[str, List[int]]
+        ] = collections.defaultdict(lambda: collections.defaultdict(list))
         requests: Mapping[str, List[Request]] = collections.defaultdict(list)
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
             instance_requests = task.convert_instance(
-                instance,
-                InstanceFormat.ELEUTHER_REQUESTS,
-                num_fewshot=num_shots)
+                instance, InstanceFormat.ELEUTHER_REQUESTS, num_fewshot=num_shots
+            )
             if not isinstance(instance_requests, (list, tuple)):
                 instance_requests = [instance_requests]
             for instance_request in instance_requests:
                 request_type = instance_request.request_type
-                instance_index_to_request_indices[instance_index][request_type].append(len(requests[request_type]))
+                instance_index_to_request_indices[instance_index][request_type].append(
+                    len(requests[request_type])
+                )
                 requests[request_type].append(instance_request)
 
         # run the requests
         results: Dict[str, Sequence] = {}
-        request_type_to_fn: Mapping[str, Callable[[Sequence[Request], T5ForConditionalGeneration, T5TokenizerFast, int], Sequence]] = {
+        request_type_to_fn: Mapping[
+            str,
+            Callable[
+                [Sequence[Request], T5ForConditionalGeneration, T5TokenizerFast, int],
+                Sequence,
+            ],
+        ] = {
             "loglikelihood": self._run_loglikelihood,
             "loglikelihood_rolling": self._run_loglikelihood_rolling,
-            "greedy_until": self._run_greedy_until
+            "greedy_until": self._run_greedy_until,
         }
         for request_type, requests_per_type in requests.items():
             results[request_type] = request_type_to_fn[request_type](
-                requests_per_type,
-                model,
-                tokenizer,
-                batch_size
+                requests_per_type, model, tokenizer, batch_size
             )
 
-        assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
+        assert isinstance(
+            task, EleutherTask
+        ), "We can only calculate metrics for EleutherTasks."
         for instance_index, instance in enumerate(instances):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
 
             results_for_instance: List = []
-            for request_type, request_indices in instance_index_to_request_indices[instance_index].items():
-                results_for_instance.extend(results[request_type][i] for i in request_indices)
+            for request_type, request_indices in instance_index_to_request_indices[
+                instance_index
+            ].items():
+                results_for_instance.extend(
+                    results[request_type][i] for i in request_indices
+                )
 
             yield task.inner_task.process_results(doc, results_for_instance)
 
@@ -369,21 +464,25 @@ class EAIT5(Model):
             for i, input_as_list in enumerate(encoder_input):
                 if len(model_inputs) <= i:
                     model_inputs.append({})
-                model_inputs[i][field_name] = torch.tensor(input_as_list, dtype=torch.long)
+                model_inputs[i][field_name] = torch.tensor(
+                    input_as_list, dtype=torch.long
+                )
         del encoder_inputs
 
         with tokenizer.as_target_tokenizer():
-            decoder_inputs = tokenizer([r.args[1] for r in requests], return_attention_mask=False)
-        for i, input_as_list in enumerate(decoder_inputs['input_ids']):
+            decoder_inputs = tokenizer(
+                [r.args[1] for r in requests], return_attention_mask=False
+            )
+        for i, input_as_list in enumerate(decoder_inputs["input_ids"]):
             input_as_list = input_as_list[:-1]  # remove EOS token
             model_inputs[i]["labels"] = torch.tensor(input_as_list, dtype=torch.long)
         del decoder_inputs
 
         # find out the order to process sequences in
-        lengths = torch.tensor([
-            len(model_input["input_ids"])
-            for model_input in model_inputs
-        ], dtype=torch.int)
+        lengths = torch.tensor(
+            [len(model_input["input_ids"]) for model_input in model_inputs],
+            dtype=torch.int,
+        )
         ordered_indices = torch.argsort(lengths, descending=True)
         del lengths
 
@@ -392,7 +491,8 @@ class EAIT5(Model):
         with torch.inference_mode():
             batches_of_indices = more_itertools.chunked(
                 Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries"),
-                batch_size)
+                batch_size,
+            )
             for batch_of_indices in batches_of_indices:
                 unpadded_batch = collections.defaultdict(list)
                 for index in batch_of_indices:
@@ -405,13 +505,20 @@ class EAIT5(Model):
 
                 batch_logits = log_softmax(model(**padded_batch).logits, dim=-1).cpu()
 
-                for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
-                    instance_logits = instance_logits[:len(decoder_input_ids)]
+                for i, instance_logits, decoder_input_ids in zip(
+                    batch_of_indices, batch_logits, unpadded_batch["labels"]
+                ):
+                    instance_logits = instance_logits[: len(decoder_input_ids)]
                     greedy_tokens = instance_logits.argmax(dim=-1)
                     max_equal = (greedy_tokens == decoder_input_ids).all()
 
-                    instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1))
-                    instance_result: Any = (float(instance_logits.sum()), bool(max_equal))
+                    instance_logits = torch.gather(
+                        instance_logits, 1, decoder_input_ids.unsqueeze(-1)
+                    )
+                    instance_result: Any = (
+                        float(instance_logits.sum()),
+                        bool(max_equal),
+                    )
                     if requests[i].index is not None:
                         instance_result = instance_result[requests[i].index]
                     results[i] = instance_result
@@ -437,8 +544,12 @@ class EAIT5(Model):
     ) -> Sequence:
         raise NotImplementedError
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:
-        assert isinstance(task, EleutherTask), "We can only calculate metrics for EleutherTasks."
+    def calculate_metrics(
+        self, task: Task, predictions: Sequence[Dict[str, Any]]
+    ) -> Dict[str, float]:
+        assert isinstance(
+            task, EleutherTask
+        ), "We can only calculate metrics for EleutherTasks."
         return {
             key: fn([p[key] for p in predictions])
             for key, fn in task.inner_task.aggregation().items()

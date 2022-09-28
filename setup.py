@@ -21,6 +21,8 @@ def parse_requirements_file(path):
                 return f"ai2-tango[all] @ {req}"
             elif m.group("name") == "lm-evaluation-harness":
                 return f"lm-eval @ {req}"
+            elif m.group("name") == "promptsource":
+                return f"promptsource @ {req}"
             else:
                 return f"{m.group('name')} @ {req}"
 

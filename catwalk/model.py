@@ -13,33 +13,41 @@ from catwalk.task import Task
 Instance = Dict[str, Any]
 
 
+def tensor_args(args: Tuple[Any]) -> Tuple[Any, ...]:
+    """
+    Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
+    into tensors.
+    """
+    fixed_args: List[Any] = []
+    for arg in args:
+        if isinstance(arg, (float, int)):
+            fixed_args.append(torch.tensor(arg))
+        else:
+            fixed_args.append(arg)
+    return tuple(fixed_args)
+
+
+def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any, ...]:
+    """
+    Further, torchmetrics can't handle single-instance calls when given tensors. It always needs the first
+    dimension of the tensors to be the instance dimension. So we add one.
+    """
+    fixed_args: List[Any] = []
+    for arg in args:
+        if isinstance(arg, torch.Tensor):
+            fixed_args.append(arg.unsqueeze(0))
+        else:
+            fixed_args.append(arg)
+    return tuple(fixed_args)
+
+
 class Model(Registrable, DetHashWithVersion, ABC):
+    VERSION = "002lst"
+
     def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError()
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
-        # Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
-        # into tensors.
-        def tensor_args(args: Tuple[Any]) -> Tuple[Any, ...]:
-            fixed_args: List[Any] = []
-            for arg in args:
-                if isinstance(arg, (float, int)):
-                    fixed_args.append(torch.tensor(arg))
-                else:
-                    fixed_args.append(arg)
-            return tuple(fixed_args)
-
-        # Further, torchmetrics can't handle single-instance calls when given tensors. It always needs the first
-        # dimension of the tensors to be the instance dimension. So we add one.
-        def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any, ...]:
-            fixed_args: List[Any] = []
-            for arg in args:
-                if isinstance(arg, torch.Tensor):
-                    fixed_args.append(arg.unsqueeze(0))
-                else:
-                    fixed_args.append(arg)
-            return tuple(fixed_args)
-
         metrics = task.make_metrics()
         for prediction in Tqdm.tqdm(predictions, desc="Calculating metrics"):
             for metric_name, metric_args in prediction.items():
@@ -51,7 +59,7 @@ class Model(Registrable, DetHashWithVersion, ABC):
                 metric_args = unsqueeze_args(metric_args)
                 metric.update(*metric_args)
         return {
-            metric_name: metric.compute()
+            metric_name: metric.compute().tolist()
             for metric_name, metric in metrics.items()
         }
 

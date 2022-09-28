@@ -232,22 +232,6 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(MC_METRICS),
     "race": RaceEleutherTask().add_metrics(MC_METRICS),
-    "headqa": EleutherTask("headqa", ranked_classification=True).add_instance_conversion(
-        InstanceFormat.HF_MC,
-        hfmc_conversion(
-            context_field=None,
-            question_field="qtext",
-            answer_choices_fields=[
-                "answers.0.atext",
-                "answers.1.atext",
-                "answers.2.atext",
-                "answers.3.atext",
-                "answers.4.atext"
-            ],
-            correct_answer_index_field="ra",
-            answer_mappings={1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
-        )
-    ).add_metrics(MC_METRICS),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -422,7 +406,7 @@ TASK_SETS = {
         "arc_easy",
         "boolq",
         "copa",
-        #"headqa_en",       # Headqa is broken as of 2022-05-05
+        "headqa_en",
         "hellaswag",
         "lambada",
         "logiqa",

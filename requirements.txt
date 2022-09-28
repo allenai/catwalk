@@ -16,4 +16,4 @@ mypy_extensions
 pytest
 
 #git+https://github.com/bigscience-workshop/promptsource.git@eval-hackathon
-git+https://github.com/dirkgr/promptsource.git@eval-hackathon-py310
+git+https://github.com/epwalsh/promptsource.git@eval-hackathon-py310

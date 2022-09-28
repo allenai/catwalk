@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from catwalk.model import Model
 from catwalk.models.eleuther import EAIGPT, EAIT5
@@ -99,3 +99,10 @@ for hf_name in _DECODER_ONLY_MODELS:
     MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
     MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name)
     MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name)
+
+
+def short_name_for_model_object(model: Model) -> Optional[str]:
+    for model_name, model_object in MODELS.items():
+        if id(model) == id(model_object):
+            return model_name
+    return None

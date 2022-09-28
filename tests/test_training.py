@@ -28,7 +28,7 @@ def test_training():
             first_loss = loss
         optimizer.step()
 
-    assert first_loss > float(loss)
+    assert first_loss > loss
 
     predictions_after = list(model.predict(task, instances))
     metrics_after = model.calculate_metrics(task, list(predictions_after))

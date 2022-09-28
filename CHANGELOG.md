@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Changed
+
 - MetaICLTask now supports fewshots less than 16 and only support getting the test split
 - set default logging level to `"WARNING"` instead of `"ERROR"` when invoking `python -m catwalk`
 - changed MetaICLModel formatting to always preserve whitespace, to reproduce MetaICL results
@@ -33,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
 - Added the ability to train `HFAutoModel`
 - Adds ability to backoff to auto device_map on out of memory error for ranked classification models
+- Format conversions for a number of multiple choice models
+- Added an experiment config that trains many models on many tasks
 - Added promptsource support
 
 ### Fixed
@@ -42,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug in cached_transformer.get() that prevented using override_weights_file arg
 - Fixed the `load_weights` arg in cached_transformers.get() which was documented but not implemented
 - Fixed support for training with OPT models
+- Countless tweaks to `FinetuneStep`
+
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

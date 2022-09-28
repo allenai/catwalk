@@ -1,4 +1,4 @@
-local debug = true;
+local debug = false;
 
 local tasks = [
     "arc_challenge",

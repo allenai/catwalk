@@ -6,11 +6,30 @@ Catwalk contains a lot of models, and a lot of tasks. The goal is to be able to 
 practice, some combinations are not possible, but many are.
 
 <details>
-<summary>Here is the current list of tasks we have implemented.</summary>
+<summary>Here is the current list of tasks we have implemented.
+This list is not showing the `metaicl` and `p3` categories of tasks, because those are
+largely variants of the other tasks.
+</summary>
 
 ```
 wikitext
 piqa
+squad
+squadshifts-reddit
+squadshifts-amazon
+squadshifts-nyt
+squadshifts-new-wiki
+mrqa::race
+mrqa::newsqa
+mrqa::triviaqa
+mrqa::searchqa
+mrqa::hotpotqa
+mrqa::naturalquestions
+mrqa::bioasq
+mrqa::drop
+mrqa::relationextraction
+mrqa::textbookqa
+mrqa::duorc.paraphraserc
 squad2
 rte
 superglue::rte
@@ -50,7 +69,6 @@ logiqa
 hellaswag
 openbookqa
 race
-headqa
 headqa_es
 headqa_en
 mathqa
@@ -66,7 +84,6 @@ ethics_justice
 ethics_utilitarianism_original
 ethics_utilitarianism
 ethics_virtue
-truthfulqa_mc
 truthfulqa_gen
 mutual
 mutual_plus

@@ -114,8 +114,17 @@ TASKS: Dict[str, Task] = {
     "wnli": EleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "boolq": EleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
     "cb": EleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "copa": EleutherTask("copa", ranked_classification=True).add_metrics(MC_METRICS),
-    "multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(MC_METRICS),
+    "copa": EleutherTask("copa", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="premise",
+            answer_choices_fields=["choice1", "choice2"],
+            correct_answer_index_field="label",
+            id_field="idx"
+        )
+    ).add_metrics(MC_METRICS),
+    "multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(QA_METRICS),
     #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
     "wic": EleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "wsc": EleutherTask("wsc", ranked_classification=True).add_metrics(MC_METRICS),
@@ -131,10 +140,45 @@ TASKS: Dict[str, Task] = {
     "prost": EleutherTask("prost", ranked_classification=True).add_metrics(MC_METRICS),
     "mc_taco": EleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
     "pubmedqa": PubmedqaEleutherTask().add_metrics(BINARY_CLASSIFICATION_METRICS),
-    "sciq": EleutherTask("sciq", ranked_classification=True).add_metrics(MC_METRICS),
-    "qa4mre_2011": EleutherTask("qa4mre_2011", ranked_classification=True).add_metrics(MC_METRICS),
-    "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_metrics(MC_METRICS),
-    "qa4mre_2013": EleutherTask("qa4mre_2013", ranked_classification=True).add_metrics(MC_METRICS),
+    "sciq": EleutherTask("sciq", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="question",
+            answer_choices_fields=["correct_answer", "distractor1", "distractor2", "distractor3"],
+            correct_answer_field="correct_answer"
+        )
+    ).add_metrics(MC_METRICS),
+    "qa4mre_2011": EleutherTask("qa4mre_2011", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field="document_str",
+            question_field="question_str",
+            answer_choices_fields="answer_options.answer_str",
+            correct_answer_index_field="correct_answer_id",
+            answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
+        )
+    ).add_metrics(MC_METRICS),
+    "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field="document_str",
+            question_field="question_str",
+            answer_choices_fields="answer_options.answer_str",
+            correct_answer_index_field="correct_answer_id",
+            answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
+        )
+    ).add_metrics(MC_METRICS),
+    "qa4mre_2013": EleutherTask("qa4mre_2013", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field="document_str",
+            question_field="question_str",
+            answer_choices_fields="answer_options.answer_str",
+            correct_answer_index_field="correct_answer_id",
+            answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
+        )
+    ).add_metrics(MC_METRICS),
     "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
     "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
@@ -158,8 +202,25 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
     ).add_metrics(MC_METRICS),
-    "logiqa": EleutherTask("logiqa", ranked_classification=True).add_metrics(MC_METRICS),
-    "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_metrics(MC_METRICS),
+    "logiqa": EleutherTask("logiqa", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field="context",
+            question_field="question",
+            answer_choices_fields="options",
+            correct_answer_index_field="label"
+        )
+    ).add_metrics(MC_METRICS),
+    "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="ctx",
+            answer_choices_fields="endings",
+            correct_answer_index_field="label",
+            answer_mappings={'0': 0, '1': 1, '2': 2, '3': 3}
+        )
+    ).add_metrics(MC_METRICS),
     "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -171,13 +232,51 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(MC_METRICS),
     "race": RaceEleutherTask().add_metrics(MC_METRICS),
-    "headqa": EleutherTask("headqa", ranked_classification=True).add_metrics(MC_METRICS),
-    "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_metrics(MC_METRICS),
-    "headqa_en": EleutherTask("headqa_en", ranked_classification=True).add_metrics(MC_METRICS),
+    "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="qtext",
+            answer_choices_fields=[
+                "answers.0.atext",
+                "answers.1.atext",
+                "answers.2.atext",
+                "answers.3.atext",
+                "answers.4.atext"
+            ],
+            correct_answer_index_field="ra",
+            answer_mappings={1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
+        )
+    ).add_metrics(MC_METRICS),
+    "headqa_en": EleutherTask("headqa_en", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="qtext",
+            answer_choices_fields=[
+                "answers.0.atext",
+                "answers.1.atext",
+                "answers.2.atext",
+                "answers.3.atext",
+                "answers.4.atext"
+            ],
+            correct_answer_index_field="ra",
+            answer_mappings={1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
+        )
+    ).add_metrics(MC_METRICS),
     "mathqa": EleutherTask("mathqa", ranked_classification=True).add_metrics(MC_METRICS),
     "webqs": EleutherTask("webqs").add_metrics(QA_METRICS),
     "wsc273": EleutherTask("wsc273", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "winogrande": EleutherTask("winogrande", ranked_classification=True).add_metrics(MC_METRICS),
+    "winogrande": EleutherTask("winogrande", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="sentence",
+            answer_choices_fields=["option1", "option2"],
+            correct_answer_index_field="answer",
+            answer_mappings={'1': 0, '2': 1}
+        )
+    ).add_metrics(MC_METRICS),
     "anli_r1": EleutherTask("anli_r1", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "anli_r2": EleutherTask("anli_r2", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "anli_r3": EleutherTask("anli_r3", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
@@ -307,7 +406,7 @@ TASK_SETS = {
         "arc_easy",
         "boolq",
         "copa",
-        #"headqa_en",       # Headqa is broken as of 2022-05-05
+        "headqa_en",
         "hellaswag",
         "lambada",
         "logiqa",

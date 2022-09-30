@@ -15,7 +15,6 @@ git+https://github.com/dirkgr/lm-evaluation-harness.git@NumexprDependency
 mypy_extensions
 pytest
 
-git+https://github.com/dirkgr/promptsource.git@eval-hackathon-py310
-#--install-option="--no-deps" git+https://github.com/dirkgr/promptsource.git@eval-hackathon-py310
-#jinja2
-#requests
+# For promptsource
+jinja2
+pyyaml>=5

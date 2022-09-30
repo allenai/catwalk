@@ -18,7 +18,7 @@ flaky
 # Building docs
 Sphinx==5.2.1
 # Sphinx theme: https://sphinx-themes.org/sample-sites/furo/
-furo==2022.9.15
+furo==2022.9.29
 # Lets Sphinx parse markdown files in addition to rst.
 myst-parser==0.18.0
 # Adds a copy button to code examples in the docs.

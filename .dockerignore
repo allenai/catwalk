@@ -1,0 +1,30 @@
+.git/
+.github/
+docs/
+
+#IntelliJ
+*.iml
+.idea/
+
+# VSCode
+.vscode/
+
+# Python
+**/__pycache__/
+catwalk.egg-info/
+build/
+dist/
+
+# Eleuther Evaluation Harness creates this directory
+lm_cache/
+data/
+
+# Tango Workspace for debugging
+workspace/
+
+# vim detritus
+**/*~
+
+#PyTest
+.pytest_cache/
+**/.DS_Store

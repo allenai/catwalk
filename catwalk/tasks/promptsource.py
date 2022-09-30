@@ -1,7 +1,7 @@
 import functools
 from typing import Dict, Any, Optional, Sequence
 
-from promptsource.templates import DatasetTemplates, TemplateCollection
+from catwalk.dependencies.promptsource.templates import DatasetTemplates, TemplateCollection
 
 from catwalk.task import InstanceConversion, RankClassificationInstance, Task
 

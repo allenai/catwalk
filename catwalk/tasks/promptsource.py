@@ -1,7 +1,7 @@
 import functools
 from typing import Dict, Any, Optional, Sequence
 
-from promptsource.templates import DatasetTemplates, TemplateCollection
+from catwalk.dependencies.promptsource.templates import DatasetTemplates, TemplateCollection
 
 from catwalk.task import InstanceConversion, RankClassificationInstance, Task
 
@@ -35,7 +35,7 @@ def promptsource_convert(
     prompts = {
         template_name: (prompt, answer_choices)
         for template_name, (prompt, answer_choices) in prompts.items()
-        if len(prompt) == 2
+        if prompt is not None
     }
     # assert that there is only one answer
     assert all(

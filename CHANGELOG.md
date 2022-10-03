@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - set default logging level to `"WARNING"` instead of `"ERROR"` when invoking `python -m catwalk`
 - changed MetaICLModel formatting to always preserve whitespace, to reproduce MetaICL results
 - improved speed of rank classification models by aggregating sequence logits on GPU rather than on CPU
+- The promptsource templates now live directly inside of Catwalk. This avoids dependency issues.
 
 ### Added
 

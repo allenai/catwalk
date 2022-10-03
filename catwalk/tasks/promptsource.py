@@ -35,7 +35,7 @@ def promptsource_convert(
     prompts = {
         template_name: (prompt, answer_choices)
         for template_name, (prompt, answer_choices) in prompts.items()
-        if len(prompt) == 2
+        if prompt is not None
     }
     # assert that there is only one answer
     assert all(

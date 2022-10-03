@@ -359,7 +359,7 @@ class Template(yaml.YAMLObject):
         else:
             return None
 
-    def apply(self, example, truncate=True, highlight_variables=False) -> Tuple[str, List[str]]:
+    def apply(self, example, truncate=True, highlight_variables=False) -> Optional[Tuple[str, List[str]]]:
         """
         Creates a prompt by applying this template to an example
 
@@ -399,7 +399,7 @@ class Template(yaml.YAMLObject):
         if parts == [""]:
             # Handles the case of blank results
             # Example: `tydiqa` where prompts are conditionned on the language and thus most of the time will return a blank result
-            return parts
+            return None
         if len(parts) < 2:
             raise ValueError("Prompt did not produce an input and at least one target.")
 
@@ -488,7 +488,7 @@ class TemplateCollection:
         dataset_folders = os.listdir(TEMPLATES_FOLDER_PATH)
         dataset_folders = [folder for folder in dataset_folders if not folder.startswith(".")]
 
-        output = {}  # format is {(dataset_name, subset_name): DatasetsTemplates}
+        output: Dict[Tuple[str, str], DatasetTemplates] = {}  # format is {(dataset_name, subset_name): DatasetsTemplates}
         for dataset in dataset_folders:
             if dataset in INCLUDED_USERS:
                 for filename in os.listdir(os.path.join(TEMPLATES_FOLDER_PATH, dataset)):
@@ -529,7 +529,7 @@ class TemplateCollection:
         into the dataset count
         """
 
-        count_dict = defaultdict(int)
+        count_dict: Dict[str, int] = defaultdict(int)
         for k, v in self.datasets_templates.items():
             # Subsets count towards dataset count
             count_dict[k[0]] += len(v)
@@ -550,12 +550,12 @@ class DatasetTemplates:
 
     def __init__(self, dataset_name: str, subset_name: str = None):
         self.dataset_name: str = dataset_name
-        self.subset_name: str = subset_name
+        self.subset_name: Optional[str] = subset_name
         # dictionary is keyed by template name.
         self.templates: Dict = self.read_from_file()
 
         # Mapping from template name to template id
-        self.name_to_id_mapping = {}
+        self.name_to_id_mapping: Dict[str, str] = {}
         self.sync_mapping()
 
     def sync_mapping(self) -> None:

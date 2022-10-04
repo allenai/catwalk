@@ -12,3 +12,5 @@ RUN conda run -n base pip install --upgrade pip
 COPY requirements.txt requirements.txt
 
 RUN conda run -n base pip install -r requirements.txt
+
+RUN rm requirements.txt

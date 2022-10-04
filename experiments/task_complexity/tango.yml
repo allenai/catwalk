@@ -23,7 +23,7 @@ executor:
     #- ai2/allennlp-elanding-a100-80g
     - ai2/allennlp-elanding-rtx8000
     #- ai2/general-gcp
-    - ai2/dirkg-1gpu
+    #- ai2/dirkg-1gpu
   env_vars:
     - name: WANDB_API_KEY
       secret: WANDB_API_KEY

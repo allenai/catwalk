@@ -9,9 +9,7 @@ executor:
   type: beaker
   # Change this to the Beaker workspace you want to use.
   beaker_workspace: ai2/task-complexity
-  # See https://github.com/allenai/docker-images/pkgs/container/pytorch
-  # for a list of all available pytorch images.
-  docker_image: ghcr.io/allenai/pytorch:1.12.0-cuda11.3-python3.9
+  beaker_image: dirkg/catwalk
   # You probably want to leave this as 'base' unless you have your own image
   # that already has a conda environment under a different name.
   venv_name: base

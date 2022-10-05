@@ -21,7 +21,7 @@ local models2batchsize = if debug then {
     "gpt2-medium": 32,
     "gpt2-large": 16,
     "gpt2-xl": 8,
-    "bloom-560m": 32,
+    "bloom-560m": 16,
     "bloom-1b1": 16,
     "bloom-1b7": 16,
     "bloom-3b": 4,

@@ -11,6 +11,7 @@ local tasks = [
     "rte",
     "winogrande",
     "wic",
+    "sst"
 ];
 
 local models2batchsize = if debug then {

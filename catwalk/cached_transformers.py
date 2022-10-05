@@ -111,15 +111,17 @@ def get(
             # When DistributedDataParallel or DataParallel is used, the state dict of the
             # DistributedDataParallel/DataParallel wrapper prepends "module." to all parameters
             # of the actual model, since the actual model is stored within the module field.
-            # This accounts for if a pretained model was saved without removing the
+            # This accounts for if a pretrained model was saved without removing the
             # DistributedDataParallel/DataParallel wrapper.
             if hasattr(transformer, "module"):
                 transformer.module.load_state_dict(override_weights)
             else:
                 transformer.load_state_dict(override_weights)
         else:
+            config = transformers.AutoConfig.from_pretrained(model_name, **kwargs)
             transformer = cls.from_pretrained(  # type: ignore
                 model_name,
+                torch_dtype=config.torch_dtype,
                 **kwargs,
             )
 

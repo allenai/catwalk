@@ -60,10 +60,10 @@ _DECODER_ONLY_MODELS = {
     "facebook/opt-30b",
     "facebook/opt-66b",
     "EleutherAI/gpt-j-6B",
-    "EleutherAI/gpt-neo-125M"
-    "EleutherAI/gpt-neo-1.3B"
-    "EleutherAI/gpt-neo-2.7B"
-    "EleutherAI/gpt-neox-20B"
+    "EleutherAI/gpt-neo-125M",
+    "EleutherAI/gpt-neo-1.3B",
+    "EleutherAI/gpt-neo-2.7B",
+    "EleutherAI/gpt-neox-20B",
 }
 
 

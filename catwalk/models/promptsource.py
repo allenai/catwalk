@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
-    VERSION = "002lst"
+    VERSION = EncoderDecoderRCModel.VERSION + "002lst"
 
     def predict_chunk(
         self: RankClassificationModel,
@@ -103,5 +103,6 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
 
 
 class PromptsourceDecoderOnlyRCModel(DecoderOnlyRCModel):
+    VERSION = PromptsourceEncoderDecoderRCModel.VERSION
     predict_chunk = PromptsourceEncoderDecoderRCModel.predict_chunk
     calculate_metrics = PromptsourceEncoderDecoderRCModel.calculate_metrics

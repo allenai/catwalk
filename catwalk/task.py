@@ -18,15 +18,6 @@ MC_METRICS = {
     "acc": torchmetrics.Accuracy,
 }
 
-ENTAILMENT_METRICS = {
-    "acc": torchmetrics.Accuracy,
-    "f1": torchmetrics.F1Score,
-    "precision": torchmetrics.Precision,
-    "recall": torchmetrics.Recall
-}
-
-BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
-
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
     "byte_perplexity": PerplexityMetric,
@@ -45,6 +36,11 @@ def classification_metrics(num_classes: int):
         "precision": partial(torchmetrics.Precision, num_classes=num_classes, average=None),
         "recall": partial(torchmetrics.Recall, num_classes=num_classes, average=None)
     }
+
+
+ENTAILMENT_METRICS = classification_metrics(2)
+
+BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
 
 
 class InstanceFormat(Enum):

@@ -32,13 +32,13 @@ local models2batchsize = if debug then {
     "opt-1.3b": 16,
     "opt-2.7b": 8,
     "opt-6.7b": 4,
-    "opt-30b": 1,
-    "opt-66b": 1,
+    #"opt-30b": 1,
+    #"opt-66b": 1,
     "gpt-j-6b": 4,
     "gpt-neo-125m": 64,
     "gpt-neo-1.3b": 16,
     "gpt-neo-2.7b": 8,
-    "gpt-neox-20b": 2,
+    "gpt-neox-20b": 1,
 };
 
 local models = std.objectFields(models2batchsize);

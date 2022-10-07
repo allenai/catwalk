@@ -39,8 +39,12 @@ class EAIGPT(Model):
         max_gen_toks: int = 256,
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
-        device = resolve_device()
-        model = cached_transformers.get(AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        model = cached_transformers.get(
+            AutoModelForCausalLM,
+            self.pretrained_model_name_or_path,
+            False,
+            device_map="auto" if torch.cuda.device_count() > 0 else None,
+        ).eval()
         tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):

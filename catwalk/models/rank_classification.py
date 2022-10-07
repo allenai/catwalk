@@ -58,14 +58,10 @@ class RankClassificationModel(Model):
         num_shots: int = 0,
         fewshot_seed: int = None
     ) -> Iterator[Dict[str, Any]]:
-        device = resolve_device()
-        try:
-            model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).to(device).eval()
-        except RuntimeError as e:
-            if not str(e).startswith('CUDA out of memory.'):
-                raise e
-            self.model_kwargs['device_map'] = "auto"
-            model = self._make_model(self.pretrained_model_name_or_path, **self.model_kwargs).eval()
+        model = self._make_model(
+            self.pretrained_model_name_or_path,
+            device_map="auto" if torch.cuda.device_count() > 0 else None,
+            **self.model_kwargs).eval()
         tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
@@ -208,8 +204,18 @@ class EncoderDecoderRCModel(RankClassificationModel):
     VERSION = RankClassificationModel.VERSION + "002spt"
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> T5ForConditionalGeneration:
-        return cached_transformers.get(AutoModelForSeq2SeqLM, pretrained_model_name_or_path, make_copy=make_copy, **kwargs)
+    def _make_model(
+        cls,
+        pretrained_model_name_or_path: str,
+        *,
+        make_copy: bool = False,
+        **kwargs
+    ) -> T5ForConditionalGeneration:
+        return cached_transformers.get(
+            AutoModelForSeq2SeqLM,
+            pretrained_model_name_or_path,
+            make_copy=make_copy,
+            **kwargs)
 
     def _run_loglikelihood(
         self,
@@ -273,8 +279,18 @@ class EncoderDecoderRCModel(RankClassificationModel):
 @Model.register("rc::decoder_only")
 class DecoderOnlyRCModel(RankClassificationModel):
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> GPT2LMHeadModel:
-        return cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, make_copy=make_copy, **kwargs)
+    def _make_model(
+        cls,
+        pretrained_model_name_or_path: str,
+        *,
+        make_copy: bool = False,
+        **kwargs
+    ) -> GPT2LMHeadModel:
+        return cached_transformers.get(
+            AutoModelForCausalLM,
+            pretrained_model_name_or_path,
+            make_copy=make_copy,
+            **kwargs)
 
     @staticmethod
     def _prefix_with_space(s: str) -> str:

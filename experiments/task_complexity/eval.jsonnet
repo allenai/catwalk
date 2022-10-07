@@ -32,18 +32,26 @@ local models2batchsize = if debug then {
     "opt-1.3b": 16,
     "opt-2.7b": 8,
     "opt-6.7b": 4,
-    #"opt-30b": 1,
-    #"opt-66b": 1,
+    "opt-30b": 32,
+    "opt-66b": 32,
     "gpt-j-6b": 4,
     "gpt-neo-125m": 64,
     "gpt-neo-1.3b": 16,
     "gpt-neo-2.7b": 8,
-    "gpt-neox-20b": 1,
+    "gpt-neox-20b": 32,
 };
 
 local models = std.objectFields(models2batchsize);
 
 local batch_size_for_model(model) = models2batchsize[model];
+
+local gpus_for_model_dict = {
+    "opt-30b": 2,
+    "opt-66b": 4,
+    "gpt-neox-20b": 2,
+};
+
+local gpus_for_model(model) = if std.objectHas(gpus_for_model_dict, model) then gpus_for_model_dict[model] else 1;
 
 
 local predict_results_step_name(task, model) = "instance_results_" + task + "_" + model;
@@ -51,7 +59,7 @@ local predict_results_step_name(task, model) = "instance_results_" + task + "_" 
 local predict_results(task, model) = {
     [predict_results_step_name(task, model)]: {
         type: "catwalk::predict",
-        step_resources: { gpu_count: 1 },
+        step_resources: { gpu_count: gpus_for_model(model) },
         model: "promptsource::" + model,
         task: task,
         batch_size: batch_size_for_model(model),

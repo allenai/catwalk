@@ -2,6 +2,7 @@ import collections
 import logging
 from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List
 
+import bettermap
 import torch
 from tango.common import Tqdm
 
@@ -28,15 +29,25 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
         num_shots: int = 0,
         fewshot_seed: int = None,
     ) -> Iterator[Dict[str, Any]]:
-        if num_shots != 0 or fewshot_seed is not None:
-            raise NotImplementedError("Promptsource tasks do not support fewshot (yet).")
-
         instance_index_to_tuple_indices: Mapping[Tuple[int, str], List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
-        rc_instances: List[Dict[str, RankClassificationInstance]] = [
-            task.convert_instance(instance, InstanceFormat.PROMPTSOURCE)
-            for i, instance in enumerate(instances)
-        ]
+
+        # Applying promptsource is slow, so we do it in parallel.
+        def convert_instance(i: int) -> Dict[str, RankClassificationInstance]:
+            instance = instances[i]
+            return task.convert_instance(
+                instance,
+                InstanceFormat.PROMPTSOURCE,
+                fewshot_instances=task.get_fewshot_instances(
+                    num_shots,
+                    random_seed=fewshot_seed if fewshot_seed is not None else i,
+                    exceptions=instance))
+
+        rc_instances: List[Dict[str, RankClassificationInstance]] = \
+            list(Tqdm.tqdm(
+                bettermap.map_in_chunks(convert_instance, range(len(instances)), chunk_size=16),
+                total=len(instances),
+                desc="Converting instances"))
 
         # Remove prompts that have no gold answer, since we can't evaluate them.
         for instance_dict in rc_instances:

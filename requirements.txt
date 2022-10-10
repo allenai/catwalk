@@ -7,7 +7,7 @@ spacy>=3.0.0
 wget
 datasets>=2.1.0
 accelerate
-https://github.com/allenai/bettermap/releases/download/v1.1.0/bettermap-1.1.0-py3-none-any.whl
+bettermap @ https://github.com/allenai/bettermap/releases/download/v1.1.0/bettermap-1.1.0-py3-none-any.whl
 
 #git+https://github.com/EleutherAI/lm-evaluation-harness.git
 git+https://github.com/dirkgr/lm-evaluation-harness.git@NumexprDependency

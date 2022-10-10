@@ -1,5 +1,10 @@
+import collections
 import functools
-from typing import Any, Dict, Optional, Sequence
+from typing import Dict, Any, Optional, Sequence, List, Tuple
+
+from tango.common import det_hash
+
+from catwalk.dependencies.promptsource.templates import DatasetTemplates, TemplateCollection
 
 from catwalk.dependencies.promptsource.templates import (
     DatasetTemplates,
@@ -10,9 +15,12 @@ from catwalk.task import InstanceConversion, RankClassificationInstance, Task
 _promptsource_template_collection = TemplateCollection()
 
 
-def _index_case_insensitive(sequence: Sequence[str], value: str) -> int:
+def _index_case_insensitive(sequence: Sequence[str], value: str) -> Optional[int]:
     sequence = [s.lower() for s in sequence]
-    return sequence.index(value.lower())
+    try:
+        return sequence.index(value.lower())
+    except ValueError:
+        return None
 
 
 def promptsource_conversion(
@@ -22,8 +30,25 @@ def promptsource_conversion(
 
 
 def promptsource_convert(
-    instance: Dict[str, Any], *, dataset_templates: DatasetTemplates
+    instance: Dict[str, Any],
+    *,
+    dataset_templates: DatasetTemplates,
+    fewshot_instances: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, RankClassificationInstance]:
+    if fewshot_instances is None:
+        fewshot_instances = []
+
+    prefixes: Dict[str, str] = collections.defaultdict(str)
+    for fewshot_instance in fewshot_instances:
+        converted_fewshot_instances = promptsource_convert(
+            fewshot_instance,
+            dataset_templates=dataset_templates)
+        for prompt_name, rc_instance in converted_fewshot_instances.items():
+            if rc_instance.correct_choice is None:
+                continue
+            correct_choice = rc_instance.choices[rc_instance.correct_choice]
+            prefixes[prompt_name] += f"{correct_choice[0].strip()}\n{correct_choice[1].strip()}\n\n"
+
     prompts = {
         template_name: (
             dataset_templates[template_name].apply(instance),
@@ -46,17 +71,14 @@ def promptsource_convert(
         )
         for (prompt, correct_answer), answer_choices in prompts.values()
     )
-    # package up as a RankClassificationInstance
-    return {  # type: ignore
+    # package up as RankClassificationInstances
+    result = {
         template_name: RankClassificationInstance(
-            [(prompt, choice) for choice in answer_choices],
-            _index_case_insensitive(answer_choices, correct_answer[0])
-            if correct_answer is not None
-            else None,
-        )
-        for template_name, ((prompt, correct_answer), answer_choices) in prompts.items()
-        if answer_choices is not None
+            [(prefixes[template_name] + prompt, choice) for choice in answer_choices],
+            _index_case_insensitive(answer_choices, correct_answer[0]) if correct_answer is not None else None
+        ) for template_name, ((prompt, correct_answer), answer_choices) in prompts.items() if answer_choices is not None
     }
+    return result
 
 
 def promptsource_templates_for_task(task: Task) -> Optional[DatasetTemplates]:

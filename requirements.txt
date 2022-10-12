@@ -1,4 +1,4 @@
-ai2-tango[torch,transformers,fairscale]
+ai2-tango[torch,transformers,fairscale]>=1.0
 #ai2-tango[torch,transformers,fairscale] @ git+https://github.com/allenai/tango.git@main
 
 torchmetrics==0.9.3

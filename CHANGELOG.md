@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Countless tweaks to `FinetuneStep`
 - Some models insert special tokens where they should not. This fixes that.
 - Metrics were messy for classification tasks. They are still messy, but less so.
+- Applied workaround for T5 bug in huggingface tokenizers
+- Fixed fine-tuning T5 ranked classification models
 
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10

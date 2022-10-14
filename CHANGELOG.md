@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the `load_weights` arg in cached_transformers.get() which was documented but not implemented
 - Fixed support for training with OPT models
 - Countless tweaks to `FinetuneStep`
+- Some models insert special tokens where they should not. This fixes that.
+- Metrics were messy for classification tasks. They are still messy, but less so.
 
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10

@@ -263,6 +263,18 @@ class TrainableRankClassificationModel(TrainableModel):
 @Model.register("rc::encoder_decoder")
 class EncoderDecoderRCModel(RankClassificationModel):
     MODEL_TYPE = AutoModelForSeq2SeqLM
+    VERSION = RankClassificationModel.VERSION + "002spt"
+
+    @classmethod
+    def _make_model(
+        cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs
+    ) -> T5ForConditionalGeneration:
+        return cached_transformers.get(
+            AutoModelForSeq2SeqLM,
+            pretrained_model_name_or_path,
+            make_copy=make_copy,
+            **kwargs,
+        )
 
     def _run_loglikelihood(
         self,
@@ -356,9 +368,9 @@ class DecoderOnlyRCModel(RankClassificationModel):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
     ) -> Sequence[float]:
-        tokenized_contexts = tokenizer([t[0] for t in tuples])
+        tokenized_contexts = tokenizer([t[0] for t in tuples], add_special_tokens=False)
         tokenized_continuations = tokenizer(
-            [self._prefix_with_space(t[1]) for t in tuples]
+            [self._prefix_with_space(t[1]) for t in tuples], add_special_tokens=False
         )
 
         # transpose the token ids so we can access them one instance at a time

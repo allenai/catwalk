@@ -128,6 +128,7 @@ class HFAutoModel(Model):
                         "acc": (logits, instance.correct_answer_index),
                     }
 
+    @classmethod
     def _predict_classification(
         cls,
         instances: Sequence[HFClassificationInstance],

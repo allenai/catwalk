@@ -152,6 +152,7 @@ class HFAutoModel(Model):
                     return_tensors="pt",
                     pad_to_multiple_of=8,
                 )
+                tensors = {k: v.to(model.device) for k, v in tensors.items()}
                 results = model(return_dict=True, **tensors)
                 for instance, logits in zip(batch, results.logits.detach().cpu()):
                     yield {

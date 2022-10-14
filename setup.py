@@ -21,6 +21,8 @@ def parse_requirements_file(path):
                 return f"ai2-tango[all] @ {req}"
             elif m.group("name") == "lm-evaluation-harness":
                 return f"lm-eval @ {req}"
+            elif m.group("name") == "promptsource":
+                return f"promptsource @ {req}"
             else:
                 return f"{m.group('name')} @ {req}"
 
@@ -68,7 +70,13 @@ setup(
             "test_fixtures.*",
         ],
     ),
-    package_data={"catwalk": ["py.typed"]},
+    package_data={
+        "catwalk": [
+            "py.typed",
+            "dependencies/promptsource/templates/*/*.yaml",
+            "dependencies/promptsource/templates/*/*/*.yaml"
+        ]
+    },
     install_requires=parse_requirements_file("requirements.txt"),
     extras_require={"dev": parse_requirements_file("dev-requirements.txt")},
     python_requires=">=3.8.0",

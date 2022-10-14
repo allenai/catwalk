@@ -10,6 +10,7 @@ from transformers import (AutoModelForMultipleChoice,
                           AutoModelForQuestionAnswering,
                           QuestionAnsweringPipeline, PreTrainedModel, PreTrainedTokenizer,
                           AutoModelForSequenceClassification, TextClassificationPipeline)
+from torchmetrics.functional import accuracy
 
 from catwalk import cached_transformers
 from catwalk.model import Model, UnsupportedTaskError, TrainableModel, Instance
@@ -19,7 +20,7 @@ from catwalk.tasks.huggingface import HFQAInstance, HFMCInstance, HFClassificati
 
 @Model.register("catwalk::hf")
 class HFAutoModel(Model):
-    VERSION = "003stp"
+    VERSION = "004acc"
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -164,7 +165,7 @@ class HFAutoModel(Model):
 
 
 class TrainableHFAutoModel(TrainableModel):
-    VERSION = "003stp"
+    VERSION = "004acc"
 
     def __init__(self, pretrained_model_name_or_path: str):
         super().__init__(None)
@@ -221,7 +222,18 @@ class TrainableHFAutoModel(TrainableModel):
         else:
             qa_results = {"loss": 0.0}
 
-        results = {"loss": mc_results["loss"] + qa_results["loss"]}
+        acc = []
+        if "acc" in mc_results:
+            acc.append(mc_results["acc"])
+        if "acc" in qa_results:
+            acc.append(qa_results["acc"])
+        if len(acc) <= 0:
+            acc = [0.0]
+
+        results = {
+            "loss": mc_results["loss"] + qa_results["loss"],
+            "acc": sum(acc) / len(acc)
+        }
         assert not isinstance(results["loss"], float), "Loss must be a tensor. Is it possible that none of the forward() functions ran?"
         results.update({"mc_" + key: value for key, value in mc_results.items()})
         results.update({"qa_" + key: value for key, value in qa_results.items()})
@@ -229,6 +241,7 @@ class TrainableHFAutoModel(TrainableModel):
 
     def _forward_mc(self, *args, **kwargs) -> Dict[str, Any]:
         results = self.mc_model.forward(*args, **kwargs)
+        results["acc"] = accuracy(results.logits, kwargs["labels"])
         return results
 
     def _forward_qa(self, *args, **kwargs) -> Dict[str, Any]:

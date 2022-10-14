@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Changed
+
 - MetaICLTask now supports fewshots less than 16 and only support getting the test split
 - set default logging level to `"WARNING"` instead of `"ERROR"` when invoking `python -m catwalk`
 - changed MetaICLModel formatting to always preserve whitespace, to reproduce MetaICL results
 - improved speed of rank classification models by aggregating sequence logits on GPU rather than on CPU
+- The promptsource templates now live directly inside of Catwalk. This avoids dependency issues.
 
 ### Added
 
@@ -34,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the ability to train `HFAutoModel`
 - Added the ability for `HFAutoModel` to run NLI tasks
 - Adds ability to backoff to auto device_map on out of memory error for ranked classification models
+- Format conversions for a number of multiple choice models
+- Added an experiment config that trains many models on many tasks
+- Added promptsource support
 
 ### Fixed
 
@@ -42,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug in cached_transformer.get() that prevented using override_weights_file arg
 - Fixed the `load_weights` arg in cached_transformers.get() which was documented but not implemented
 - Fixed support for training with OPT models
+- Countless tweaks to `FinetuneStep`
+- Some models insert special tokens where they should not. This fixes that.
+- Metrics were messy for classification tasks. They are still messy, but less so.
+
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

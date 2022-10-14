@@ -1,5 +1,5 @@
-ai2-tango[all]
-#git+https://github.com/allenai/tango.git@main
+ai2-tango[torch,transformers,fairscale]
+#ai2-tango[torch,transformers,fairscale] @ git+https://github.com/allenai/tango.git@main
 
 torchmetrics==0.9.3
 more_itertools
@@ -14,3 +14,7 @@ git+https://github.com/dirkgr/lm-evaluation-harness.git@NumexprDependency
 # The Eleuther harness depends on these even at runtime, but does not declare them.
 mypy_extensions
 pytest
+
+# For promptsource
+jinja2
+pyyaml>=5

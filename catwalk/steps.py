@@ -1,3 +1,4 @@
+import math
 from typing import (
     Union,
     Dict,
@@ -14,6 +15,7 @@ import tango
 import transformers.optimization
 from tango import Step, JsonFormat
 from tango.common import Lazy, DatasetDict
+from tango.common.exceptions import ConfigurationError
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
 from tango.integrations.torch import (
@@ -26,9 +28,10 @@ import torch
 
 from catwalk.task import Task
 from catwalk.tasks import TASKS
+from catwalk.tasks import short_name_for_task_object
 from catwalk.model import Model
 from catwalk.models import MODELS
-from catwalk.training_callback import CatwalkEvaluationCallback
+from catwalk.models import short_name_for_model_object
 
 
 @Step.register("catwalk::predict")
@@ -100,8 +103,10 @@ class CalculateMetricsStep(Step):
 
 @Step.register("catwalk::finetune")
 class FinetuneStep(Step):
-    VERSION = "001"
+    VERSION = "002vmn"
     FORMAT = TorchFormat
+
+    SKIP_ID_ARGUMENTS = {"wandb_entity", "wandb_project"}
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -114,19 +119,14 @@ class FinetuneStep(Step):
         self,
         model: Union[str, Model],
         tasks: List[Union[str, Task]],
-        train_steps: int = 10000,
-        validation_steps: int = 1000,
+        train_epochs: Optional[int] = 25,
+        train_steps: Optional[int] = None,
+        validate_every: int = 100,
+        validation_steps: Optional[int] = None,
+        val_metric_name: str = "loss",
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
-            lr_scheduler=Lazy(
-                transformers.optimization.get_linear_schedule_with_warmup,
-                num_warmup_steps=200,
-                num_training_steps=10000
-            ),
-            optimizer=Lazy(
-                torch.optim.AdamW,
-                lr=1e-5,
-            )
+            optimizer=Lazy(torch.optim.AdamW, lr=1e-5,)
         ),
         model_wrapper: Optional[Lazy[TangoModel]] = None,
         random_seed: int = 42,
@@ -136,6 +136,8 @@ class FinetuneStep(Step):
         distributed_port: int = 54761,
         train_split: str = "train",
         validation_split: Optional[str] = "validation",
+        wandb_entity: Optional[str] = None,
+        wandb_project: Optional[str] = None
     ) -> Model:  # type: ignore
         if isinstance(model, str):
             model = MODELS[model]
@@ -166,11 +168,14 @@ class FinetuneStep(Step):
             step_name=self.name,
             seed=random_seed,
             train_steps=train_steps,
-            validation_steps=validation_steps,
+            train_epochs=train_epochs,
+            val_metric_name=val_metric_name,
+            minimize_val_metric=False,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
-            validate_every=1000,
-            checkpoint_every=1000,
+            validate_every=validate_every,
+            checkpoint_every=validate_every,
+            validation_steps=validation_steps,
             grad_accum=grad_accum,
             is_distributed=is_distributed,
             world_size=num_workers,
@@ -207,17 +212,37 @@ class FinetuneStep(Step):
         else:
             wrapped_model = Lazy(model_wrapper.construct, model=trainable_model)
 
-        if validation_split is None:
-            # No point in stopping early when we don't have a validation set.
-            callbacks = []
-        else:
-            callbacks = [
+        callbacks = []
+        if wandb_entity is not None or wandb_project is not None:
+            if wandb_entity is None or wandb_project is None:
+                raise ConfigurationError("You have to set wandb_entity and wandp_project together.")
+            from tango.integrations.wandb import WandbTrainCallback
+            tags = [short_name_for_task_object(task) for task in tasks_in_a_special_variable_because_mypy_is_insane]
+            tags.append(short_name_for_model_object(model))
+            tags.append(f"seed={random_seed}")
+            callbacks.append(
                 Lazy(
-                    CatwalkEvaluationCallback,
-                    tasks=tasks_in_a_special_variable_because_mypy_is_insane,
-                    eval_limit=validation_steps
+                    WandbTrainCallback,
+                    project=wandb_project,
+                    entity=wandb_entity,
+                    tags=[t for t in tags if t is not None]
                 )
-            ]
+            )
+
+        # Hack a default LR scheduler into the training engine
+        if train_steps is None:
+            if train_epochs is None:
+                raise ConfigurationError("You have to set either train_steps or train_epochs.")
+            train_steps = train_epochs * math.ceil(
+                len(splits["train"]) / (device_count * grad_accum * batch_size)
+            )
+        if training_engine._constructor == TorchTrainingEngine:
+            if "lr_scheduler" not in training_engine._constructor_extras:
+                training_engine._constructor_extras["lr_scheduler"] = Lazy(
+                    transformers.optimization.get_linear_schedule_with_warmup,
+                    num_warmup_steps=200,
+                    num_training_steps=train_steps
+                )
 
         if is_distributed:
             import torch.multiprocessing as mp

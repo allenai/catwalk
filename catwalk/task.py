@@ -17,12 +17,6 @@ MC_METRICS = {
     "acc": torchmetrics.Accuracy,
 }
 
-ENTAILMENT_METRICS = {
-    "acc": torchmetrics.Accuracy,
-}
-
-BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
-
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
     "byte_perplexity": PerplexityMetric,
@@ -43,16 +37,22 @@ def classification_metrics(num_classes: int):
     }
 
 
+ENTAILMENT_METRICS = classification_metrics(2)
+
+BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
+
+
 class InstanceFormat(Enum):
     HF_DICT = 1
     HF_MC = 2
     HF_QA = 8
-    HF_CLASSIFICATION = 9
+    HF_CLASSIFICATION = 10
     ELEUTHER_DOC = 3
     ELEUTHER_CONTEXT = 4
     ELEUTHER_REQUESTS = 5
     T5_PROMPT = 6
     RANK_CLASSIFICATION = 7
+    PROMPTSOURCE = 9
 
 
 @dataclass

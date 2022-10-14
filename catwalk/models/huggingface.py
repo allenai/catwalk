@@ -195,7 +195,7 @@ class TrainableHFAutoModel(TrainableModel):
             True)
         classification_modules = dict(self.classification_model.named_children())
         for name in mc_modules.keys() & classification_modules.keys():
-            self.qa_model.add_module(name, classification_modules[name])  # This overwrites the existing module.
+            self.classification_model.add_module(name, mc_modules[name])  # This overwrites the existing module.
         self.classification_num_labels = self.classification_model.num_labels
         if self.classification_num_labels == 1:
             self.classification_num_labels = 2
@@ -240,7 +240,7 @@ class TrainableHFAutoModel(TrainableModel):
                 task)
             return HFAutoModel._predict_classification(
                 classification_instances,
-                self.qa_model,
+                self.classification_model,
                 self.tokenizer,
                 batch_size=batch_size)
         else:

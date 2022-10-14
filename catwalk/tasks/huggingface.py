@@ -1,7 +1,7 @@
 import functools
 from dataclasses import dataclass
 import random
-from typing import Optional, Sequence, Dict, Any, List, Union, Mapping
+from typing import Optional, Sequence, Dict, Any, List, Union, Mapping, Tuple
 
 import datasets
 from tango.common.sequences import MappedSequence
@@ -87,12 +87,14 @@ class HFDatasetsTask(Task):
         ds = MappedSequence(lambda x: x, ds)
         return ds
 
+
 @dataclass
 class HFQAInstance:
     id: str
     question: str
     context: str
     answers: List[str]
+
 
 def hfqa_conversion(
     *,
@@ -109,6 +111,7 @@ def hfqa_conversion(
             answers=get_from_dict(instance, answers_field))
         
     return convert
+
 
 @dataclass
 class HFMCInstance:
@@ -197,24 +200,24 @@ def hfmc_conversion(
 @dataclass
 class HFClassificationInstance:
     id: Optional[str]
-    premise: str
-    hypothesis: str
-    label: int
+    text: Union[str, Tuple[str, str]]
+    label: Optional[int]
 
 
 def hfclassification_convert(
     instance: Dict[str, Any],
     *,
     premise_field: str = "premise",
-    hypothesis_field: str = "hypothesis",
+    hypothesis_field: Optional[str] = "hypothesis",
     label_field: str = "label",
     id_field: Optional[str] = None,
 ) -> HFClassificationInstance:
+    premise = get_from_dict(instance, premise_field)
+    label = int(get_from_dict(instance, label_field))
     return HFClassificationInstance(
         id=str(get_from_dict(instance, id_field)) if id_field else None,
-        premise=get_from_dict(instance, premise_field).strip(),
-        hypothesis=get_from_dict(instance, hypothesis_field).strip(),
-        label=int(get_from_dict(instance, label_field)))
+        text=premise if hypothesis_field is None else (premise, get_from_dict(instance, hypothesis_field)),
+        label=label if label >= 0 else None)
 
 
 def hfclassification_conversion(

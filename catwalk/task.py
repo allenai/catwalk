@@ -159,3 +159,8 @@ class Task(Registrable, ABC):
     def add_instance_conversion(self, format: InstanceFormat, conversion: InstanceConversion):
         self.instance_conversions[format] = conversion
         return self
+
+
+class WithAnswerOptionsMixin:
+    def __init__(self, answer_options: Sequence[str]):
+        self.answer_options = answer_options

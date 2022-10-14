@@ -3,7 +3,8 @@ from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar
 
 from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceFormat, RankClassificationInstance
+from catwalk.task import Task, InstanceFormat, RankClassificationInstance, WithAnswerOptionsMixin, \
+    classification_metrics
 
 import lm_eval.tasks
 from lm_eval.base import Task as EAITask
@@ -138,6 +139,20 @@ class EleutherTask(Task):
 
         assert label < len(choices)
         return RankClassificationInstance(choices, label)
+
+
+@Task.register("eleuther::classification")
+class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        answer_options: Sequence[str],
+        version_override: Optional[str] = None,
+    ):
+        EleutherTask.__init__(self, eleuther_task, version_override=version_override, ranked_classification=True)
+        WithAnswerOptionsMixin.__init__(self, answer_options)
+        self.add_metrics(classification_metrics(len(answer_options)))
 
 
 @Task.register("eleuther::race")

@@ -4,7 +4,8 @@ import datasets
 
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
-from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits
+from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
+    EleutherClassificationTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
@@ -88,7 +89,10 @@ TASKS: Dict[str, Task] = {
         hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
-    "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(
+    "rte": EleutherClassificationTask(
+        "rte",
+        answer_options=["entailment", "not entailment"]
+    ).add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
             task_name="rte",
@@ -101,7 +105,7 @@ TASKS: Dict[str, Task] = {
             premise_field="sentence1",
             hypothesis_field="sentence2"
         )
-    ).add_metrics(ENTAILMENT_METRICS),
+    ),
     "superglue::rte": HFDatasetsTask("super_glue", "rte").add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
@@ -110,7 +114,17 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherTask("cola", ranked_classification=True).add_metrics(classification_metrics(2)),
+    "cola": EleutherClassificationTask(
+        "cola",
+        answer_options=["false", "true"]
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="sentence",
+            hypothesis_field=None,
+            id_field='idx'
+        )
+    ),
     "mnli": EleutherTaskWithRenamedSplits("mnli", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion()

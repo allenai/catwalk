@@ -184,9 +184,11 @@ class TrainableHFAutoModel(TrainableModel):
         self.mc_model = cached_transformers.get(AutoModelForMultipleChoice, pretrained_model_name_or_path, True)
         mc_modules = dict(self.mc_model.named_children())
 
+        NEVER_SHARED_MODULE_NAMES = {'pooler', 'dropout', 'classifier'}
+
         self.qa_model = cached_transformers.get(AutoModelForQuestionAnswering, pretrained_model_name_or_path, True)
         qa_modules = dict(self.qa_model.named_children())
-        for name in mc_modules.keys() & qa_modules.keys():
+        for name in mc_modules.keys() & qa_modules.keys() - NEVER_SHARED_MODULE_NAMES:
             self.qa_model.add_module(name, mc_modules[name])  # This overwrites the existing module.
 
         self.classification_model = cached_transformers.get(
@@ -194,7 +196,7 @@ class TrainableHFAutoModel(TrainableModel):
             pretrained_model_name_or_path,
             True)
         classification_modules = dict(self.classification_model.named_children())
-        for name in mc_modules.keys() & classification_modules.keys():
+        for name in mc_modules.keys() & classification_modules.keys() - NEVER_SHARED_MODULE_NAMES:
             self.classification_model.add_module(name, mc_modules[name])  # This overwrites the existing module.
         self.classification_num_labels = self.classification_model.num_labels
         if self.classification_num_labels == 1:

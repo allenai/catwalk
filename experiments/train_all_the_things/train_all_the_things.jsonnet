@@ -23,19 +23,27 @@ local tasks = [
     #"mrpc"
 ];
 
-local models = [
-    "bert-base-uncased",
-    #"bert-base-cased",
-    #"bert-large-uncased",
-    #"bert-large-cased",
-    "roberta-base",
-    #"roberta-large",
-    "deberta-v3-base",
-    #"deberta-v3-small",
-    #"deberta-v3-large",
-    ##"deberta-v2-xlarge",
-    ##"deberta-v2-xxlarge",
-];
+local models2batchsize = if debug then {
+    "bert-base-uncased": 2,
+    "roberta-base": 3,
+    "deberta-v3-base": 4,
+} else {
+    "bert-base-uncased": 32,
+    "bert-base-cased": 32,
+    "bert-large-uncased": 32,
+    "bert-large-cased": 32,
+    "roberta-base": 32,
+    "roberta-large": 32,
+    "deberta-v3-base": 32,
+    "deberta-v3-small": 32,
+    "deberta-v3-large": 8,
+    "deberta-v2-xlarge": 2,
+    "deberta-v2-xxlarge": 1,
+};
+
+local models = std.objectFields(models2batchsize);
+
+local batch_size_for_model(model) = models2batchsize[model];
 
 local random_seeds = if debug then [42, 1] else [
     42,
@@ -46,21 +54,7 @@ local random_seeds = if debug then [42, 1] else [
 ];
 
 
-local effective_batch_size = if debug then 6 else 32;
-
-local batch_size_for_model(model, task) =
-    std.min(effective_batch_size,
-        if debug then 3 else
-        (
-            if std.length(std.findSubstr("xxl", model)) > 0 then 2 else
-            if std.length(std.findSubstr("xl", model)) > 0 then 4 else
-            if std.length(std.findSubstr("large", model)) > 0 then
-                (if std.length(std.findSubstr("deberta", model)) > 0 then 4 else 8) else
-            effective_batch_size)
-        ) / (
-            if std.length(std.findSubstr("headqa", task)) > 0 || std.length(std.findSubstr("logiqa", task)) > 0 then 2 else 1
-        );
-
+local effective_batch_size = if debug then (2*3*4) else 32;
 
 local trained_model_step_name(task, model, seed) = "trained_model_" + task + "_" + model + "_" + seed;
 
@@ -71,7 +65,7 @@ local trained_model(task, model, seed) = {
         model: model,
         tasks: [task],
         random_seed: seed,
-        batch_size: batch_size_for_model(model, task),
+        batch_size: batch_size_for_model(model),
         grad_accum: effective_batch_size / self.batch_size,
         val_metric_name: "acc",
         [if debug then "train_steps"]: 3,
@@ -91,7 +85,7 @@ local predict_results(task, model, seed) = {
         step_resources: { gpu_count: 1 },
         model: {type: "ref", ref: trained_model_step_name(task, model, seed)},
         task: task,
-        batch_size: batch_size_for_model(model, task) * 2,
+        batch_size: batch_size_for_model(model) * 2,
         [if debug then "limit"]: 10
     }
 };

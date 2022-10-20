@@ -222,7 +222,7 @@ class FinetuneStep(Step):
         if wandb_entity is not None or wandb_project is not None:
             if wandb_entity is None or wandb_project is None:
                 raise ConfigurationError("You have to set wandb_entity and wandp_project together.")
-            from tango.integrations.wandb import WandbTrainCallback
+            from tango.integrations.wandb.torch_train_callback import WandbTrainCallback
             tags = [short_name_for_task_object(task) for task in tasks_in_a_special_variable_because_mypy_is_insane]
             tags.append(short_name_for_model_object(model))
             tags.append(f"seed={random_seed}")

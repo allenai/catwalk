@@ -15,13 +15,19 @@ from catwalk.tasks.huggingface import HFQAInstance
 
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2LMHeadModel
 
 
 @Model.register("catwalk::gpt")
 class GPTModel(Model):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+
+    @property
+    def model(self) -> GPT2LMHeadModel:
+        return cached_transformers.get(
+            AutoModelForCausalLM, self.pretrained_model_name_or_path, False
+        ).eval()
         
     def _convert_instances(self, instances: Sequence[Dict[str, Any]], instance_format, task) -> MappedSequence:
         return MappedSequence(lambda instance: task.convert_instance(instance, instance_format), instances)
@@ -46,8 +52,7 @@ class GPTModel(Model):
             batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = cached_transformers.get(
-            AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        model = self.model.to(device)
         tokenizer = cached_transformers.get_tokenizer(
             AutoTokenizer, self.pretrained_model_name_or_path)
         tokenizer.pad_token = tokenizer.eos_token
@@ -91,8 +96,7 @@ class GPTModel(Model):
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
-        model = cached_transformers.get(
-            AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        model = self.model.to(device)
         tokenizer = cached_transformers.get_tokenizer(
             AutoTokenizer, self.pretrained_model_name_or_path)
 
@@ -184,4 +188,3 @@ class GPTModel(Model):
                 "byte_perplexity": (logprob, len(text)),
                 "bits_per_byte": (logprob, len(text))
             }
-

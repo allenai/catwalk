@@ -1,21 +1,29 @@
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
+from torchmetrics import Accuracy, F1Score, Precision, Recall
 
 from catwalk.task import InstanceFormat, RankClassificationInstance
 from catwalk.tasks import HFDatasetsTask
 
 
 class P3Task(HFDatasetsTask):
+    VERSION = "002"
+
     def __init__(
         self,
         dataset_name: str,
         *,
         version_override: Optional[str] = None,
     ):
-        super().__init__("bigscience/P3", dataset_name=dataset_name, version_override=version_override)
-        self.add_instance_conversion(
-            InstanceFormat.RANK_CLASSIFICATION,
-            self.instance_as_rank_classification
+        super().__init__(
+            "bigscience/P3",
+            dataset_name=dataset_name,
+            version_override=version_override,
         )
+        self.add_instance_conversion(
+            InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification
+        )
+        self.add_metric("acc", Accuracy)
 
     def instance_as_rank_classification(
         self,
@@ -29,20 +37,20 @@ class P3Task(HFDatasetsTask):
         for fewshot_instance in fewshot_instances:
             as_rc = self.instance_as_rank_classification(fewshot_instance)
             if as_rc.correct_choice is None:
-                raise ValueError("Could not determine correct choice in ranked classification instance.")
+                raise ValueError(
+                    "Could not determine correct choice in ranked classification instance."
+                )
             correct_choice = as_rc.choices[as_rc.correct_choice]
             prefix += f"{correct_choice[0].strip()} {correct_choice[1].strip()}\n\n"
 
         prefix += f" {instance['inputs_pretokenized'].strip()}"
-        correct_choice = instance['targets_pretokenized'].strip()
+        correct_choice = instance["targets_pretokenized"].strip()
         try:
-            choices = [
-                choice.strip()
-                for choice in instance["answer_choices"]
-            ]
+            choices = [choice.strip() for choice in instance["answer_choices"]]
         except KeyError:
-            raise ValueError("This instance cannot be converted to rank classification format.")
+            raise ValueError(
+                "This instance cannot be converted to rank classification format."
+            )
         return RankClassificationInstance(
-            [(prefix, choice) for choice in choices],
-            choices.index(correct_choice)
+            [(prefix, choice) for choice in choices], choices.index(correct_choice)
         )

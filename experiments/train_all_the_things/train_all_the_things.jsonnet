@@ -3,38 +3,38 @@ local debug = false;
 local tasks = [
     // MC
     "arc_challenge",
-    "arc_easy",
-    "piqa",
-    "copa",
-    "sciq",
-    "logiqa",
-    "hellaswag",
-    "openbookqa",
-    "headqa_en",
-    "winogrande",
+    #"arc_easy",
+    #"piqa",
+    #"copa",
+    #"sciq",
+    #"logiqa",
+    #"hellaswag",
+    #"openbookqa",
+    #"headqa_en",
+    #"winogrande",
     // Classification
     "rte",
-    "mnli",
-    "mnli_mismatched",
-    "cola",
-    "sst",
-    "qqp",
-    "qnli",
-    "mrpc"
+    #"mnli",
+    #"mnli_mismatched",
+    #"cola",
+    #"sst",
+    #"qqp",
+    #"qnli",
+    #"mrpc"
 ];
 
 local models = [
     "bert-base-uncased",
-    "bert-base-cased",
-    "bert-large-uncased",
-    "bert-large-cased",
+    #"bert-base-cased",
+    #"bert-large-uncased",
+    #"bert-large-cased",
     "roberta-base",
-    "roberta-large",
+    #"roberta-large",
     "deberta-v3-base",
-    "deberta-v3-small",
-    "deberta-v3-large",
-    #"deberta-v2-xlarge",
-    #"deberta-v2-xxlarge",
+    #"deberta-v3-small",
+    #"deberta-v3-large",
+    ##"deberta-v2-xlarge",
+    ##"deberta-v2-xxlarge",
 ];
 
 local random_seeds = if debug then [42, 1] else [

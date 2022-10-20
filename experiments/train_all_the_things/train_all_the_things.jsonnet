@@ -63,9 +63,12 @@ local trained_model(task, model, seed) = {
         random_seed: seed,
         batch_size: batch_size_for_model(model, task),
         grad_accum: effective_batch_size / self.batch_size,
-        [if debug then "train_epochs"]: 3,
-        wandb_entity: "allennlp",
-        wandb_project: "catwalk"
+        val_metric_name: "acc",
+        [if debug then "train_steps"]: 3,
+        [if debug then "train_epochs"]: null,
+        [if debug then "validation_steps"]: 5,
+        [if !debug then "wandb_entity"]: "allennlp",
+        [if !debug then "wandb_project"]: "catwalk"
     }
 };
 

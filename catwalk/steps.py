@@ -26,7 +26,7 @@ from tango.integrations.torch import (
 from tango.integrations.torch.model import Model as TangoModel
 import torch
 
-from catwalk.task import Task
+from catwalk.task import Task, WithAnswerOptionsMixin
 from catwalk.tasks import TASKS
 from catwalk.tasks import short_name_for_task_object
 from catwalk.model import Model
@@ -199,7 +199,13 @@ class FinetuneStep(Step):
             ]
         dataset_dict = DatasetDict(splits=splits, metadata={})
 
-        trainable_model = model.trainable_copy()
+        trainable_model_kwargs: Dict[str, Any] = {}
+        for task in tasks_in_a_special_variable_because_mypy_is_insane:
+            if isinstance(task, WithAnswerOptionsMixin):
+                trainable_model_kwargs["num_classification_labels"] = max(
+                    trainable_model_kwargs.get("num_classification_labels", 0),
+                    len(task.answer_options))
+        trainable_model = model.trainable_copy(**trainable_model_kwargs)
         data_loader = Lazy(
             DataLoader,
             collate_fn=trainable_model.collate_for_training,

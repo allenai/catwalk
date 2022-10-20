@@ -168,14 +168,14 @@ class HFAutoModel(Model):
                         "acc": (logits, instance.label),
                     }
 
-    def trainable_copy(self) -> "TrainableHFAutoModel":
-        return TrainableHFAutoModel(self.pretrained_model_name_or_path)
+    def trainable_copy(self, **kwargs) -> "TrainableHFAutoModel":
+        return TrainableHFAutoModel(self.pretrained_model_name_or_path, **kwargs)
 
 
 class TrainableHFAutoModel(TrainableModel):
     VERSION = "004acc"
 
-    def __init__(self, pretrained_model_name_or_path: str):
+    def __init__(self, pretrained_model_name_or_path: str, *, num_classification_labels: Optional[int] = None):
         super().__init__(None)
         self.tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, pretrained_model_name_or_path)
 
@@ -192,17 +192,21 @@ class TrainableHFAutoModel(TrainableModel):
         for name in mc_modules.keys() & qa_modules.keys() - NEVER_SHARED_MODULE_NAMES:
             self.qa_model.add_module(name, mc_modules[name])  # This overwrites the existing module.
 
-        self.classification_model = cached_transformers.get(
-            AutoModelForSequenceClassification,
-            pretrained_model_name_or_path,
-            True)
-        classification_modules = dict(self.classification_model.named_children())
-        for name in mc_modules.keys() & classification_modules.keys() - NEVER_SHARED_MODULE_NAMES:
-            self.classification_model.add_module(name, mc_modules[name])  # This overwrites the existing module.
-        self.classification_num_labels = self.classification_model.num_labels
-        if self.classification_num_labels == 1:
-            self.classification_num_labels = 2
-        self.classification_warning_shown = False
+        if num_classification_labels is None:
+            self.classification_model = None
+        else:
+            self.classification_model = cached_transformers.get(
+                AutoModelForSequenceClassification,
+                pretrained_model_name_or_path,
+                True,
+                num_labels=num_classification_labels)
+            classification_modules = dict(self.classification_model.named_children())
+            for name in mc_modules.keys() & classification_modules.keys() - NEVER_SHARED_MODULE_NAMES:
+                self.classification_model.add_module(name, mc_modules[name])  # This overwrites the existing module.
+            self.classification_num_labels = self.classification_model.num_labels
+            if self.classification_num_labels == 1:
+                self.classification_num_labels = 2
+            self.classification_warning_shown = False
 
     def predict(  # type: ignore
         self,
@@ -232,6 +236,8 @@ class TrainableHFAutoModel(TrainableModel):
                 self.tokenizer,
                 batch_size=batch_size)
         elif task.has_instance_conversion(InstanceFormat.HF_CLASSIFICATION):
+            if self.classification_model is None:
+                raise ValueError("This model must be initialized with num_classification_labels to perform classification.")
             if not self.classification_warning_shown:
                 assert isinstance(task, WithAnswerOptionsMixin)
                 if len(task.answer_options) != self.classification_num_labels:
@@ -313,6 +319,7 @@ class TrainableHFAutoModel(TrainableModel):
         return results
 
     def _forward_classification(self, *args, **kwargs) -> Dict[str, Any]:
+        assert self.classification_model is not None
         results = self.classification_model.forward(*args, **kwargs)
         results["acc"] = accuracy(results.logits, kwargs["labels"])
         return results
@@ -333,6 +340,8 @@ class TrainableHFAutoModel(TrainableModel):
                         HFQAInstance,
                         task.convert_instance(instance, InstanceFormat.HF_QA)))
             elif task.has_instance_conversion(InstanceFormat.HF_CLASSIFICATION):
+                if self.classification_model is None:
+                    raise ValueError("This model must be initialized with num_classification_labels to perform classification.")
                 if not self.classification_warning_shown:
                     assert isinstance(task, WithAnswerOptionsMixin)
                     if len(task.answer_options) != self.classification_num_labels:
@@ -382,6 +391,7 @@ class TrainableHFAutoModel(TrainableModel):
 
         # build classification tensors
         if len(classification_instances) > 0:
+            assert self.classification_model is not None
             tensors = self.tokenizer.batch_encode_plus(
                 [instance.text for instance in classification_instances],
                 padding=True,

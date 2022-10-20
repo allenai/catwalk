@@ -28,14 +28,14 @@ local models2batchsize = if debug then {
     "roberta-base": 3,
     "deberta-v3-base": 4,
 } else {
-    "bert-base-uncased": 32,
-    "bert-base-cased": 32,
-    "bert-large-uncased": 32,
-    "bert-large-cased": 32,
-    "roberta-base": 32,
-    "roberta-large": 32,
-    "deberta-v3-base": 32,
-    "deberta-v3-small": 32,
+    "bert-base-uncased": 16,
+    "bert-base-cased": 16,
+    "bert-large-uncased": 16,
+    "bert-large-cased": 16,
+    "roberta-base": 16,
+    "roberta-large": 16,
+    "deberta-v3-base": 16,
+    "deberta-v3-small": 16,
     "deberta-v3-large": 8,
     "deberta-v2-xlarge": 2,
     "deberta-v2-xxlarge": 1,
@@ -54,7 +54,7 @@ local random_seeds = if debug then [42, 1] else [
 ];
 
 
-local effective_batch_size = if debug then (2*3*4) else 32;
+local effective_batch_size = if debug then (2*3*4) else 16;
 
 local trained_model_step_name(task, model, seed) = "trained_model_" + task + "_" + model + "_" + seed;
 

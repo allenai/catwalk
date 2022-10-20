@@ -7,7 +7,7 @@ from catwalk.tasks import HFDatasetsTask
 
 
 class P3Task(HFDatasetsTask):
-    VERSION = "001"
+    VERSION = "002"
 
     def __init__(
         self,
@@ -24,9 +24,6 @@ class P3Task(HFDatasetsTask):
             InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification
         )
         self.add_metric("acc", Accuracy)
-        self.add_metric("f1", F1Score)
-        self.add_metric("precision", Precision)
-        self.add_metric("recall", Recall)
 
     def instance_as_rank_classification(
         self,

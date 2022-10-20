@@ -1,10 +1,14 @@
 from typing import Any, Dict, List, Optional
 
+from torchmetrics import Accuracy, F1Score, Precision, Recall
+
 from catwalk.task import InstanceFormat, RankClassificationInstance
 from catwalk.tasks import HFDatasetsTask
 
 
 class P3Task(HFDatasetsTask):
+    VERSION = "001"
+
     def __init__(
         self,
         dataset_name: str,
@@ -19,6 +23,10 @@ class P3Task(HFDatasetsTask):
         self.add_instance_conversion(
             InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification
         )
+        self.add_metric("acc", Accuracy)
+        self.add_metric("f1", F1Score)
+        self.add_metric("precision", Precision)
+        self.add_metric("recall", Recall)
 
     def instance_as_rank_classification(
         self,

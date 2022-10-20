@@ -114,16 +114,9 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherClassificationTask(
-        "cola",
-        answer_options=["false", "true"]
-    ).add_instance_conversion(
+    "cola": EleutherClassificationTask("cola", answer_options=["false", "true"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
-        hfclassification_conversion(
-            premise_field="sentence",
-            hypothesis_field=None,
-            id_field='idx'
-        )
+        hfclassification_conversion(premise_field="sentence", hypothesis_field=None, id_field='idx')
     ),
     "mnli": EleutherClassificationTaskWithRenamedSplits(
         "mnli",
@@ -139,13 +132,28 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(id_field='idx')
     ),
-    "mrpc": EleutherTask("mrpc", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "qnli": EleutherTask("qnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "qqp": EleutherTask("qqp", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "sst": EleutherClassificationTask(
-        "sst",
-        answer_options=["negative", "positive"]
+    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]
     ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="sentence1",
+            hypothesis_field="sentence2",
+            id_field='idx'
+        )
+    ),
+    "qnli": EleutherClassificationTask("qnli", answer_options=["yes", "no"]).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(premise_field="question", hypothesis_field="sentence", id_field='idx')
+    ),
+    "qqp": EleutherClassificationTask("qqp", answer_options=["no", "yes"]).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="question1",
+            hypothesis_field="question2",
+            id_field='idx'
+        )
+    ),
+    "sst": EleutherClassificationTask("sst", answer_options=["negative", "positive"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
             premise_field="sentence",

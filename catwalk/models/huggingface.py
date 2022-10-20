@@ -12,6 +12,7 @@ from transformers import (AutoModelForMultipleChoice,
                           QuestionAnsweringPipeline, PreTrainedModel, PreTrainedTokenizer,
                           AutoModelForSequenceClassification, TextClassificationPipeline)
 from torchmetrics.functional import accuracy
+from transformers.tokenization_utils_base import LARGE_INTEGER
 
 from catwalk import cached_transformers
 from catwalk.model import Model, UnsupportedTaskError, TrainableModel, Instance
@@ -344,6 +345,8 @@ class TrainableHFAutoModel(TrainableModel):
             else:
                 raise ValueError("I don't know how to handle this instance.")
 
+        truncation = "longest_first" if self.tokenizer.model_max_length <= LARGE_INTEGER else False
+
         # build MC tensors
         result: Dict[str, torch.Tensor] = {}
         if len(mc_instances) > 0:
@@ -361,7 +364,7 @@ class TrainableHFAutoModel(TrainableModel):
             tensors = self.tokenizer.batch_encode_plus(
                 texts,
                 padding=True,
-                truncation="longest_first",
+                truncation=truncation,
                 return_tensors="pt",
                 pad_to_multiple_of=8,
             )
@@ -382,7 +385,7 @@ class TrainableHFAutoModel(TrainableModel):
             tensors = self.tokenizer.batch_encode_plus(
                 [instance.text for instance in classification_instances],
                 padding=True,
-                truncation="only_first",
+                truncation=truncation,
                 return_tensors="pt",
                 pad_to_multiple_of=8,
             )

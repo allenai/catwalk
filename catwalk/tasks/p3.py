@@ -40,18 +40,12 @@ class P3Task(HFDatasetsTask):
 
         prefix += f" {instance['inputs_pretokenized'].strip()}"
         correct_choice = instance["targets_pretokenized"].strip()
-
-        if "answer_choices" not in instance:
-            if correct_choice in {"True", "False"}:
-                instance["answer_choices"] = ["True", "False"]
-
         try:
             choices = [choice.strip() for choice in instance["answer_choices"]]
         except KeyError:
             raise ValueError(
                 "This instance cannot be converted to rank classification format."
             )
-
         return RankClassificationInstance(
             [(prefix, choice) for choice in choices], choices.index(correct_choice)
         )

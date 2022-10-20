@@ -1,6 +1,7 @@
 local debug = false;
 
 local tasks = [
+    // MC
     "arc_challenge",
     "arc_easy",
     "piqa",
@@ -10,7 +11,16 @@ local tasks = [
     "hellaswag",
     "openbookqa",
     "headqa_en",
-    "winogrande"
+    "winogrande",
+    // Classification
+    "rte",
+    "mnli",
+    "mnli_mismatched",
+    "cola",
+    "sst",
+    "qqp",
+    "qnli",
+    "mrpc"
 ];
 
 local models = [

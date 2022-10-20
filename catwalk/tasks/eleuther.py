@@ -220,3 +220,20 @@ class EleutherTaskWithRenamedSplits(EleutherTask):
         # to make them act like sequences.
         return MappedSequence(lambda x: x, result)
 
+
+@Task.register("eleuther::classification_with_renamed_splits")
+class EleutherClassificationTaskWithRenamedSplits(EleutherTaskWithRenamedSplits, WithAnswerOptionsMixin):
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        answer_options: Sequence[str],
+        version_override: Optional[str] = None,
+    ):
+        EleutherTaskWithRenamedSplits.__init__(
+            self,
+            eleuther_task,
+            version_override=version_override,
+            ranked_classification=True)
+        WithAnswerOptionsMixin.__init__(self, answer_options)
+        self.add_metrics(classification_metrics(len(answer_options)))

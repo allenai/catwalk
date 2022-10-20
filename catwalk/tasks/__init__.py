@@ -5,7 +5,7 @@ import datasets
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
-    EleutherClassificationTask
+    EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
@@ -125,15 +125,34 @@ TASKS: Dict[str, Task] = {
             id_field='idx'
         )
     ),
-    "mnli": EleutherTaskWithRenamedSplits("mnli", ranked_classification=True).add_instance_conversion(
+    "mnli": EleutherClassificationTaskWithRenamedSplits(
+        "mnli",
+        answer_options=["True", "Neither", "False"]
+    ).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
-        hfclassification_conversion()
-    ).add_metrics(ENTAILMENT_METRICS),
-    "mnli_mismatched": EleutherTask("mnli_mismatched", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+        hfclassification_conversion(id_field='idx')
+    ),
+    "mnli_mismatched": EleutherClassificationTask(
+        "mnli_mismatched",
+        answer_options=["True", "Neither", "False"]
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(id_field='idx')
+    ),
     "mrpc": EleutherTask("mrpc", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "qnli": EleutherTask("qnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "qqp": EleutherTask("qqp", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "sst": EleutherTask("sst", ranked_classification=True).add_metrics(classification_metrics(2)),
+    "sst": EleutherClassificationTask(
+        "sst",
+        answer_options=["negative", "positive"]
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="sentence",
+            hypothesis_field=None,
+            id_field='idx'
+        )
+    ),
     "wnli": EleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "boolq": EleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
     "cb": EleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),

@@ -15,9 +15,11 @@ local tasks = [
 ];
 
 local models2batchsize = if debug then {
-    "gpt2": 3,
-    "tiny-gpt2": 4
+    "gpt2": 2,
+    "tiny-gpt2": 3,
+    "t5-very-small-random": 4
 } else {
+    // decoder-only
     "gpt2": 32,
     "gpt2-medium": 32,
     "gpt2-large": 16,
@@ -39,6 +41,17 @@ local models2batchsize = if debug then {
     "gpt-neo-1.3b": 16,
     "gpt-neo-2.7b": 8,
     "gpt-neox-20b": 16,
+    // encoder/decoder
+    "t5-small-lm-adapt": 64,
+    "t5-base-lm-adapt": 32,
+    "t5-large-lm-adapt": 8,
+    "t5-xl-lm-adapt": 2,
+    "t5-xxl-lm-adapt": 1,
+    "t5-v1_1-small": 64,
+    "t5-v1_1-base": 32,
+    "t5-v1_1-large": 8,
+    "t5-v1_1-xl": 2,
+    "t5-v1_1-xxl": 1
 };
 
 local models = std.objectFields(models2batchsize);

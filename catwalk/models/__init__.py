@@ -31,11 +31,11 @@ _ENCODER_DECODER_MODELS = {
     "google/t5-large-lm-adapt",
     "google/t5-xl-lm-adapt",
     "google/t5-xxl-lm-adapt",
-    "google/t5-v11-small",
-    "google/t5-v11-base",
-    "google/t5-v11-large",
-    "google/t5-v11-xl",
-    "google/t5-v11-xxl",
+    "google/t5-v1_1-small",
+    "google/t5-v1_1-base",
+    "google/t5-v1_1-large",
+    "google/t5-v1_1-xl",
+    "google/t5-v1_1-xxl",
     "stas/t5-very-small-random",
 }
 

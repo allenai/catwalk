@@ -3,24 +3,24 @@ local debug = false;
 local tasks = [
     // MC
     "arc_challenge",
-    #"arc_easy",
-    #"piqa",
-    #"copa",
-    #"sciq",
-    #"logiqa",
-    #"hellaswag",
-    #"openbookqa",
-    #"headqa_en",
-    #"winogrande",
+    "arc_easy",
+    "piqa",
+    "copa",
+    "sciq",
+    "logiqa",
+    "hellaswag",
+    "openbookqa",
+    "headqa_en",
+    "winogrande",
     // Classification
     "rte",
-    #"mnli",
-    #"mnli_mismatched",
-    #"cola",
-    #"sst",
-    #"qqp",
-    #"qnli",
-    #"mrpc"
+    "mnli",
+    "mnli_mismatched",
+    "cola",
+    "sst",
+    "qqp",
+    "qnli",
+    "mrpc"
 ];
 
 local models2batchsize = if debug then {

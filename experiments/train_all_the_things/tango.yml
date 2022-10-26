@@ -30,6 +30,7 @@ executor:
     - name: WANDB_API_KEY
       secret: WANDB_API_KEY
   priority: preemptible
+  parallelism: 128
 
 
 # This tells Tango where to look for your custom step classes.

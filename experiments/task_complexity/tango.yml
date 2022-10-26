@@ -21,7 +21,6 @@ executor:
     - ai2/allennlp-cirrascale
     - ai2/allennlp-elanding-a100-40g
     - ai2/allennlp-elanding-a100-80g
-    - ai2/allennlp-elanding-rtx8000
     - ai2/general-gcp
     - ai2/dirkg-1gpu
   env_vars:

@@ -1,7 +1,7 @@
-ai2-tango[torch,transformers,fairscale,beaker,wandb]
+ai2-tango[torch,transformers,fairscale,beaker,wandb]>=1.0
 #ai2-tango[torch,transformers,fairscale,beaker,wandb] @ git+https://github.com/allenai/tango.git@main
 
-torchmetrics==0.9.3
+torchmetrics==0.10.1
 more_itertools
 spacy>=3.0.0
 wget

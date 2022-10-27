@@ -163,6 +163,22 @@ arc_easy        acc     0.3998316526412964
 piqa    acc     0.6256800889968872
 ```
 
+## Training / Finetuning
+
+Catwalk can train models. It can train models on a single task, or on multiple tasks at once.
+To train, use this command line:
+```shell
+python -m catwalk.train --model rc::gpt2 --task piqa
+```
+
+You can train on multiple tasks at the same time, if you want to create a multi-task model:
+```shell
+python -m catwalk.train --model rc::gpt2 --task piqa arc_easy
+```
+
+Note that not all models support training. If you want to train one and can't, create an issue and tag @dirkgr in
+it. 
+
 ## Tango integration
 
 Catwalk uses [Tango](https://github.com/allenai/tango) for caching and executing evaluations. The command line

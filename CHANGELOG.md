@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added MRQA task
 - Adds support for inference with IA3 adapters loaded from a file on decoder only ranked classification models
 - Added the ability to train `HFAutoModel`
+- Added the ability for `HFAutoModel` to run NLI tasks
 - Adds ability to backoff to auto device_map on out of memory error for ranked classification models
 - Format conversions for a number of multiple choice models
 - Added an experiment config that trains many models on many tasks
@@ -49,7 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Countless tweaks to `FinetuneStep`
 - Some models insert special tokens where they should not. This fixes that.
 - Metrics were messy for classification tasks. They are still messy, but less so.
-
+- Applied workaround for T5 bug in huggingface tokenizers
+- Fixed fine-tuning T5 ranked classification models
+- Fixed the names of the T5 1.1 models
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

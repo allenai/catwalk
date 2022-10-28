@@ -67,7 +67,7 @@ class Model(Registrable, DetHashWithVersion, ABC):
     def supports_fewshot(self) -> bool:
         return "num_shots" in inspect.signature(self.predict).parameters
 
-    def trainable_copy(self) -> "TrainableModel":
+    def trainable_copy(self, **kwargs) -> "TrainableModel":
         """Returns a trainable version of this model.
 
         Catwalk models by default are immutable. Trainable models are not, because they can be trained.
@@ -106,7 +106,7 @@ class TrainableModel(Model, torch.nn.Module, ABC):
         """
         raise NotImplementedError
 
-    def trainable_copy(self) -> "TrainableModel":
+    def trainable_copy(self, **kwargs) -> "TrainableModel":
         return deepcopy(self)
 
 

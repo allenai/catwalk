@@ -1,4 +1,5 @@
 import collections
+import functools
 from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, Optional, cast, Callable
 
 import more_itertools
@@ -126,12 +127,11 @@ class RankClassificationModel(Model):
     ) -> Sequence[float]:
         raise NotImplementedError
 
-    def trainable_copy(self) -> TrainableModel:
+    def trainable_copy(self, **kwargs) -> TrainableModel:
         return TrainableRankClassificationModel(
             self._make_model(self.pretrained_model_name_or_path, make_copy=True, **self.model_kwargs),
             cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
-            self.predict_chunk
-        )
+            self.predict_chunk)
 
 
 class TrainableRankClassificationModel(TrainableModel):
@@ -174,25 +174,42 @@ class TrainableRankClassificationModel(TrainableModel):
             rc.choices[rc.correct_choice]
             for rc in rc_instances
         ]
-        tokenized_strings = self.tokenizer(
-            correct_strings,
+        tokenize = functools.partial(
+            self.tokenizer,
+            return_tensors="pt",
             padding=True,
             truncation=True,
             pad_to_multiple_of=8,
-            return_tensors='pt',
-            is_split_into_words=False,
-            return_token_type_ids=True,
-            )
-        tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
-        for i, label in enumerate(tokenized_strings.labels):
-            mask = [bool(s == 1) for s in tokenized_strings['token_type_ids'][i]]
-            # This is a work around because token_type_ids does not correctly account
-            # for special tokens that are added by the tokenizer, causing this sequence
-            # to be shorter than the actual input_ids sequence. We simply pad with false
-            # at the beginning assuming that special tokens will be added at the beginning
-            mask = [False] * (len(tokenized_strings.input_ids[0]) - len(mask)) + mask
-            label[mask] = tokenized_strings.input_ids[i, mask]
-        del tokenized_strings['token_type_ids']
+            is_split_into_words=False)
+        if hasattr(self.model, "encoder"):
+            # Huggingface tokenizers don't do any of this correctly, so we have to do it manually.
+            tokenized_strings = tokenize([s[0] for s in correct_strings])
+            with self.tokenizer.as_target_tokenizer():
+                tokenized_labels = self.tokenizer(
+                    [s[1] for s in correct_strings],
+                    return_attention_mask=False
+                )['input_ids']
+            # remove trailing EOS token
+            for i in range(len(tokenized_labels)):
+                if tokenized_labels[i][-1] == self.tokenizer.eos_token_id:
+                    tokenized_labels[i] = tokenized_labels[i][:-1]
+            tokenized_labels = pad_sequence(
+                [torch.tensor(s, dtype=torch.long) for s in tokenized_labels],
+                batch_first=True,
+                padding_value=-100)
+            tokenized_strings["labels"] = tokenized_labels
+        else:
+            tokenized_strings = tokenize(correct_strings, return_token_type_ids=True)
+            tokenized_strings['labels'] = torch.full_like(tokenized_strings.input_ids, -100)
+            for i, label in enumerate(tokenized_strings.labels):
+                mask = [bool(s == 1) for s in tokenized_strings['token_type_ids'][i]]
+                # This is a workaround because token_type_ids does not correctly account
+                # for special tokens that are added by the tokenizer, causing this sequence
+                # to be shorter than the actual input_ids sequence. We simply pad with false
+                # at the beginning assuming that special tokens will be added at the beginning
+                mask = [False] * (len(tokenized_strings.input_ids[0]) - len(mask)) + mask
+                label[mask] = tokenized_strings.input_ids[i, mask]
+            del tokenized_strings['token_type_ids']
         return {
             key: tensor.to(self.model.device)
             for key, tensor in tokenized_strings.items()

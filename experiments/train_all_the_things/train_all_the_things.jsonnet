@@ -36,14 +36,16 @@ local models2batchsize = if debug then {
     "roberta-large": 16,
     "deberta-v3-base": 16,
     "deberta-v3-small": 16,
-    "deberta-v3-large": 8,
-    "deberta-v2-xlarge": 2,
-    "deberta-v2-xxlarge": 1,
+    "deberta-v3-large": 16,
+    "deberta-v2-xlarge": 4,
+    "deberta-v2-xxlarge": 2,
 };
 
 local models = std.objectFields(models2batchsize);
 
 local batch_size_for_model(model) = models2batchsize[model];
+
+local effective_batch_size = if debug then (2*3*4) else 16;
 
 local random_seeds = if debug then [42, 1] else [
     42,
@@ -53,8 +55,19 @@ local random_seeds = if debug then [42, 1] else [
     1985
 ];
 
+local task2validate_every = {
+    "qqp": 1000,
+    "mnli": 1000,
+    "sst": 1000,
+    "hellaswag": 1000,
+    "winogrande": 1000,
+    "logicqa": 200,
+    "sciq": 500
+};
 
-local effective_batch_size = if debug then (2*3*4) else 16;
+local validate_every(task) = std.get(task2validate_every, task, 100);
+
+
 
 local trained_model_step_name(task, model, seed) = "trained_model_" + task + "_" + model + "_" + seed;
 
@@ -68,6 +81,7 @@ local trained_model(task, model, seed) = {
         batch_size: batch_size_for_model(model),
         grad_accum: effective_batch_size / self.batch_size,
         val_metric_name: "acc",
+        validate_every: validate_every(task),
         [if debug then "train_steps"]: 3,
         [if debug then "train_epochs"]: null,
         [if debug then "validation_steps"]: 5,

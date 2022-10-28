@@ -131,12 +131,11 @@ class RankClassificationModel(Model):
     ) -> Sequence[float]:
         raise NotImplementedError
 
-    def trainable_copy(self) -> TrainableModel:
+    def trainable_copy(self, **kwargs) -> TrainableModel:
         return TrainableRankClassificationModel(
             self._make_model(self.pretrained_model_name_or_path, make_copy=True, **self.model_kwargs),
             cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path),
-            self.predict_chunk
-        )
+            self.predict_chunk)
 
 
 class TrainableRankClassificationModel(TrainableModel):

@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from random import Random
-from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Set, cast, FrozenSet, \
-    Iterable
+from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Iterable
 
 import torchmetrics
 from mypy_extensions import KwArg
@@ -45,13 +44,14 @@ BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
 
 class InstanceFormat(Enum):
     HF_DICT = 1
+    HF_MC = 2
+    HF_QA = 8
+    HF_CLASSIFICATION = 10
     ELEUTHER_DOC = 3
     ELEUTHER_CONTEXT = 4
     ELEUTHER_REQUESTS = 5
-    HF_MC = 2
     T5_PROMPT = 6
     RANK_CLASSIFICATION = 7
-    HF_QA = 8
     PROMPTSOURCE = 9
 
 
@@ -159,3 +159,8 @@ class Task(Registrable, ABC):
     def add_instance_conversion(self, format: InstanceFormat, conversion: InstanceConversion):
         self.instance_conversions[format] = conversion
         return self
+
+
+class WithAnswerOptionsMixin:
+    def __init__(self, answer_options: Sequence[str]):
+        self.answer_options = answer_options

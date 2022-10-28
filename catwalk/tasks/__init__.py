@@ -4,8 +4,9 @@ import datasets
 
 from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS
-from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, PubmedqaEleutherTask
-from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion
+from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
+    EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
+from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
@@ -88,14 +89,23 @@ TASKS: Dict[str, Task] = {
         hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
-    "rte": EleutherTask("rte", ranked_classification=True).add_instance_conversion(
+    "rte": EleutherClassificationTask(
+        "rte",
+        answer_options=["entailment", "not entailment"]
+    ).add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
             task_name="rte",
             label_map={0: "entailment", 1: "not_entailment"},
             use_fields=["sentence1", "sentence2"]
         )
-    ).add_metrics(ENTAILMENT_METRICS),
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="sentence1",
+            hypothesis_field="sentence2"
+        )
+    ),
     "superglue::rte": HFDatasetsTask("super_glue", "rte").add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
@@ -104,13 +114,53 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherTask("cola", ranked_classification=True).add_metrics(classification_metrics(2)),
-    "mnli": EleutherTask("mnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "mnli_mismatched": EleutherTask("mnli_mismatched", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "mrpc": EleutherTask("mrpc", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "qnli": EleutherTask("qnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "qqp": EleutherTask("qqp", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "sst": EleutherTask("sst", ranked_classification=True).add_metrics(classification_metrics(2)),
+    "cola": EleutherClassificationTask("cola", answer_options=["false", "true"]).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(premise_field="sentence", hypothesis_field=None, id_field='idx')
+    ),
+    "mnli": EleutherClassificationTaskWithRenamedSplits(
+        "mnli",
+        answer_options=["True", "Neither", "False"]
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(id_field='idx')
+    ),
+    "mnli_mismatched": EleutherClassificationTask(
+        "mnli_mismatched",
+        answer_options=["True", "Neither", "False"]
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(id_field='idx')
+    ),
+    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]
+    ).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="sentence1",
+            hypothesis_field="sentence2",
+            id_field='idx'
+        )
+    ),
+    "qnli": EleutherClassificationTask("qnli", answer_options=["yes", "no"]).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(premise_field="question", hypothesis_field="sentence", id_field='idx')
+    ),
+    "qqp": EleutherClassificationTask("qqp", answer_options=["no", "yes"]).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="question1",
+            hypothesis_field="question2",
+            id_field='idx'
+        )
+    ),
+    "sst": EleutherClassificationTask("sst", answer_options=["negative", "positive"]).add_instance_conversion(
+        InstanceFormat.HF_CLASSIFICATION,
+        hfclassification_conversion(
+            premise_field="sentence",
+            hypothesis_field=None,
+            id_field='idx'
+        )
+    ),
     "wnli": EleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "boolq": EleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
     "cb": EleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
@@ -139,7 +189,7 @@ TASKS: Dict[str, Task] = {
     "lambada_mt_es": EleutherTask("lambada_mt_es"),
     "prost": EleutherTask("prost", ranked_classification=True).add_metrics(MC_METRICS),
     "mc_taco": EleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
-    "pubmedqa": PubmedqaEleutherTask().add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(

@@ -49,6 +49,18 @@ def test_training_step_gpt():
     metrics_step.result()
 
 
+def test_training_step_t5():
+    finetune_step = FinetuneStep(
+        model='rc::t5-very-small-random',
+        tasks=["rte", "boolq"],
+        train_steps=10,
+        validation_steps=10,
+    )
+    predict_step = PredictStep(model=finetune_step, task="rte", limit=10)
+    metrics_step = CalculateMetricsStep(model=finetune_step, task="rte", predictions=predict_step)
+    metrics_step.result()
+
+
 def test_training_step_hf():
     finetune_step = FinetuneStep(
         model='tiny-bert',

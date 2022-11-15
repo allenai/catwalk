@@ -36,7 +36,7 @@ local models2batchsize = if debug then {
     "roberta-large": 16,
     "deberta-v3-base": 16,
     "deberta-v3-small": 16,
-    "deberta-v3-large": 16,
+    "deberta-v3-large": 8,
     "deberta-v2-xlarge": 4,
     "deberta-v2-xxlarge": 2,
 };
@@ -58,6 +58,7 @@ local random_seeds = if debug then [42, 1] else [
 local task2validate_every = {
     "qqp": 1000,
     "mnli": 1000,
+    "mnli_mismatched": 1000,
     "sst": 1000,
     "hellaswag": 1000,
     "winogrande": 1000,

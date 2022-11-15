@@ -15,7 +15,7 @@ local tasks = [
     // Classification
     "rte",
     "mnli",
-    "mnli_mismatched",
+    //"mnli_mismatched", // Broken because it doesn't have a "validation" set.
     "cola",
     "sst",
     "qqp",

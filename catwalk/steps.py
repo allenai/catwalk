@@ -51,7 +51,7 @@ class PredictStep(Step):
 
     def run(
         self,
-        model: Union[str, Model],
+        model: Union[str, Lazy[Model], Model],
         task: Union[str, Task],
         split: Optional[str] = None,
         limit: Optional[int] = None,
@@ -60,6 +60,8 @@ class PredictStep(Step):
     ) -> Sequence[Any]:
         if isinstance(model, str):
             model = MODELS[model]
+        elif isinstance(model, Lazy):
+            model = model.construct()
         if isinstance(task, str):
             task = TASKS[task]
         if split is None:
@@ -89,12 +91,14 @@ class CalculateMetricsStep(Step):
 
     def run(
         self,
-        model: Union[str, Model],
+        model: Union[str, Lazy[Model], Model],
         task: Union[str, Task],
         predictions: Sequence[Any]
     ) -> Dict[str, float]:
         if isinstance(model, str):
             model = MODELS[model]
+        elif isinstance(model, Lazy):
+            model = model.construct()
         if isinstance(task, str):
             task = TASKS[task]
 

@@ -1,3 +1,4 @@
+import os
 import random
 from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar
 
@@ -41,6 +42,8 @@ class EleutherTask(Task):
             self.eleuther_task = eleuther_task()
             self.dataset_name = self.eleuther_task.DATASET_NAME
             self.dataset_path = self.eleuther_task.DATASET_PATH
+        # Sometimes the "path" is a path to a Python file. We have to fix that.
+        self.dataset_path = os.path.splitext(os.path.basename(self.dataset_path))[0]
 
         self.add_instance_conversion(InstanceFormat.HF_DICT, _identity)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, self.instance_as_eleuther_doc)

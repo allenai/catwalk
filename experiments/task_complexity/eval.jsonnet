@@ -3,15 +3,44 @@ local debug = false;
 local tasks = [
     "arc_challenge",
     "arc_easy",
-    "copa",
-    "piqa",
     "boolq",
+    "copa",
     "hellaswag",
     "openbookqa",
+    "piqa",
     "rte",
-    "winogrande",
+    "sst",
     "wic",
-    "sst"
+    "winogrande",
+    "lambada",
+    #"pile",   # TODO, only perplexity task
+    #"logiqa", # Doesn't have promptsource.
+    "mc_taco", # Removed prompt that asks for "temporal category" instead of asking about the task. Will be fixed with the pubmedqa fix.
+    "mrpc",
+    "multirc",
+    #"prost",    # Prost is zero-shot only, and doesn't have promotsource.
+    #"pubmedqa", # TODO, have to fix the issue where different prompts produce a different number of answer choiced.
+    "qnli",
+    "qqp",
+    "sciq",
+    #"triviaqa", # TODO: should be easy
+    #"webqs", # TODO
+    "wnli",
+    #"wsc",  # TODO: should be easy
+    #"race", # TODO: should be easy
+    "headqa_en",
+    "mathqa",
+    # Arithmetic is not in promptsource.
+    #"arithmetic_2da",
+    #"arithmetic_2ds",
+    #"arithmetic_3da",
+    #"arithmetic_3ds",
+    #"arithmetic_4da",
+    #"arithmetic_4ds",
+    #"arithmetic_5da",
+    #"arithmetic_5ds",
+    #"arithmetic_2dm",
+    #"arithmetic_1dc",
 ];
 
 local models2batchsize = if debug then {

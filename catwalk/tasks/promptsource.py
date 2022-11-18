@@ -49,35 +49,48 @@ def promptsource_convert(
             correct_choice = rc_instance.choices[rc_instance.correct_choice]
             prefixes[prompt_name] += f"{correct_choice[0].strip()}\n{correct_choice[1].strip()}\n\n"
 
-    prompts = {
-        template_name: (
-            dataset_templates[template_name].apply(instance),
-            dataset_templates[template_name].get_answer_choices_list(instance),
+    result: Dict[str, RankClassificationInstance] = {}
+    for template_name in dataset_templates.all_template_names:
+        template = dataset_templates[template_name]
+
+        prompt = template.apply(instance)
+        if prompt is None:
+            continue
+        prompt, correct_answer = prompt
+        if correct_answer is not None:
+            assert len(correct_answer) == 1
+            correct_answer = correct_answer[0]
+
+        answer_choices = template.get_answer_choices_list(instance)
+        correct_choice_index: Optional[int]
+        if answer_choices is None:
+            answer_choices = template.get_fixed_answer_choices_list()
+            if answer_choices is None:
+                continue
+            if correct_answer is None:
+                correct_choice_index = None
+            else:
+                correct_choice_index = _index_case_insensitive(answer_choices, correct_answer)
+                assert correct_choice_index is not None
+        else:
+            if correct_answer is None:
+                correct_choice_index = None
+            else:
+                # We're doing this in a convoluted way because the matching is case-insensitive, and we don't
+                # want to add the correct answer choice if it is already there with a different case.
+                correct_choice_index = _index_case_insensitive(answer_choices, correct_answer)
+                if correct_choice_index is None:
+                    answer_choices.append(correct_answer)
+                    answer_choices = list(set(answer_choices))
+                    correct_choice_index = _index_case_insensitive(answer_choices, correct_answer)
+
+        result[template_name] = RankClassificationInstance(
+            choices=[
+                (prefixes[template_name] + prompt, choice)
+                for choice in answer_choices
+            ],
+            correct_choice=correct_choice_index,
         )
-        for template_name in dataset_templates.all_template_names
-    }
-    # filter out invalid prompts
-    prompts = {
-        template_name: (prompt, answer_choices)
-        for template_name, (prompt, answer_choices) in prompts.items()
-        if prompt is not None
-    }
-    # assert that there is only one answer
-    assert all(  # type: ignore
-        (
-            (answer_choices is None)
-            or (correct_answer is None)
-            or (len(correct_answer) == 1)
-        )
-        for (prompt, correct_answer), answer_choices in prompts.values()
-    )
-    # package up as RankClassificationInstances
-    result = {
-        template_name: RankClassificationInstance(
-            [(prefixes[template_name] + prompt, choice) for choice in answer_choices],
-            _index_case_insensitive(answer_choices, correct_answer[0]) if correct_answer is not None else None
-        ) for template_name, ((prompt, correct_answer), answer_choices) in prompts.items() if answer_choices is not None
-    }
     return result
 
 

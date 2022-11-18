@@ -1,4 +1,5 @@
 import collections
+import functools
 import logging
 from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List, Optional
 
@@ -43,9 +44,11 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
                     random_seed=fewshot_seed if fewshot_seed is not None else i,
                     exceptions=instance))
 
+        #map_fn = map        # for debugging
+        map_fn = functools.partial(bettermap.map_in_chunks, chunk_size=64)
         rc_instances: List[Dict[str, RankClassificationInstance]] = \
             list(Tqdm.tqdm(
-                bettermap.map_in_chunks(convert_instance, range(len(instances)), chunk_size=16),
+                map_fn(convert_instance, range(len(instances))),
                 total=len(instances),
                 desc="Converting instances"))
 

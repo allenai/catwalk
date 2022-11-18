@@ -65,6 +65,13 @@ _DECODER_ONLY_MODELS = {
     "EleutherAI/gpt-neo-1.3B",
     "EleutherAI/gpt-neo-2.7B",
     "EleutherAI/gpt-neox-20b",
+    "bigscience/T0",
+    "bigscience/T0p",
+    "bigscience/T0pp",
+    "bigscience/T0_single_prompt",
+    "bigscience/T0_original_task_only",
+    "bigscience/T0-3B",
+    "ThomasNLG/CT0-11B"
 }
 
 

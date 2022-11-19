@@ -23,14 +23,14 @@ local tasks = [
     "qnli",
     "qqp",
     "sciq",
-    #"triviaqa", # TODO: should be easy
+    #"triviaqa",    # Open-ended QA
     #"webqs", # TODO
     "wnli",
     #"wsc",  # TODO: should be easy
     #"race", # TODO: should be easy
     "headqa_en",
     "mathqa",
-    # Arithmetic is not in promptsource.
+    # Arithmetic is not in promptsource, and is open-ended QA.
     #"arithmetic_2da",
     #"arithmetic_2ds",
     #"arithmetic_3da",

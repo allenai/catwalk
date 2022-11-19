@@ -1,6 +1,6 @@
 import os
 import random
-from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar
+from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar, Tuple
 
 from tango.common.sequences import MappedSequence
 
@@ -25,7 +25,8 @@ class EleutherTask(Task):
         eleuther_task: Union[str, Callable[[], EAITask]],
         *,
         version_override: Optional[str] = None,
-        ranked_classification: bool = False
+        ranked_classification: bool = False,
+        promptsource_task: Optional[Tuple[str, str]] = None,
     ):
         super().__init__(version_override=version_override)
 
@@ -52,9 +53,14 @@ class EleutherTask(Task):
         if ranked_classification:
             self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
 
-        from catwalk.tasks.promptsource import promptsource_conversion, promptsource_templates_for_task
-        promptsource_templates = promptsource_templates_for_task(self)
+        if promptsource_task is None:
+            from catwalk.tasks.promptsource import promptsource_templates_for_task
+            promptsource_templates = promptsource_templates_for_task(self)
+        else:
+            from catwalk.tasks.promptsource import promptsource_templates
+            promptsource_templates = promptsource_templates(promptsource_task)
         if promptsource_templates is not None:
+            from catwalk.tasks.promptsource import promptsource_conversion
             self.add_instance_conversion(InstanceFormat.PROMPTSOURCE, promptsource_conversion(
                 dataset_templates=promptsource_templates))
 

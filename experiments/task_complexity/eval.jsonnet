@@ -18,8 +18,8 @@ local tasks = [
     "mc_taco", # Removed prompt that asks for "temporal category" instead of asking about the task. Will be fixed with the pubmedqa fix.
     "mrpc",
     "multirc",
-    #"prost",    # Prost is zero-shot only, and doesn't have promotsource.
-    #"pubmedqa", # TODO, have to fix the issue where different prompts produce a different number of answer choiced.
+    #"prost",    # Prost is zero-shot only, and doesn't have promptsource.
+    #"pubmedqa", # TODO, have to fix the issue where different prompts produce a different number of answer choices.
     "qnli",
     "qqp",
     "sciq",

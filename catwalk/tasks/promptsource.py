@@ -94,6 +94,10 @@ def promptsource_convert(
     return result
 
 
+def promptsource_templates(task: Tuple[str, str]) -> Optional[DatasetTemplates]:
+    return _promptsource_template_collection.get_dataset(*task)
+
+
 def promptsource_templates_for_task(task: Task) -> Optional[DatasetTemplates]:
     from catwalk.tasks.eleuther import EleutherTask
     from catwalk.tasks.huggingface import HFDatasetsTask

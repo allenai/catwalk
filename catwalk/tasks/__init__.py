@@ -229,7 +229,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
     ).add_metrics(MC_METRICS),
-    "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
+    "triviaqa": EleutherTask("triviaqa", promptsource_task=("trivia_qa", "unfiltered")).add_metrics(QA_METRICS),
     "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(

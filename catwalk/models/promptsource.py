@@ -10,7 +10,7 @@ from tango.common import Tqdm
 from catwalk.models.rank_classification import RankClassificationModel, _Model, _Tokenizer, EncoderDecoderRCModel, \
     DecoderOnlyRCModel
 from catwalk.task import RankClassificationInstance, InstanceFormat, Task
-from catwalk.tasks.promptsource import promptsource_templates_for_task
+from catwalk.tasks.promptsource import promptsource_templates_for_task, WithPromptsourceMixin
 from catwalk.model import tensor_args, unsqueeze_args
 
 
@@ -87,7 +87,8 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
         original_metrics = task.make_metrics()
-        promptsource_templates = promptsource_templates_for_task(task)
+        assert isinstance(task, WithPromptsourceMixin)
+        promptsource_templates = task.promptsource_templates
         assert promptsource_templates is not None
         metrics = {}
         for template_name in promptsource_templates.all_template_names:

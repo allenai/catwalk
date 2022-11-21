@@ -6,6 +6,7 @@ from tango.common.sequences import MappedSequence
 
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance, WithAnswerOptionsMixin, \
     classification_metrics
+from catwalk.tasks.promptsource import WithPromptsourceMixin
 
 import lm_eval.tasks
 from lm_eval.base import Task as EAITask
@@ -19,16 +20,16 @@ def _identity(x: T) -> T:
 
 
 @Task.register("eleuther")
-class EleutherTask(Task):
+class EleutherTask(Task, WithPromptsourceMixin):
     def __init__(
         self,
         eleuther_task: Union[str, Callable[[], EAITask]],
         *,
         version_override: Optional[str] = None,
         ranked_classification: bool = False,
-        promptsource_task: Optional[Tuple[str, str]] = None,
+        promptsource_task_spec: Optional[Tuple[str, str]] = None,
     ):
-        super().__init__(version_override=version_override)
+        Task.__init__(self, version_override=version_override)
 
         self.eleuther_task: Optional[EAITask]
         if isinstance(eleuther_task, str):
@@ -53,16 +54,10 @@ class EleutherTask(Task):
         if ranked_classification:
             self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
 
-        if promptsource_task is None:
-            from catwalk.tasks.promptsource import promptsource_templates_for_task
-            promptsource_templates = promptsource_templates_for_task(self)
+        if promptsource_task_spec is None:
+            WithPromptsourceMixin.__init__(self, self.dataset_path, self.dataset_name)
         else:
-            from catwalk.tasks.promptsource import promptsource_templates
-            promptsource_templates = promptsource_templates(promptsource_task)
-        if promptsource_templates is not None:
-            from catwalk.tasks.promptsource import promptsource_conversion
-            self.add_instance_conversion(InstanceFormat.PROMPTSOURCE, promptsource_conversion(
-                dataset_templates=promptsource_templates))
+            WithPromptsourceMixin.__init__(self, *promptsource_task_spec)
 
     def __getstate__(self):
         result = self.__dict__.copy()

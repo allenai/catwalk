@@ -177,7 +177,11 @@ TASKS: Dict[str, Task] = {
     "multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(QA_METRICS),
     #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
     "wic": EleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "wsc": EleutherTask("wsc", ranked_classification=True).add_metrics(MC_METRICS),
+    "wsc": EleutherTask(
+        "wsc",
+        ranked_classification=True,
+        promptsource_task_spec=('super_glue', 'wsc.fixed')
+    ).add_metrics(MC_METRICS),
     #"coqa": EleutherTask("coqa"),  # currently broken in the datasets library
     "drop": EleutherTask("drop").add_metrics(QA_METRICS),
     "lambada": EleutherTask("lambada"),
@@ -229,7 +233,10 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
     ).add_metrics(MC_METRICS),
-    "triviaqa": EleutherTask("triviaqa", promptsource_task=("trivia_qa", "unfiltered")).add_metrics(QA_METRICS),
+    "triviaqa": EleutherTask(
+        "triviaqa",
+        promptsource_task_spec=("trivia_qa", "unfiltered")
+    ).add_metrics(QA_METRICS),
     "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(

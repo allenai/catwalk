@@ -1,16 +1,12 @@
 import collections
 import functools
-from typing import Dict, Any, Optional, Sequence, List, Tuple
-
-from tango.common import det_hash
-
-from catwalk.dependencies.promptsource.templates import DatasetTemplates, TemplateCollection
+from typing import Dict, Any, Optional, Sequence, List
 
 from catwalk.dependencies.promptsource.templates import (
     DatasetTemplates,
     TemplateCollection,
 )
-from catwalk.task import InstanceConversion, RankClassificationInstance, Task
+from catwalk.task import InstanceConversion, RankClassificationInstance, Task, InstanceFormat
 
 _promptsource_template_collection = TemplateCollection()
 
@@ -94,10 +90,6 @@ def promptsource_convert(
     return result
 
 
-def promptsource_templates(task: Tuple[str, str]) -> Optional[DatasetTemplates]:
-    return _promptsource_template_collection.get_dataset(*task)
-
-
 def promptsource_templates_for_task(task: Task) -> Optional[DatasetTemplates]:
     from catwalk.tasks.eleuther import EleutherTask
     from catwalk.tasks.huggingface import HFDatasetsTask
@@ -111,3 +103,15 @@ def promptsource_templates_for_task(task: Task) -> Optional[DatasetTemplates]:
                 task.dataset_path, task.dataset_name
             )
     return None
+
+
+class WithPromptsourceMixin:
+    def __init__(self, dataset_name: str, subset_name: Optional[str] = None):
+        if (dataset_name, subset_name) in _promptsource_template_collection.keys:
+            self.promptsource_templates = _promptsource_template_collection.get_dataset(dataset_name, subset_name)
+            if isinstance(self, Task):
+                self.add_instance_conversion(
+                    InstanceFormat.PROMPTSOURCE,
+                    promptsource_conversion(dataset_templates=self.promptsource_templates))
+        else:
+            self.promptsource_templates = None

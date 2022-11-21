@@ -26,7 +26,7 @@ local tasks = [
     #"triviaqa",    # Open-ended QA
     #"webqs", # TODO
     "wnli",
-    #"wsc",  # TODO: should be easy
+    "wsc",
     #"race", # TODO: should be easy
     "headqa_en",
     "mathqa",

@@ -90,21 +90,6 @@ def promptsource_convert(
     return result
 
 
-def promptsource_templates_for_task(task: Task) -> Optional[DatasetTemplates]:
-    from catwalk.tasks.eleuther import EleutherTask
-    from catwalk.tasks.huggingface import HFDatasetsTask
-
-    if isinstance(task, EleutherTask) or isinstance(task, HFDatasetsTask):
-        if (
-            task.dataset_path,
-            task.dataset_name,
-        ) in _promptsource_template_collection.keys:
-            return _promptsource_template_collection.get_dataset(
-                task.dataset_path, task.dataset_name
-            )
-    return None
-
-
 class WithPromptsourceMixin:
     def __init__(self, dataset_name: str, subset_name: Optional[str] = None):
         if (dataset_name, subset_name) in _promptsource_template_collection.keys:

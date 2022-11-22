@@ -10,7 +10,7 @@ from tango.common import Tqdm
 from catwalk.models.rank_classification import RankClassificationModel, _Model, _Tokenizer, EncoderDecoderRCModel, \
     DecoderOnlyRCModel
 from catwalk.task import RankClassificationInstance, InstanceFormat, Task
-from catwalk.tasks.promptsource import promptsource_templates_for_task, WithPromptsourceMixin
+from catwalk.tasks.promptsource import WithPromptsourceMixin
 from catwalk.model import tensor_args, unsqueeze_args
 
 

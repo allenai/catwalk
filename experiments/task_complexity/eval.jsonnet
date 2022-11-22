@@ -27,7 +27,7 @@ local tasks = [
     #"webqs", # TODO
     "wnli",
     "wsc",
-    #"race", # TODO: should be easy
+    "race",
     "headqa_en",
     "mathqa",
     # Arithmetic is not in promptsource, and is open-ended QA.

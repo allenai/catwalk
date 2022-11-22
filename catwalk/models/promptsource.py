@@ -45,8 +45,8 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
                     random_seed=fewshot_seed if fewshot_seed is not None else i,
                     exceptions=instance))
 
-        #map_fn = map        # for debugging
         map_fn = functools.partial(bettermap.map_in_chunks, chunk_size=64)
+        #map_fn = map        # for debugging
         rc_instances: List[Dict[str, RankClassificationInstance]] = \
             list(Tqdm.tqdm(
                 map_fn(convert_instance, range(len(instances))),

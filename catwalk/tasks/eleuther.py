@@ -161,7 +161,8 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
 
 @Task.register("eleuther::race")
 class RaceEleutherTask(EleutherTask):
-    """This task is different because there is no 1:1 correspondence between HF instances and EAI instances."""
+    """The EAI Race task is different because there is no 1:1 correspondence between HF instances and EAI
+    instances. EAI chose to follow the GPT3 evaluation approach, which combines multiple questions into one."""
     def __init__(self, *, version_override: Optional[str] = None):
         super().__init__("race", version_override=version_override)
         del self.instance_conversions[InstanceFormat.HF_DICT]

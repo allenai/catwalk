@@ -122,6 +122,7 @@ local metrics_results_step_name(task, model) = "metrics_" + task + "_" + model;
 local metrics_results(task, model) = {
     [metrics_results_step_name(task, model)]: {
         type: "catwalk::calculate_metrics",
+        step_resources: { machine: "local" },
         model: "promptsource::" + model,
         task: task,
         predictions: {type: "ref", ref: predict_results_step_name(task, model)}
@@ -143,6 +144,7 @@ local metrics_results(task, model) = {
     ) + {
         "tabulate": {
             type: "catwalk::tabulate_metrics",
+            step_resources: { machine: "local" },
             metrics: std.foldl(
                 function(x, task) x + std.foldl(
                     function(y, model) y + {

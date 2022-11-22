@@ -24,7 +24,7 @@ local tasks = [
     "qqp",
     "sciq",
     #"triviaqa",    # Open-ended QA
-    #"webqs", # TODO
+    #"webqs",       # Open-ended QA
     "wnli",
     "wsc",
     "race",

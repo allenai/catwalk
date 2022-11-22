@@ -81,13 +81,13 @@ local models2batchsize = if debug then {
     "t5-v1_1-large": 8,
     "t5-v1_1-xl": 2,
     "t5-v1_1-xxl": 1,
-    "t0": 1,
-    "t0p": 1,
-    "t0pp": 1,
-    "t0_single_prompt": 1,
-    "t0_original_task_only": 1,
-    "t0-3b": 8,
-    "ct0-11b": 1
+    #"t0": 1,
+    #"t0p": 1,
+    #"t0pp": 1,
+    #"t0_single_prompt": 1,
+    #"t0_original_task_only": 1,
+    #"t0-3b": 8,
+    #"ct0-11b": 1
 };
 
 local models = std.objectFields(models2batchsize);

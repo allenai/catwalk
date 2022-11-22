@@ -15,11 +15,11 @@ local tasks = [
     "lambada",
     #"pile",   # TODO, only perplexity task
     #"logiqa", # Doesn't have promptsource.
-    "mc_taco", # Removed prompt that asks for "temporal category" instead of asking about the task. Will be fixed with the pubmedqa fix.
+    "mc_taco",
     "mrpc",
     "multirc",
     #"prost",    # Prost is zero-shot only, and doesn't have promptsource.
-    #"pubmedqa", # TODO, have to fix the issue where different prompts produce a different number of answer choices.
+    "pubmedqa",
     "qnli",
     "qqp",
     "sciq",

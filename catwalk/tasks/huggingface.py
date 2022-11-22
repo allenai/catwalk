@@ -7,6 +7,7 @@ import datasets
 from tango.common.sequences import MappedSequence
 
 from catwalk.task import Task, InstanceFormat, InstanceConversion
+from catwalk.tasks.promptsource import WithPromptsourceMixin
 
 
 def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str, missing_ok: bool = False) -> Any:
@@ -53,7 +54,7 @@ def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str, missin
         raise ValueError()
 
 
-class HFDatasetsTask(Task):
+class HFDatasetsTask(Task, WithPromptsourceMixin):
     def __init__(
         self,
         dataset_path: str,
@@ -61,16 +62,12 @@ class HFDatasetsTask(Task):
         *,
         version_override: Optional[str] = None
     ):
-        super().__init__(version_override=version_override)
+        Task.__init__(self, version_override=version_override)
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
         self.add_instance_conversion(InstanceFormat.HF_DICT, lambda x: x)
 
-        from catwalk.tasks.promptsource import promptsource_conversion, promptsource_templates_for_task
-        promptsource_templates = promptsource_templates_for_task(self)
-        if promptsource_templates is not None:
-            self.add_instance_conversion(InstanceFormat.PROMPTSOURCE, promptsource_conversion(
-                dataset_templates=promptsource_templates))
+        WithPromptsourceMixin.__init__(self, self.dataset_path, self.dataset_name)
 
     @functools.lru_cache
     def has_split(self, split: str) -> bool:

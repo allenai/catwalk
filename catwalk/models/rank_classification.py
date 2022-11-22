@@ -92,7 +92,10 @@ class RankClassificationModel(Model):
             task.convert_instance(
                 instance,
                 InstanceFormat.RANK_CLASSIFICATION,
-                fewshot_instances=task.get_fewshot_instances(num_shots, random_seed=fewshot_seed if fewshot_seed is not None else i, exceptions=instance))
+                fewshot_instances=task.get_fewshot_instances(
+                    num_shots,
+                    random_seed=fewshot_seed if fewshot_seed is not None else i,
+                    exceptions=instance))
             for i, instance in enumerate(instances)
         ]
 

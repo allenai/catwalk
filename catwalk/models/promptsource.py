@@ -5,6 +5,7 @@ from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List
 
 import bettermap
 import torch
+import torchmetrics
 from tango.common import Tqdm
 
 from catwalk.models.rank_classification import RankClassificationModel, _Model, _Tokenizer, EncoderDecoderRCModel, \
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
-    VERSION = EncoderDecoderRCModel.VERSION + "002lst"
+    VERSION = EncoderDecoderRCModel.VERSION + "003met"
 
     def predict_chunk(
         self: RankClassificationModel,
@@ -78,23 +79,18 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
                 results_for_instance_and_prompt = [results[i] for i in tuple_indices]
                 result_tensor = torch.tensor(results_for_instance_and_prompt)
                 metric_args = (result_tensor, rc_instance.correct_choice)
-                prompt_name = prompt_name.replace(" ", "_")
+                prompt_name = prompt_name.strip().replace(" ", "_")
                 result[prompt_name + "_acc"] = metric_args
-                result[prompt_name + "_f1"] = metric_args
-                result[prompt_name + "_precision"] = metric_args
-                result[prompt_name + "_recall"] = metric_args
             yield result
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
-        original_metrics = task.make_metrics()
         assert isinstance(task, WithPromptsourceMixin)
-        promptsource_templates = task.promptsource_templates
-        assert promptsource_templates is not None
+        templates = task.promptsource_templates
+        assert templates is not None
         metrics = {}
-        for template_name in promptsource_templates.all_template_names:
-            template_name = template_name.replace(" ", "_")
-            for metric_name, metric_object in original_metrics.items():
-                metrics[template_name + "_" + metric_name] = metric_object.clone()
+        for template_name in templates.all_template_names:
+            metrics[template_name.strip().replace(" ", "_") + "_acc"] = \
+                torchmetrics.Accuracy(num_classes=None)
 
         metrics_seen = set()
         for prediction in Tqdm.tqdm(predictions, desc="Calculating metrics"):

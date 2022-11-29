@@ -29,7 +29,7 @@ executor:
   env_vars:
     - name: WANDB_API_KEY
       secret: WANDB_API_KEY
-  priority: preemptible
+  priority: normal  # preemptible
   parallelism: 128
 
 

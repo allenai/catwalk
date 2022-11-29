@@ -1,0 +1,44 @@
+# Define the workspace to use (where results will be stored).
+workspace:
+  type: beaker
+  # Change this to the Beaker workspace you want to use.
+  beaker_workspace: ai2/task-complexity
+
+# Define the executor to use (how steps will be run).
+executor:
+  type: beaker
+  # Change this to the Beaker workspace you want to use.
+  beaker_workspace: ai2/task-complexity
+  beaker_image: dirkg/catwalk
+  # You probably want to leave this as 'base' unless you have your own image
+  # that already has a conda environment under a different name.
+  venv_name: base
+  # These are the Beaker clusters that you want to use to run steps.
+  # Tango will inspect all of the clusters in this list at runtime and pick
+  # the first one with enough free resources for your jobs.
+  clusters:
+    - ai2/general-cirrascale
+    - ai2/allennlp-cirrascale
+    - ai2/allennlp-elanding-a100-40g
+    - ai2/allennlp-elanding-a100-80g
+    - ai2/aristo-cirrascale
+    - ai2/mosaic-cirrascale-a100
+    - ai2/s2-cirrascale
+    - ai2/s2-elanding
+    - ai2/dirkg-1gpu
+  env_vars:
+    - name: WANDB_API_KEY
+      secret: WANDB_API_KEY
+  priority: preemptible
+  parallelism: 128
+
+
+# This tells Tango where to look for your custom step classes.
+# Each item in the list can be a path to a directory or Python file, or a Python
+# module name (e.g. 'my_package.steps').
+include_package:
+  - catwalk/steps.py
+
+# Adjust the log level as you want. "info" is probably a good place to start.
+log_level: info
+

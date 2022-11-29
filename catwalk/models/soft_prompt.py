@@ -6,7 +6,7 @@ from tango.integrations.transformers import add_soft_prompt
 from catwalk.model import Model
 
 
-def _with_soft_prompt(
+def with_soft_prompt(
     model: Union[str, Model],
     prompt_length: int,
     *,
@@ -17,7 +17,8 @@ def _with_soft_prompt(
 ) -> Model:
     if isinstance(model, str):
         from catwalk.models import MODELS
-        model = copy.deepcopy(MODELS[model])
+        model = MODELS[model]
+    model = copy.deepcopy(model)
 
     assert hasattr(model, model_factory_method_name)
     original_model_factory = getattr(model, model_factory_method_name)
@@ -36,4 +37,4 @@ def _with_soft_prompt(
     return model
 
 
-Model.register("catwalk::with_soft_prompt")(_with_soft_prompt)
+Model.register("catwalk::with_soft_prompt")(with_soft_prompt)

@@ -9,6 +9,7 @@ from transformers import AutoModelForCausalLM, GPT2LMHeadModel
 from catwalk import cached_transformers
 from catwalk.models import MetaICLModel
 
+
 class DecoderOnlyIA3Mixin:
     @classmethod
     def _make_model(self, pretrained_model_name_or_path: str, *, ia3_weights_file: str = None, **kwargs) -> GPT2LMHeadModel:
@@ -45,7 +46,7 @@ class IA3MetaICLModel(DecoderOnlyIA3Mixin, MetaICLModel):
         assert ia3_weights_file is not None
 
 
-#### Code from allenai/hn-icl by Qinyuan Yu, used with permission ####
+# The following code comes from from allenai/hn-icl by Qinyuan Yu, used with permission
 
 class IA3ForGPT2Config:
     def __init__(self):
@@ -54,6 +55,7 @@ class IA3ForGPT2Config:
         self.mlp_modules = ".*mlp"
         self.mlp_layers = "c_fc"
         self.trainable_param_names = ".*lora_b.*"
+
 
 class Conv1DAttWithIA3(nn.Module):
     def __init__(self, conv1d_layer, hidden_size):
@@ -86,6 +88,7 @@ class Conv1DAttWithIA3(nn.Module):
 
         return x
 
+
 class Conv1DMLPWithIA3(nn.Module):
     def __init__(self, conv1d_layer):
         super().__init__()
@@ -108,6 +111,7 @@ class Conv1DMLPWithIA3(nn.Module):
         x = x * self.multi_lora_b.flatten()
 
         return x
+
 
 def modify_with_ia3(transformer, config):
     for m_name, module in dict(transformer.named_modules()).items():

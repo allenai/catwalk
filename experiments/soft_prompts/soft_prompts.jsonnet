@@ -173,7 +173,7 @@ local softprompt_results(task, model, seed) = {
 local softprompt_metrics_step_name(task, model, seed) = "softprompt_metrics_" + task + "_" + model + "_" + seed;
 
 local softprompt_metrics(task, model, seed) = {
-    [finetuned_metrics_step_name(task, model, seed)]: {
+    [softprompt_metrics_step_name(task, model, seed)]: {
         type: "catwalk::calculate_metrics",
         step_resources: { machine: "local" },
         model: {type: "ref", ref: softprompt_model_step_name(task, model, seed)},

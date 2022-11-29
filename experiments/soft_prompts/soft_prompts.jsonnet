@@ -213,6 +213,9 @@ local softprompt_metrics(task, model, seed) = {
                         function(z, seed) z + {
                             ["finetuning_" + task + "\t" + model + "\t" + seed]: {
                                 type: "ref", ref: finetuned_metrics_step_name(task, model, seed)
+                            },
+                            ["softprompt_" + task + "\t" + model + "\t" + seed]: {
+                                type: "ref", ref: softprompt_metrics_step_name(task, model, seed)
                             }
                         },
                         random_seeds,

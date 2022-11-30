@@ -163,6 +163,12 @@ class FinetuneStep(Step):
             is_distributed = False
             num_workers = 1
 
+        if val_metric_name == "loss" and not minimize_val_metric:
+            raise ConfigurationError(
+                "This training run is configured to maximize the loss. "
+                "We don't think you want to do that."
+            )
+
         train_config = TrainConfig(
             self.unique_id,
             self.work_dir,

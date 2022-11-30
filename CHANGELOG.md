@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Format conversions for a number of multiple choice models
 - Added an experiment config that trains many models on many tasks
 - Added promptsource support
+- Added support for soft prompts
 
 ### Fixed
 

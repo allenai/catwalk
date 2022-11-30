@@ -22,7 +22,6 @@ local tasks = if debug then [
     // Classification
     "rte",
     "mnli",
-    "mnli_mismatched",
     "cola",
     "sst",
     "qqp",

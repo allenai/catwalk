@@ -548,9 +548,9 @@ class DatasetTemplates:
     SUBSET_KEY = "subset"
     TEMPLATE_FILENAME = "templates.yaml"
 
-    def __init__(self, dataset_name: str, subset_name: str = None):
-        self.dataset_name: str = dataset_name
-        self.subset_name: Optional[str] = subset_name
+    def __init__(self, dataset_name: str, subset_name: Optional[str] = None):
+        self.dataset_name = dataset_name
+        self.subset_name = subset_name
         # dictionary is keyed by template name.
         self.templates: Dict = self.read_from_file()
 

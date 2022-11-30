@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -11,7 +12,13 @@ from catwalk.models import MetaICLModel
 
 class DecoderOnlyIA3Mixin:
     @classmethod
-    def _make_model(self, pretrained_model_name_or_path: str, *, ia3_weights_file: str = None, **kwargs) -> GPT2LMHeadModel:
+    def _make_model(
+        self,
+        pretrained_model_name_or_path: str,
+        *,
+        ia3_weights_file: Optional[str] = None,
+        **kwargs
+    ) -> GPT2LMHeadModel:
         model = cached_transformers.get(AutoModelForCausalLM, pretrained_model_name_or_path, True)
         isinstance(model, GPT2LMHeadModel)
         config = IA3ForGPT2Config()
@@ -30,7 +37,7 @@ class IA3MetaICLModel(DecoderOnlyIA3Mixin, MetaICLModel):
         max_length_per_example: int = 256,
         continuation_seperator: str = '\n',
         example_seperator: str = '\n\n\n',
-        ia3_weights_file: str = None,
+        ia3_weights_file: Optional[str] = None,
         **model_kwargs
     ):
         super().__init__(

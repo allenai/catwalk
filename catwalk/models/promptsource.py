@@ -1,6 +1,6 @@
 import collections
 import logging
-from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List
+from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List, Optional
 
 import torch
 from tango.common import Tqdm
@@ -26,7 +26,7 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         num_shots: int = 0,
-        fewshot_seed: int = None,
+        fewshot_seed: Optional[int] = None,
     ) -> Iterator[Dict[str, Any]]:
         if num_shots != 0 or fewshot_seed is not None:
             raise NotImplementedError("Promptsource tasks do not support fewshot (yet).")

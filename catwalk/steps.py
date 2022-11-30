@@ -124,9 +124,10 @@ class FinetuneStep(Step):
         validate_every: int = 100,
         validation_steps: Optional[int] = None,
         val_metric_name: str = "loss",
+        minimize_val_metric: bool = True,
         training_engine: Lazy[TrainingEngine] = Lazy(
             TorchTrainingEngine,
-            optimizer=Lazy(torch.optim.AdamW, lr=1e-5,)
+            optimizer=Lazy(torch.optim.AdamW, lr=1e-5)
         ),
         model_wrapper: Optional[Lazy[TangoModel]] = None,
         random_seed: int = 42,
@@ -170,7 +171,7 @@ class FinetuneStep(Step):
             train_steps=train_steps,
             train_epochs=train_epochs,
             val_metric_name=val_metric_name,
-            minimize_val_metric=False,
+            minimize_val_metric=minimize_val_metric,
             train_split="train",
             validation_split=None if validation_split is None else "validation",
             validate_every=validate_every,

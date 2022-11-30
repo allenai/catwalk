@@ -9,24 +9,24 @@ local tasks = if debug then [
     "mnli",
 ] else [
     // MC
-    "arc_challenge",
+    #"arc_challenge",
     "arc_easy",
     "piqa",
-    "copa",
-    "sciq",
-    "logiqa",
-    "hellaswag",
-    "openbookqa",
-    "headqa_en",
-    "winogrande",
+    #"copa",
+    #"sciq",
+    #"logiqa",
+    #"hellaswag",
+    #"openbookqa",
+    #"headqa_en",
+    #"winogrande",
     // Classification
     "rte",
     "mnli",
-    "cola",
+    #"cola",
     "sst",
-    "qqp",
-    "qnli",
-    "mrpc"
+    #"qqp",
+    #"qnli",
+    #"mrpc"
 ];
 
 local models2batchsize = if debug then {

@@ -467,7 +467,7 @@ class TemplateCollection:
     def __init__(self):
 
         # Dict of all the DatasetTemplates, key is the tuple (dataset_name, subset_name)
-        self.datasets_templates: Dict[(str, Optional[str]), DatasetTemplates] = self._collect_datasets()
+        self.datasets_templates: Dict[Tuple[str, Optional[str]], DatasetTemplates] = self._collect_datasets()
 
     @property
     def keys(self):
@@ -479,7 +479,7 @@ class TemplateCollection:
     def remove(self, dataset_name: str, subset_name: Optional[str] = None) -> None:
         del self.datasets_templates[dataset_name, subset_name]
 
-    def _collect_datasets(self) -> Dict[Tuple[str, str], "DatasetTemplates"]:
+    def _collect_datasets(self) -> Dict[Tuple[str, Optional[str]], "DatasetTemplates"]:
         """
         Initialize a DatasetTemplates object for each templates.yaml detected in the templates folder
 
@@ -488,7 +488,7 @@ class TemplateCollection:
         dataset_folders = os.listdir(TEMPLATES_FOLDER_PATH)
         dataset_folders = [folder for folder in dataset_folders if not folder.startswith(".")]
 
-        output: Dict[Tuple[str, str], DatasetTemplates] = {}  # format is {(dataset_name, subset_name): DatasetsTemplates}
+        output: Dict[Tuple[str, Optional[str]], DatasetTemplates] = {}  # format is {(dataset_name, subset_name): DatasetsTemplates}
         for dataset in dataset_folders:
             if dataset in INCLUDED_USERS:
                 for filename in os.listdir(os.path.join(TEMPLATES_FOLDER_PATH, dataset)):

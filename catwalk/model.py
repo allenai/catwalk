@@ -91,6 +91,11 @@ class TrainableModel(Model, torch.nn.Module, ABC):
         This method takes the input created by the :meth:`collate()` method and returns a dictionary that contains
         the loss under the key ``"loss"``.
         """
+        if self.inner_module is None:
+            raise NotImplementedError(
+                "If you want to be able to pass None as the inner_module to TrainableModule, "
+                "you need to override the forward() method."
+            )
         return self.inner_module.forward(*args, **kwargs)
 
     def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:

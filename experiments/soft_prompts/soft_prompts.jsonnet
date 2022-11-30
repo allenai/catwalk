@@ -29,6 +29,21 @@ local tasks = if debug then [
     #"mrpc"
 ];
 
+# By default we validate every 100 batches, but some datasets are too large for that, so we have an override here.
+local task2validate_every = {
+    "qqp": 1000,
+    "mnli": 1000,
+    "mnli_mismatched": 1000,
+    "sst": 1000,
+    "hellaswag": 1000,
+    "winogrande": 1000,
+    "logicqa": 200,
+    "sciq": 500
+};
+
+local validate_every(task) = std.get(task2validate_every, task, 100);
+
+
 local models2batchsize = if debug then {
     "rc::t5-small": 2,
     "rc::gpt2": 3
@@ -89,6 +104,7 @@ local finetuned_model(task, model, seed) = {
         batch_size: batch_size_for_model(model),
         grad_accum: effective_batch_size / self.batch_size,
         val_metric_name: "loss",
+        validate_every: validate_every(task),
         [if debug then "train_steps"]: 3,
         [if debug then "train_epochs"]: null,
         [if debug then "validation_steps"]: 5,

@@ -8,9 +8,8 @@ from catwalk.task import Task, InstanceFormat, RankClassificationInstance, WithA
     classification_metrics
 from catwalk.tasks.promptsource import WithPromptsourceMixin
 
-import lm_eval.tasks
-from lm_eval.base import Task as EAITask
-
+from catwalk.dependencies.lm_eval.base import Task as EAITask
+from catwalk.dependencies.lm_eval.tasks import get_task as get_eai_task
 
 T = TypeVar("T")
 
@@ -35,7 +34,7 @@ class EleutherTask(Task, WithPromptsourceMixin):
         if isinstance(eleuther_task, str):
             # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to
             # make this lazy.
-            self.eleuther_task_fn = lm_eval.tasks.get_task(eleuther_task)
+            self.eleuther_task_fn = get_eai_task(eleuther_task)
             self.dataset_name = self.eleuther_task_fn.DATASET_NAME
             self.dataset_path = self.eleuther_task_fn.DATASET_PATH
             self.eleuther_task = None

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - changed MetaICLModel formatting to always preserve whitespace, to reproduce MetaICL results
 - improved speed of rank classification models by aggregating sequence logits on GPU rather than on CPU
 - The promptsource templates now live directly inside of Catwalk. This avoids dependency issues.
+- Promptsource now applies the templates in parallel across all CPUs.
 
 ### Added
 
@@ -40,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an experiment config that trains many models on many tasks
 - Added promptsource support
 - Added support for soft prompts
+- Added more models, T0 variants of T5 and Eleuther variants of GPT
+- Added support for Huggingface's accelerate project, but only for inference
+- Promptsource now supports few-shot ICL.
 
 ### Fixed
 
@@ -54,6 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Applied workaround for T5 bug in huggingface tokenizers
 - Fixed fine-tuning T5 ranked classification models
 - Fixed the names of the T5 1.1 models
+- Cached transformers now take `kwargs` into account.
+- Fixed various tasks: WSC, TriviaQA, Race, HeadQA
+- Fixed the case where different promptsource templates produce different numbers of answer choices
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

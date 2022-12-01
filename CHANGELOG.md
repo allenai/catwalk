@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - improved speed of rank classification models by aggregating sequence logits on GPU rather than on CPU
 - The promptsource templates now live directly inside of Catwalk. This avoids dependency issues.
 - Promptsource now applies the templates in parallel across all CPUs.
+- Replaced a dependency on `lmeval` with a copy of the source code
 
 ### Added
 

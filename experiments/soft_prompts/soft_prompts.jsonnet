@@ -21,7 +21,7 @@ local tasks = if debug then [
     #"winogrande",
     // Classification
     "rte",
-    "mnli",
+    #"mnli",
     #"cola",
     "sst",
     #"qqp",

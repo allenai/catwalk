@@ -1,5 +1,5 @@
-#ai2-tango[torch,transformers,fairscale,beaker,wandb]>=1.0
-ai2-tango[torch,transformers,fairscale,beaker,wandb] @ git+https://github.com/allenai/tango.git@89980c21966e68bdab28a21f18b84b81a0dffb60
+ai2-tango[torch,transformers,fairscale,beaker,wandb]>=1.1
+#ai2-tango[torch,transformers,fairscale,beaker,wandb] @ git+https://github.com/allenai/tango.git@main
 
 torchmetrics==0.10.1
 more_itertools
@@ -7,6 +7,7 @@ spacy>=3.0.0
 wget
 datasets>=2.1.0
 accelerate
+bettermap @ https://github.com/allenai/bettermap/releases/download/v1.1.0/bettermap-1.1.0-py3-none-any.whl
 
 #git+https://github.com/EleutherAI/lm-evaluation-harness.git
 git+https://github.com/dirkgr/lm-evaluation-harness.git@NumexprDependency

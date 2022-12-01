@@ -83,16 +83,18 @@ def get(
             override_weights_file = cached_path(override_weights_file)
             override_weights = torch.load(override_weights_file)
             if override_weights_strip_prefix is not None:
-                def strip_prefix(s):
-                    if s.startswith(override_weights_strip_prefix):
-                        return s[len(override_weights_strip_prefix) :]
+                prefix = str(override_weights_strip_prefix)     # mypy insanity
+
+                def strip_prefix(s: str) -> str:
+                    if s.startswith(prefix):
+                        return s[len(prefix) :]
                     else:
                         return s
 
                 valid_keys = {
                     k
                     for k in override_weights.keys()
-                    if k.startswith(override_weights_strip_prefix)
+                    if k.startswith(prefix)
                 }
                 if len(valid_keys) > 0:
                     logger.info(
@@ -100,8 +102,8 @@ def get(
                     )
                 else:
                     raise ValueError(
-                        f"Specified prefix of '{override_weights_strip_prefix}' means no tensors "
-                        f"will be loaded from {override_weights_file}."
+                        f"Specified prefix of '{prefix}' means no tensors "
+                        f"will be loaded from {prefix}."
                     )
                 override_weights = {strip_prefix(k): override_weights[k] for k in valid_keys}
 

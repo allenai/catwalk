@@ -57,7 +57,7 @@ class RankClassificationModel(Model):
         batch_size: int = 32,
         max_instances_in_memory: int = 32 * 1024,
         num_shots: int = 0,
-        fewshot_seed: int = None
+        fewshot_seed: Optional[int] = None
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         try:
@@ -88,7 +88,7 @@ class RankClassificationModel(Model):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         num_shots: int = 0,
-        fewshot_seed: int = None
+        fewshot_seed: Optional[int] = None
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []

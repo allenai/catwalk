@@ -38,7 +38,7 @@ jobs:
         include:
           - task:
               name: Type check
-              run: mypy .
+              run: mypy --check-untyped-defs .
             python: '3.10'
 
           - task:

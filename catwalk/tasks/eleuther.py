@@ -1,10 +1,12 @@
+import os
 import random
-from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar
+from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar, Tuple
 
 from tango.common.sequences import MappedSequence
 
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance, WithAnswerOptionsMixin, \
     classification_metrics
+from catwalk.tasks.promptsource import WithPromptsourceMixin
 
 import lm_eval.tasks
 from lm_eval.base import Task as EAITask
@@ -18,15 +20,16 @@ def _identity(x: T) -> T:
 
 
 @Task.register("eleuther")
-class EleutherTask(Task):
+class EleutherTask(Task, WithPromptsourceMixin):
     def __init__(
         self,
         eleuther_task: Union[str, Callable[[], EAITask]],
         *,
         version_override: Optional[str] = None,
-        ranked_classification: bool = False
+        ranked_classification: bool = False,
+        promptsource_task_spec: Optional[Tuple[str, str]] = None,
     ):
-        super().__init__(version_override=version_override)
+        Task.__init__(self, version_override=version_override)
 
         self.eleuther_task: Optional[EAITask]
         if isinstance(eleuther_task, str):
@@ -41,6 +44,8 @@ class EleutherTask(Task):
             self.eleuther_task = eleuther_task()
             self.dataset_name = self.eleuther_task.DATASET_NAME
             self.dataset_path = self.eleuther_task.DATASET_PATH
+        # Sometimes the "path" is a path to a Python file. We have to fix that.
+        self.dataset_path = os.path.splitext(os.path.basename(self.dataset_path))[0]
 
         self.add_instance_conversion(InstanceFormat.HF_DICT, _identity)
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, self.instance_as_eleuther_doc)
@@ -49,11 +54,10 @@ class EleutherTask(Task):
         if ranked_classification:
             self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
 
-        from catwalk.tasks.promptsource import promptsource_conversion, promptsource_templates_for_task
-        promptsource_templates = promptsource_templates_for_task(self)
-        if promptsource_templates is not None:
-            self.add_instance_conversion(InstanceFormat.PROMPTSOURCE, promptsource_conversion(
-                dataset_templates=promptsource_templates))
+        if promptsource_task_spec is None:
+            WithPromptsourceMixin.__init__(self, self.dataset_path, self.dataset_name)
+        else:
+            WithPromptsourceMixin.__init__(self, *promptsource_task_spec)
 
     def __getstate__(self):
         result = self.__dict__.copy()
@@ -157,7 +161,8 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
 
 @Task.register("eleuther::race")
 class RaceEleutherTask(EleutherTask):
-    """This task is different because there is no 1:1 correspondence between HF instances and EAI instances."""
+    """The EAI Race task is different because there is no 1:1 correspondence between HF instances and EAI
+    instances. EAI chose to follow the GPT3 evaluation approach, which combines multiple questions into one."""
     def __init__(self, *, version_override: Optional[str] = None):
         super().__init__("race", version_override=version_override)
         del self.instance_conversions[InstanceFormat.HF_DICT]

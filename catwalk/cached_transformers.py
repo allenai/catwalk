@@ -1,6 +1,6 @@
 import logging
-from dataclasses import dataclass
-from typing import Optional, Tuple, Dict, TypeVar, Type, Any
+from dataclasses import dataclass, field
+from typing import Optional, Dict, TypeVar, Type, Any
 
 import torch
 import transformers
@@ -9,6 +9,7 @@ from tango.common import det_hash
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class TransformerSpec:
     cls: type
@@ -16,6 +17,7 @@ class TransformerSpec:
     override_weights_file: Optional[str] = None
     override_weights_strip_prefix: Optional[str] = None
     load_weights: bool = True
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self):
         return hash((
@@ -23,7 +25,8 @@ class TransformerSpec:
             self.model_name,
             self.override_weights_file,
             self.override_weights_strip_prefix,
-            self.load_weights
+            self.load_weights,
+            det_hash(self.kwargs)
         ))
 
 
@@ -72,7 +75,8 @@ def get(
         model_name,
         override_weights_file,
         override_weights_strip_prefix,
-        load_weights
+        load_weights,
+        kwargs
     )
     transformer = _model_cache.get(spec, None)
     if transformer is None:

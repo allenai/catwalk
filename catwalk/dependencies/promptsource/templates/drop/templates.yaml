@@ -13,7 +13,7 @@ templates:
 
       Answer:
 
-      ||| {{ answers_spans.spans | join(", ") }}'
+      ||| {{ answer.spans | join(", ") }}'
     metadata: !TemplateMetadata
       choices_in_prompt: false
       languages:
@@ -29,7 +29,7 @@ templates:
     id: 79c0d600-8d49-4628-b1c1-d472fb762fa2
     jinja: "I am trying to figure out the answer to the question, \"{{question}}\"\
       \ I found the following text-snippet has the answer. Can you tell me the answer?\n\
-      \n{{passage}} \n\n||| {{ answers_spans.spans | join(\", \") }}\n"
+      \n{{passage}} \n\n||| {{ answer.spans | join(\", \") }}\n"
     metadata: !TemplateMetadata
       choices_in_prompt: false
       languages:
@@ -47,7 +47,7 @@ templates:
 
       Question: {{question}}
 
-      Answer: ||| {{ answers_spans.spans | join(", ") }}'
+      Answer: ||| {{ answer.spans | join(", ") }}'
     metadata: !TemplateMetadata
       choices_in_prompt: false
       languages:
@@ -62,7 +62,7 @@ templates:
     answer_choices: null
     id: ad649b92-59ad-44a9-b328-7bbab49b104f
     jinja: 'Generate a question from the following passage that has the answer, {{
-      answers_spans.spans | join(", ") }}
+      answer.spans | join(", ") }}
 
       Passage : {{passage}}
 
@@ -93,7 +93,7 @@ templates:
 
       Answer:
 
-      ||| {{ answers_spans.spans | join(", ") }}'
+      ||| {{ answer.spans | join(", ") }}'
     metadata: !TemplateMetadata
       choices_in_prompt: false
       languages:

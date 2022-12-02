@@ -59,29 +59,30 @@ class GPTModel(Model):
             # TODO: Use promptsource to add more prompt options?
             return instance.context, f"\nQuestion:{instance.question}\nAnswer:"
 
-        converted_instances = Tqdm.tqdm(converted_instances, desc="Processing instances")
-        for batch in more_itertools.chunked(converted_instances, batch_size):
-            formatted_batch = [format_instance(instance) for instance in batch]
-            encodings = tokenizer(formatted_batch,
-                                  padding="longest",
-                                  truncation="only_first",
-                                  max_length=model.config.n_positions - model.config.task_specific_params['text-generation']['max_length'],
-                                  return_tensors="pt")
-            
-            with torch.inference_mode():
-                outputs = model.generate(input_ids=torch.stack(encodings["input_ids"]).to(device),
-                                         attention_mask=torch.stack(
-                                             encodings["attention_mask"]).to(device),
-                                         max_new_tokens=model.config.task_specific_params['text-generation']['max_length'])
-                
-            outputs = [output[len(encodings["input_ids"][0]) + 1:] for output in outputs]
-            outputs = tokenizer.batch_decode(
-                outputs, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+        with Tqdm.tqdm(converted_instances, desc="Processing instances") as converted_instances:
+            for batch in more_itertools.chunked(converted_instances, batch_size):
+                formatted_batch = [format_instance(instance) for instance in batch]
+                encodings = tokenizer(
+                    formatted_batch,
+                    padding="longest",
+                    truncation="only_first",
+                    max_length=model.config.n_positions - model.config.task_specific_params['text-generation']['max_length'],
+                    return_tensors="pt"
+                )
 
-            for instance, prediction in zip(batch, outputs):
-                yield {
-                    "squad_metrics": ({"id": instance.id, "prediction_text": prediction}, {"id": instance.id, "answers": instance.answers})
-                }
+                with torch.inference_mode():
+                    outputs = model.generate(input_ids=torch.stack(encodings["input_ids"]).to(device),
+                                             attention_mask=torch.stack(
+                                                 encodings["attention_mask"]).to(device),
+                                             max_new_tokens=model.config.task_specific_params['text-generation']['max_length'])
+
+                outputs = [output[len(encodings["input_ids"][0]) + 1:] for output in outputs]
+                outputs = tokenizer.batch_decode(outputs, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+
+                for instance, prediction in zip(batch, outputs):
+                    yield {
+                        "squad_metrics": ({"id": instance.id, "prediction_text": prediction}, {"id": instance.id, "answers": instance.answers})
+                    }
 
     def _predict_perplexity(
         self,

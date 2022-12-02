@@ -61,15 +61,15 @@ def simple_evaluate(
     if isinstance(model, str):
         if model_args is None:
             model_args = ""
-        lm = lm_eval.models.get_model(model).create_from_arg_string(
+        lm = catwalk.dependencies.lm_eval.models.get_model(model).create_from_arg_string(
             model_args, {"batch_size": batch_size, "device": device}
         )
     else:
-        assert isinstance(model, lm_eval.base.LM)
+        assert isinstance(model, catwalk.dependencies.lm_eval.base.LM)
         lm = model
 
     if not no_cache:
-        lm = lm_eval.base.CachingLM(
+        lm = catwalk.dependencies.lm_eval.base.CachingLM(
             lm,
             "lm_cache/"
             + model
@@ -78,7 +78,7 @@ def simple_evaluate(
             + ".db",
         )
 
-    task_dict = lm_eval.tasks.get_task_dict(tasks)
+    task_dict = catwalk.dependencies.lm_eval.tasks.get_task_dict(tasks)
 
     if check_integrity:
         run_task_tests(task_list=tasks)
@@ -284,7 +284,7 @@ def evaluate(
         # hotfix: bleu, chrf, ter seem to be really expensive to bootstrap
         # so we run them less iterations. still looking for a cleaner way to do this
 
-        stderr = lm_eval.metrics.stderr_for_metric(
+        stderr = catwalk.dependencies.lm_eval.metrics.stderr_for_metric(
             metric=task.aggregation()[real_metric],
             bootstrap_iters=min(bootstrap_iters, 1000)
             if metric in ["bleu", "chrf", "ter"]

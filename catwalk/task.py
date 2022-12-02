@@ -122,6 +122,9 @@ class Task(Registrable, ABC):
         exceptions: Union[None, Dict[str, Any], Iterable[Dict[str, Any]]] = None,
         random_seed: int = 18830087
     ) -> Sequence[Dict[str, Any]]:
+        if num_shots <= 0:
+            return []
+
         if exceptions is None:
             exceptions = []
         elif isinstance(exceptions, Dict):

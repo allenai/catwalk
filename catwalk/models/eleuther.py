@@ -3,12 +3,12 @@ from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple
 
 import more_itertools
 import torch
-from lm_eval.base import Request
+from catwalk.dependencies.lm_eval.base import Request
 from tango.common import Tqdm
 from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel, \
+from transformers import AutoModelForCausalLM, GPT2Tokenizer, GPT2LMHeadModel, \
     AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
 from catwalk import cached_transformers
@@ -39,8 +39,12 @@ class EAIGPT(Model):
         max_gen_toks: int = 256,
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
-        device = resolve_device()
-        model = cached_transformers.get(AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        model = cached_transformers.get(
+            AutoModelForCausalLM,
+            self.pretrained_model_name_or_path,
+            False,
+            device_map="auto" if torch.cuda.device_count() > 0 else None,
+        ).eval()
         tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.2.0](https://github.com/allenai/catwalk/releases/tag/v0.2.0) - 2022-12-02
+
 ### Changed
 
 - MetaICLTask now supports fewshots less than 16 and only support getting the test split

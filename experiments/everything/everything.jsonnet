@@ -220,6 +220,7 @@ local metrics = std.foldl(
     function(x, config) x + {
         [metrics_step_name(config)]: {
             type: "catwalk::calculate_metrics",
+            step_resources: { machine: "local" },
             model: model_ref(config),
             task: config.task,
             predictions: {type: "ref", ref: predictions_step_name(config)}
@@ -241,6 +242,7 @@ local metrics = std.foldl(
         metrics + {
             "tabulate": {
                 type: "catwalk::tabulate_metrics",
+                step_resources: { machine: "local" },
                 metrics: std.foldl(
                     function(x, config) x + {
                         [

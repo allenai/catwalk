@@ -7,28 +7,31 @@ local debug = true;
 # Define tasks
 #
 
-local tasks = [
-    // MC
-    "arc_challenge",
-    "arc_easy",
-    "piqa",
-    "copa",
-    "sciq",
-    "logiqa",
-    "hellaswag",
-    "openbookqa",
-    "headqa_en",
-    "winogrande",
-    // Classification
-    "rte",
-    "mnli",
-    //"mnli_mismatched", // Broken because it doesn't have a "validation" set.
-    "cola",
-    "sst",
-    "qqp",
-    "qnli",
-    "mrpc"
-];
+local tasks = if debug then [
+        "arc_easy",
+        "rte",
+    ] else [
+        // MC
+        "arc_challenge",
+        "arc_easy",
+        "piqa",
+        "copa",
+        "sciq",
+        "logiqa",
+        "hellaswag",
+        "openbookqa",
+        "headqa_en",
+        "winogrande",
+        // Classification
+        "rte",
+        "mnli",
+        //"mnli_mismatched", // Broken because it doesn't have a "validation" set.
+        "cola",
+        "sst",
+        "qqp",
+        "qnli",
+        "mrpc"
+    ];
 
 local task2validate_every = {
     "qqp": 1000,

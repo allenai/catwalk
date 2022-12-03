@@ -13,24 +13,24 @@ local tasks = if debug then [
     ] else [
         // MC
         "arc_challenge",
-        "arc_easy",
-        "piqa",
-        "copa",
-        "sciq",
-        "logiqa",
-        "hellaswag",
-        "openbookqa",
-        "headqa_en",
-        "winogrande",
+        #"arc_easy",
+        #"piqa",
+        #"copa",
+        #"sciq",
+        #"logiqa",
+        #"hellaswag",
+        #"openbookqa",
+        #"headqa_en",
+        #"winogrande",
         // Classification
         "rte",
-        "mnli",
+        #"mnli",
         //"mnli_mismatched", // Broken because it doesn't have a "validation" set.
-        "cola",
-        "sst",
-        "qqp",
-        "qnli",
-        "mrpc"
+        #"cola",
+        #"sst",
+        #"qqp",
+        #"qnli",
+        #"mrpc"
     ];
 
 local task2validate_every = {

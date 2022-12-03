@@ -165,8 +165,8 @@ local trained_models = std.foldl(
             [if debug then "train_epochs"]: null,
             [if debug then "validation_steps"]: 5,
             [if !debug then "wandb_entity"]: "allennlp",
-            [if !debug then "wandb_project"]: "catwalk"
-            # TODO: early stopping
+            [if !debug then "wandb_project"]: "catwalk",
+            early_stopping_patience: 6
         }
     },
     training_configs,

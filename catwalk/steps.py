@@ -21,7 +21,7 @@ from tango.format import SqliteSequenceFormat, TextFormat
 from tango.integrations.torch import (
     TorchFormat,
     TorchTrainingEngine,
-    DataLoader, TrainingEngine, TrainConfig,
+    DataLoader, TrainingEngine, TrainConfig, StopEarlyCallback,
 )
 from tango.integrations.torch.model import Model as TangoModel
 import torch
@@ -107,6 +107,9 @@ class FinetuneStep(Step):
     FORMAT = TorchFormat
 
     SKIP_ID_ARGUMENTS = {"wandb_entity", "wandb_project"}
+    SKIP_DEFAULT_ARGUMENTS = {
+        "early_stopping_patience": None
+    }
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -138,7 +141,8 @@ class FinetuneStep(Step):
         train_split: str = "train",
         validation_split: Optional[str] = "validation",
         wandb_entity: Optional[str] = None,
-        wandb_project: Optional[str] = None
+        wandb_project: Optional[str] = None,
+        early_stopping_patience: Optional[int] = None
     ) -> Model:  # type: ignore
         if isinstance(model, str):
             model = MODELS[model]
@@ -241,6 +245,8 @@ class FinetuneStep(Step):
                     tags=[t for t in tags if t is not None]
                 )
             )
+        if early_stopping_patience is not None:
+            callbacks.append(Lazy(StopEarlyCallback, patience=early_stopping_patience))
 
         # Hack a default LR scheduler into the training engine
         if train_steps is None:

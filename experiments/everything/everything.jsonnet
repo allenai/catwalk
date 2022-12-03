@@ -1,6 +1,6 @@
 # This experiment calculates the big matrix of model/method X tasks, with an accuracy score for each.
 
-local debug = true;
+local debug = false;
 
 
 #

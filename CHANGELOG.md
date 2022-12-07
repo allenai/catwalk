@@ -64,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cached transformers now take `kwargs` into account.
 - Fixed various tasks: WSC, TriviaQA, Race, HeadQA
 - Fixed the case where different promptsource templates produce different numbers of answer choices
+- `tqdm` has to be closed or it'll start printing a bunch of newlines.
+
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

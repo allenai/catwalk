@@ -163,6 +163,7 @@ local trained_models = std.foldl(
             batch_size: batch_size_for_model(config.model),
             grad_accum: effective_batch_size / self.batch_size,
             val_metric_name: "acc",
+            minimize_val_metric: False,
             validate_every: validate_every(config.task),
             [if debug then "train_steps"]: 3,
             [if debug then "train_epochs"]: null,

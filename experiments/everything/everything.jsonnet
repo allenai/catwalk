@@ -66,7 +66,7 @@ local trainable_models2batchsize = if debug then {
     "deberta-v3-small": 16,
     "deberta-v3-large": 8,
     "deberta-v2-xlarge": 4,
-    "deberta-v2-xxlarge": 2,
+    "deberta-v2-xxlarge": 1,
 };
 
 local shot_models2batchsize = if debug then {

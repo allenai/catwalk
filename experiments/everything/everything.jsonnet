@@ -247,8 +247,8 @@ local metrics = std.foldl(
                     function(x, config) x + {
                         [
                             if std.count(training_configs, config) > 0
-                            then config.task + "_" + config.model + "_" + config.seed
-                            else config.task + "_" + config.model
+                            then config.task + "\t" + config.model + "\t" + config.seed
+                            else config.task + "\t" + config.model + "\tnone"
                         ]: {type: "ref", ref: metrics_step_name(config)}
                     },
                     all_configs,

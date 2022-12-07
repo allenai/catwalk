@@ -125,7 +125,7 @@ local random_seeds = if debug then [42, 1337] else [
 local training_configs = std.flatMap(
     function(t) std.flatMap(
         function(m) std.map(
-            function(s) { "task": t, "model": m, "seed": s },
+            function(s) { "style": "bert", "task": t, "model": m, "seed": s },
             random_seeds
         ),
         trainable_models
@@ -135,7 +135,7 @@ local training_configs = std.flatMap(
 
 local non_training_configs = std.flatMap(
     function(t) std.map(
-        function(m) { "task": t, "model": m, "seed": null },
+        function(m) { "style": "0-shot RC" , "task": t, "model": m, "seed": null },
         shot_models
     ),
     tasks
@@ -246,11 +246,8 @@ local metrics = std.foldl(
                 step_resources: { machine: "local" },
                 metrics: std.foldl(
                     function(x, config) x + {
-                        [
-                            if std.count(training_configs, config) > 0
-                            then config.task + "\t" + config.model + "\t" + config.seed
-                            else config.task + "\t" + config.model + "\tnone"
-                        ]: {type: "ref", ref: metrics_step_name(config)}
+                        [config.style + "\t" + config.task + "\t" + config.model + "\t" + config.seed]:
+                            {type: "ref", ref: metrics_step_name(config)}
                     },
                     all_configs,
                     {}

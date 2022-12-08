@@ -69,7 +69,9 @@ local trainable_models2batchsize = if debug then {
     "deberta-v2-xxlarge": 1,
 };
 
-local lr_overrides = {
+local lr_overrides = if debug then {
+    "deberta-v3-base": 1e-6,
+} else {
     "deberta-v2-xlarge": 1e-6,
     "deberta-v2-xxlarge": 1e-6,
 };

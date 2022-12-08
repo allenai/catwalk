@@ -162,6 +162,13 @@ local trained_models = std.foldl(
             random_seed: config.seed,
             batch_size: batch_size_for_model(config.model),
             grad_accum: effective_batch_size / self.batch_size,
+            training_engine: {
+                type: "torch",
+                optimizer: {
+                    type: "adamw",
+                    lr: 1e-5
+                }
+            },
             val_metric_name: "acc",
             minimize_val_metric: false,
             validate_every: validate_every(config.task),

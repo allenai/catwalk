@@ -69,6 +69,11 @@ local trainable_models2batchsize = if debug then {
     "deberta-v2-xxlarge": 1,
 };
 
+local lr_overrides = {
+    "deberta-v2-xlarge": 1e-6,
+    "deberta-v2-xxlarge": 1e-6,
+};
+
 local shot_models2batchsize = if debug then {
     "rc::t5-small": 2,
     "rc::gpt2": 3,
@@ -162,11 +167,11 @@ local trained_models = std.foldl(
             random_seed: config.seed,
             batch_size: batch_size_for_model(config.model),
             grad_accum: effective_batch_size / self.batch_size,
-            training_engine: {
+            [if std.objectHas(lr_overrides, config.model) then "training_engine"]: {
                 type: "torch",
                 optimizer: {
                     type: "adamw",
-                    lr: 1e-5
+                    lr: lr_overrides[config.model]
                 }
             },
             val_metric_name: "acc",

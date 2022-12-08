@@ -255,7 +255,9 @@ class FinetuneStep(Step):
             train_steps = train_epochs * math.ceil(
                 len(splits["train"]) / (device_count * grad_accum * batch_size)
             )
-        if training_engine._constructor == TorchTrainingEngine:
+        if (training_engine._constructor == TorchTrainingEngine) or (
+            training_engine._constructor == TrainingEngine and training_engine._params.get("type") == "torch"
+        ):
             if "lr_scheduler" not in training_engine._constructor_extras:
                 training_engine._constructor_extras["lr_scheduler"] = Lazy(
                     transformers.optimization.get_linear_schedule_with_warmup,

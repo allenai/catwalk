@@ -170,7 +170,7 @@ local trained_models = std.foldl(
             [if std.objectHas(lr_overrides, config.model) then "training_engine"]: {
                 type: "torch",
                 optimizer: {
-                    type: "adamw",
+                    type: "torch::AdamW",
                     lr: lr_overrides[config.model]
                 }
             },

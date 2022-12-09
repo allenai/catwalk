@@ -64,9 +64,9 @@ local trainable_models2batchsize = if debug then {
     "roberta-large": 16,
     "deberta-v3-base": 16,
     "deberta-v3-small": 16,
-    "deberta-v3-large": 8,
-    "deberta-v2-xlarge": 4,
-    "deberta-v2-xxlarge": 1,
+    "deberta-v3-large": 4,
+    "deberta-v2-xlarge": 2,
+    #"deberta-v2-xxlarge": 1,
 };
 
 local lr_overrides = if debug then {

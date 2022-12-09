@@ -76,6 +76,12 @@ local lr_overrides = if debug then {
     "deberta-v2-xxlarge": 1e-6,
 };
 
+local batchsize_modifiers_for_datasets = {
+    "headqa_en": 2,      # Headqa is 5-way multiple choice
+    "piqa": 2,           # I don't know why piqa runs out of memory all the time.
+    "logiqa": 2,         # LogiQA is 4-way multiple choice with fairly long sentences.
+};
+
 local shot_models2batchsize = if debug then {
     "rc::t5-small": 2,
     "rc::gpt2": 3,
@@ -167,7 +173,7 @@ local trained_models = std.foldl(
             model: config.model,
             tasks: [config.task],
             random_seed: config.seed,
-            batch_size: batch_size_for_model(config.model),
+            batch_size: batch_size_for_model(config.model) / std.get(batchsize_modifiers_for_datasets, config.model, 1),
             grad_accum: effective_batch_size / self.batch_size,
             [if std.objectHas(lr_overrides, config.model) then "training_engine"]: {
                 type: "torch",

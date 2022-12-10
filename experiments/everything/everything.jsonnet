@@ -77,8 +77,8 @@ local lr_overrides = if debug then {
 };
 
 local batchsize_modifiers_for_datasets = {
-    "headqa_en": 2,      # Headqa is 5-way multiple choice
-    "piqa": 2,           # I don't know why piqa runs out of memory all the time.
+    "headqa_en": 4,      # Headqa is 5-way multiple choice
+    "piqa": 4,           # I don't know why piqa runs out of memory all the time.
     "logiqa": 2,         # LogiQA is 4-way multiple choice with fairly long sentences.
 };
 
@@ -121,6 +121,11 @@ local batch_size_for_model(model) = std.get(
     model,
     std.get(trainable_models2batchsize, model));
 
+local batch_size_for_config(config) = (
+    local modifier = std.get(batchsize_modifiers_for_datasets, config.model, 1);
+    local batch_size = batch_size_for_model(config.model);
+    if batch_size >= modifier then batch_size / modifier else 1
+);
 
 local random_seeds = if debug then [42, 1337] else [
     42,
@@ -173,7 +178,7 @@ local trained_models = std.foldl(
             model: config.model,
             tasks: [config.task],
             random_seed: config.seed,
-            batch_size: batch_size_for_model(config.model) / std.get(batchsize_modifiers_for_datasets, config.model, 1),
+            batch_size: batch_size_for_config(config),
             grad_accum: effective_batch_size / self.batch_size,
             [if std.objectHas(lr_overrides, config.model) then "training_engine"]: {
                 type: "torch",

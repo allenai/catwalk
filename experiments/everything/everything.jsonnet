@@ -77,9 +77,9 @@ local lr_overrides = if debug then {
 };
 
 local batchsize_modifiers_for_datasets = {
-    "headqa_en": 4,      # Headqa is 5-way multiple choice
+    "headqa_en": 8,      # Headqa is 5-way multiple choice
     "piqa": 8,           # I don't know why piqa runs out of memory all the time.
-    "logiqa": 2,         # LogiQA is 4-way multiple choice with fairly long sentences.
+    "logiqa": 4,         # LogiQA is 4-way multiple choice with fairly long sentences.
 };
 
 local shot_models2batchsize = if debug then {

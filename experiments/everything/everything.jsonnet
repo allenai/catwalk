@@ -77,8 +77,8 @@ local lr_overrides = if debug then {
 };
 
 local batchsize_modifiers_for_datasets = {
-    "headqa_en": 8,      # Headqa is 5-way multiple choice
-    "piqa": 8,           # I don't know why piqa runs out of memory all the time.
+    "headqa_en": 4,      # Headqa is 5-way multiple choice.
+    "piqa": 4,           # Piqa is 5-way multiple choice.
     "logiqa": 4,         # LogiQA is 4-way multiple choice with fairly long sentences.
 };
 
@@ -122,7 +122,7 @@ local batch_size_for_model(model) = std.get(
     std.get(trainable_models2batchsize, model));
 
 local batch_size_for_config(config) = (
-    local modifier = std.get(batchsize_modifiers_for_datasets, config.model, 1);
+    local modifier = std.get(batchsize_modifiers_for_datasets, config.task, 1);
     local batch_size = batch_size_for_model(config.model);
     if batch_size >= modifier then batch_size / modifier else 1
 );

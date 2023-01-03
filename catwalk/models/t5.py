@@ -30,19 +30,20 @@ class T5Model(Model, ABC):
         tokenizer.model_max_length = model.config.n_positions
         
         with torch.inference_mode():
-            for batch in more_itertools.chunked(Tqdm.tqdm(qas, desc="Processing instances"), batch_size):
-                model_input = tokenizer([f"question:{i.question}" for i in batch],
-                                        [f"context:{i.context}" for i in batch],
-                                        truncation="only_second",
-                                        padding="longest",
-                                        return_tensors="pt")
-                
-                model_output = model.generate(**model_input, max_new_tokens=50) # 50 new tokens is also same as GPT evaluation
-                model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
-                for instance, prediction in zip(batch, model_output):
-                    yield {
-                        "squad_metrics": ({"id": instance.id, "prediction_text": prediction}, {"id": instance.id, "answers": instance.answers})
-                    }
+            with Tqdm.tqdm(qas, desc="Processing instances") as qas_tqdm:
+                for batch in more_itertools.chunked(qas_tqdm, batch_size):
+                    model_input = tokenizer([f"question:{i.question}" for i in batch],
+                                            [f"context:{i.context}" for i in batch],
+                                            truncation="only_second",
+                                            padding="longest",
+                                            return_tensors="pt")
+
+                    model_output = model.generate(**model_input, max_new_tokens=50) # 50 new tokens is also same as GPT evaluation
+                    model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
+                    for instance, prediction in zip(batch, model_output):
+                        yield {
+                            "squad_metrics": ({"id": instance.id, "prediction_text": prediction}, {"id": instance.id, "answers": instance.answers})
+                        }
     
     def _predict_prompt(self, task: Task, instances: Sequence[Dict[str, Any]], batch_size: int = 32) -> Iterator[Dict[str, Any]]:
         prompts = MappedSequence(task.instance_conversions[InstanceFormat.T5_PROMPT], instances)
@@ -51,22 +52,23 @@ class T5Model(Model, ABC):
         tokenizer = self.get_tokenizer()
 
         with torch.inference_mode():
-            for batch in more_itertools.chunked(Tqdm.tqdm(prompts, desc="Processing instances"), batch_size):
-                model_input = tokenizer(
-                    [i[0] for i in batch],
-                    padding=True,
-                    truncation="only_first",
-                    return_tensors="pt",
-                    pad_to_multiple_of=8)
-                model_output = model.generate(**model_input)
-                model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
-                for target, prediction in zip(batch, model_output):
-                    target = target[1]
-                    yield {
-                        "acc": (torch.Tensor([target == prediction]), _true_tensor),
-                        "bleu": ([prediction], [[target]]),
-                        "rouge": ([prediction], [[target]])
-                    }
+            with Tqdm.tqdm(prompts, desc="Processing instances") as prompts_tqdm:
+                for batch in more_itertools.chunked(prompts_tqdm, batch_size):
+                    model_input = tokenizer(
+                        [i[0] for i in batch],
+                        padding=True,
+                        truncation="only_first",
+                        return_tensors="pt",
+                        pad_to_multiple_of=8)
+                    model_output = model.generate(**model_input)
+                    model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
+                    for target, prediction in zip(batch, model_output):
+                        target = target[1]
+                        yield {
+                            "acc": (torch.Tensor([target == prediction]), _true_tensor),
+                            "bleu": ([prediction], [[target]]),
+                            "rouge": ([prediction], [[target]])
+                        }
 
     def predict(  # type: ignore
         self,

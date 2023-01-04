@@ -24,13 +24,13 @@ local tasks = if debug then [
         "winogrande",
         // Classification
         "rte",
-        #"mnli",
-        //"mnli_mismatched", // Broken because it doesn't have a "validation" set.
-        #"cola",
-        #"sst",
-        #"qqp",
-        #"qnli",
-        #"mrpc"
+        "mnli",
+        #"mnli_mismatched", // Broken because it doesn't have a "validation" set.
+        "cola",
+        "sst",
+        "qqp",
+        "qnli",
+        "mrpc"
     ];
 
 local task2validate_every = {

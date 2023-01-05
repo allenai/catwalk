@@ -16,7 +16,7 @@ pytest-forked
 flaky
 
 # Building docs
-Sphinx==5.3.0
+Sphinx==6.0.0
 # Sphinx theme: https://sphinx-themes.org/sample-sites/furo/
 furo==2022.12.7
 # Lets Sphinx parse markdown files in addition to rst.

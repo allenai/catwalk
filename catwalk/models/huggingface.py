@@ -10,8 +10,8 @@ from transformers import (AutoModelForMultipleChoice,
                           AutoTokenizer,
                           AutoModelForQuestionAnswering,
                           QuestionAnsweringPipeline, PreTrainedModel, PreTrainedTokenizer,
-                          AutoModelForSequenceClassification, TextClassificationPipeline)
-from torchmetrics.functional import accuracy
+                          AutoModelForSequenceClassification)
+from torchmetrics.functional.classification import multiclass_accuracy
 from transformers.tokenization_utils_base import LARGE_INTEGER
 
 from catwalk import cached_transformers
@@ -312,7 +312,7 @@ class TrainableHFAutoModel(TrainableModel):
 
     def _forward_mc(self, *args, **kwargs) -> Dict[str, Any]:
         results = self.mc_model.forward(*args, **kwargs)
-        results["acc"] = accuracy(results.logits, kwargs["labels"])
+        results["acc"] = multiclass_accuracy(results.logits, kwargs["labels"], num_classes=results.logits.size(-1))
         return results
 
     def _forward_qa(self, *args, **kwargs) -> Dict[str, Any]:
@@ -322,7 +322,7 @@ class TrainableHFAutoModel(TrainableModel):
     def _forward_classification(self, *args, **kwargs) -> Dict[str, Any]:
         assert self.classification_model is not None
         results = self.classification_model.forward(*args, **kwargs)
-        results["acc"] = accuracy(results.logits, kwargs["labels"])
+        results["acc"] = multiclass_accuracy(results.logits, kwargs["labels"], num_classes=results.logits.size(-1))
         return results
 
     def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:

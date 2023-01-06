@@ -1,13 +1,13 @@
 ai2-tango[torch,transformers,fairscale,beaker,wandb]>=1.1
 #ai2-tango[torch,transformers,fairscale,beaker,wandb] @ git+https://github.com/allenai/tango.git@main
 
-torchmetrics==0.10.1
+torchmetrics==0.11.0
 more_itertools
 spacy>=3.0.0
 wget
 datasets>=2.1.0
 accelerate
-bettermap @ https://github.com/allenai/bettermap/releases/download/v1.1.0/bettermap-1.1.0-py3-none-any.whl
+bettermap
 
 # For lm-eval
 sacrebleu>=1.5.0

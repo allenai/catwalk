@@ -1,4 +1,3 @@
-import functools
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
@@ -25,14 +24,22 @@ QA_METRICS = {
 }
 
 
-@functools.cache
+try:
+    from functools import cache as memoize
+except ImportError:
+    def memoize(user_function, /):      # type: ignore
+        import functools
+        return functools.lru_cache(maxsize=None)(user_function)
+
+
+@memoize
 def mc_metrics(num_classes: int):
     return {
         "acc": partial(torchmetrics.classification.MulticlassAccuracy, num_classes=num_classes)
     }
 
 
-@functools.cache
+@memoize
 def classification_metrics(num_classes: int):
     return {
         "acc": partial(torchmetrics.classification.MulticlassAccuracy, num_classes=num_classes, average=None),

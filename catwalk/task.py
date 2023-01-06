@@ -1,3 +1,4 @@
+import functools
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
@@ -13,10 +14,6 @@ from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
 
 
-MC_METRICS = {
-    "acc": torchmetrics.Accuracy,
-}
-
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
     "byte_perplexity": PerplexityMetric,
@@ -28,18 +25,26 @@ QA_METRICS = {
 }
 
 
+@functools.cache
+def mc_metrics(num_classes: int):
+    return {
+        "acc": partial(torchmetrics.classification.MulticlassAccuracy, num_classes=num_classes)
+    }
+
+
+@functools.cache
 def classification_metrics(num_classes: int):
     return {
-        "acc": torchmetrics.Accuracy,
-        "f1": partial(torchmetrics.F1Score, num_classes=num_classes, average=None),
-        "precision": partial(torchmetrics.Precision, num_classes=num_classes, average=None),
-        "recall": partial(torchmetrics.Recall, num_classes=num_classes, average=None)
+        "acc": partial(torchmetrics.classification.MulticlassAccuracy, num_classes=num_classes, average=None),
+        "f1": partial(torchmetrics.classification.MulticlassF1Score, num_classes=num_classes, average=None),
+        "precision": partial(torchmetrics.classification.MulticlassPrecision, num_classes=num_classes, average=None),
+        "recall": partial(torchmetrics.classification.MulticlassRecall, num_classes=num_classes, average=None)
     }
 
 
 ENTAILMENT_METRICS = classification_metrics(2)
 
-BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
+BINARY_CLASSIFICATION_METRICS = classification_metrics(2)
 
 
 class InstanceFormat(Enum):

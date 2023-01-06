@@ -1,6 +1,6 @@
 import logging
-from dataclasses import dataclass
-from typing import Optional, Tuple, Dict, TypeVar, Type, Any
+from dataclasses import dataclass, field
+from typing import Optional, Dict, TypeVar, Type, Any
 
 import torch
 import transformers
@@ -9,6 +9,7 @@ from tango.common import det_hash
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class TransformerSpec:
     cls: type
@@ -16,6 +17,7 @@ class TransformerSpec:
     override_weights_file: Optional[str] = None
     override_weights_strip_prefix: Optional[str] = None
     load_weights: bool = True
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self):
         return hash((
@@ -23,7 +25,8 @@ class TransformerSpec:
             self.model_name,
             self.override_weights_file,
             self.override_weights_strip_prefix,
-            self.load_weights
+            self.load_weights,
+            det_hash(self.kwargs)
         ))
 
 
@@ -72,7 +75,8 @@ def get(
         model_name,
         override_weights_file,
         override_weights_strip_prefix,
-        load_weights
+        load_weights,
+        kwargs
     )
     transformer = _model_cache.get(spec, None)
     if transformer is None:
@@ -83,16 +87,18 @@ def get(
             override_weights_file = cached_path(override_weights_file)
             override_weights = torch.load(override_weights_file)
             if override_weights_strip_prefix is not None:
-                def strip_prefix(s):
-                    if s.startswith(override_weights_strip_prefix):
-                        return s[len(override_weights_strip_prefix) :]
+                prefix = str(override_weights_strip_prefix)     # mypy insanity
+
+                def strip_prefix(s: str) -> str:
+                    if s.startswith(prefix):
+                        return s[len(prefix) :]
                     else:
                         return s
 
                 valid_keys = {
                     k
                     for k in override_weights.keys()
-                    if k.startswith(override_weights_strip_prefix)
+                    if k.startswith(prefix)
                 }
                 if len(valid_keys) > 0:
                     logger.info(
@@ -100,8 +106,8 @@ def get(
                     )
                 else:
                     raise ValueError(
-                        f"Specified prefix of '{override_weights_strip_prefix}' means no tensors "
-                        f"will be loaded from {override_weights_file}."
+                        f"Specified prefix of '{prefix}' means no tensors "
+                        f"will be loaded from {prefix}."
                     )
                 override_weights = {strip_prefix(k): override_weights[k] for k in valid_keys}
 

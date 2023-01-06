@@ -103,7 +103,7 @@ class RaftTask(HFDatasetsTask):
         **kwargs
     ):
         rci = self.instance_as_rank_classification(instance, **kwargs)
-        from lm_eval.base import rf
+        from catwalk.dependencies.lm_eval.base import rf
         return [
             rf.loglikelihood(choice[0], choice[1])
             for choice in rci.choices

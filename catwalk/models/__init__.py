@@ -9,6 +9,7 @@ from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 from catwalk.models.metaicl import MetaICLModel
 from catwalk.models.ia3 import IA3MetaICLModel
 from catwalk.models.promptsource import PromptsourceEncoderDecoderRCModel, PromptsourceDecoderOnlyRCModel
+from catwalk.models.soft_prompt import with_soft_prompt
 
 _ENCODER_DECODER_MODELS = {
     "t5-small",
@@ -37,6 +38,13 @@ _ENCODER_DECODER_MODELS = {
     "google/t5-v1_1-xl",
     "google/t5-v1_1-xxl",
     "stas/t5-very-small-random",
+    "bigscience/T0",
+    "bigscience/T0p",
+    "bigscience/T0pp",
+    "bigscience/T0_single_prompt",
+    "bigscience/T0_original_task_only",
+    "bigscience/T0-3B",
+    "ThomasNLG/CT0-11B"
 }
 
 _DECODER_ONLY_MODELS = {
@@ -60,6 +68,10 @@ _DECODER_ONLY_MODELS = {
     "facebook/opt-30b",
     "facebook/opt-66b",
     "EleutherAI/gpt-j-6B",
+    "EleutherAI/gpt-neo-125M",
+    "EleutherAI/gpt-neo-1.3B",
+    "EleutherAI/gpt-neo-2.7B",
+    "EleutherAI/gpt-neox-20b",
 }
 
 

@@ -177,16 +177,20 @@ TASKS: Dict[str, Task] = {
     "multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(QA_METRICS),
     #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
     "wic": EleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "wsc": EleutherTask("wsc", ranked_classification=True).add_metrics(MC_METRICS),
+    "wsc": EleutherTask(
+        "wsc",
+        ranked_classification=True,
+        promptsource_task_spec=('super_glue', 'wsc.fixed')
+    ).add_metrics(MC_METRICS),
     #"coqa": EleutherTask("coqa"),  # currently broken in the datasets library
     "drop": EleutherTask("drop").add_metrics(QA_METRICS),
-    "lambada": EleutherTask("lambada"),
-    "lambada_cloze": EleutherTask("lambada_cloze"),
-    "lambada_mt_en": EleutherTask("lambada_mt_en"),
-    "lambada_mt_fr": EleutherTask("lambada_mt_fr"),
-    "lambada_mt_de": EleutherTask("lambada_mt_de"),
-    "lambada_mt_it": EleutherTask("lambada_mt_it"),
-    "lambada_mt_es": EleutherTask("lambada_mt_es"),
+    "lambada": EleutherTask("lambada_standard"),
+    "lambada_cloze": EleutherTask("lambada_standard_cloze"),
+    "lambada_mt_en": EleutherTask("lambada_openai_mt_en"),
+    "lambada_mt_fr": EleutherTask("lambada_openai_mt_fr"),
+    "lambada_mt_de": EleutherTask("lambada_openai_mt_de"),
+    "lambada_mt_it": EleutherTask("lambada_openai_mt_it"),
+    "lambada_mt_es": EleutherTask("lambada_openai_mt_es"),
     "prost": EleutherTask("prost", ranked_classification=True).add_metrics(MC_METRICS),
     "mc_taco": EleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
     "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
@@ -229,7 +233,10 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
     ).add_metrics(MC_METRICS),
-    "triviaqa": EleutherTask("triviaqa").add_metrics(QA_METRICS),
+    "triviaqa": EleutherTask(
+        "triviaqa",
+        promptsource_task_spec=("trivia_qa", "unfiltered")
+    ).add_metrics(QA_METRICS),
     "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -281,7 +288,8 @@ TASKS: Dict[str, Task] = {
             id_field="id"
         )
     ).add_metrics(MC_METRICS),
-    "race": RaceEleutherTask().add_metrics(MC_METRICS),
+    "race": HFDatasetsTask("race", "high"),
+    "eleuther::race": RaceEleutherTask().add_metrics(MC_METRICS),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -439,9 +447,6 @@ TASKS: Dict[str, Task] = {
     "metaicl::unifiedqa:openbookqa_with_ir": MetaICLTask("unifiedqa:openbookqa_with_ir").add_metrics(MC_METRICS),
     "metaicl::unifiedqa:mctest": MetaICLTask("unifiedqa:mctest").add_metrics(MC_METRICS),
     "metaicl::unifiedqa:ai2_science_middle": MetaICLTask("unifiedqa:ai2_science_middle").add_metrics(MC_METRICS),
-    
-    "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
-
     "metaicl::numer_sense": MetaICLTask("numer_sense").add_metrics(classification_metrics(12)),
     "metaicl::race-high": MetaICLTask("race-high").add_metrics(MC_METRICS),
     "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),

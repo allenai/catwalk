@@ -3,12 +3,12 @@ from typing import Sequence, Dict, Any, Iterator, Callable, Mapping, List, Tuple
 
 import more_itertools
 import torch
-from lm_eval.base import Request
+from catwalk.dependencies.lm_eval.base import Request
 from tango.common import Tqdm
 from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel, \
+from transformers import AutoModelForCausalLM, GPT2Tokenizer, GPT2LMHeadModel, \
     AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
 from catwalk import cached_transformers
@@ -39,8 +39,12 @@ class EAIGPT(Model):
         max_gen_toks: int = 256,
         num_shots: int = 0
     ) -> Iterator[Dict[str, Any]]:
-        device = resolve_device()
-        model = cached_transformers.get(AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+        model = cached_transformers.get(
+            AutoModelForCausalLM,
+            self.pretrained_model_name_or_path,
+            False,
+            device_map="auto" if torch.cuda.device_count() > 0 else None,
+        ).eval()
         tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
@@ -145,44 +149,43 @@ class EAIGPT(Model):
         # actually do the processing
         results = [None] * len(ordered_indices)
         with torch.inference_mode():
-            batches_of_indices = more_itertools.chunked(
-                Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries"),
-                batch_size)
-            for batch_of_indices in batches_of_indices:
-                unpadded_batch = collections.defaultdict(list)
-                input_lengths = []
-                batch_contexts = []
-                batch_continuations = []
-                for index in batch_of_indices:
-                    for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
-                        ids = torch.cat([context_ids, continuation_ids])
-                        ids = ids[-(tokenizer.model_max_length+1):][:-1]
-                        unpadded_batch[field_name].append(ids)
+            with Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries") as batches_of_indices_tqdm:
+                batches_of_indices = more_itertools.chunked(batches_of_indices_tqdm, batch_size)
+                for batch_of_indices in batches_of_indices:
+                    unpadded_batch = collections.defaultdict(list)
+                    input_lengths = []
+                    batch_contexts = []
+                    batch_continuations = []
+                    for index in batch_of_indices:
+                        for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
+                            ids = torch.cat([context_ids, continuation_ids])
+                            ids = ids[-(tokenizer.model_max_length+1):][:-1]
+                            unpadded_batch[field_name].append(ids)
 
-                    input_lengths.append(len(unpadded_batch["input_ids"][-1]))
-                    batch_contexts.append(cc_pairs[index]["input_ids"][0])
-                    batch_continuations.append(cc_pairs[index]["input_ids"][1])
+                        input_lengths.append(len(unpadded_batch["input_ids"][-1]))
+                        batch_contexts.append(cc_pairs[index]["input_ids"][0])
+                        batch_continuations.append(cc_pairs[index]["input_ids"][1])
 
-                padded_batch = {
-                    field_name: pad_sequence(tensors, batch_first=True).to(model.device)
-                    for field_name, tensors in unpadded_batch.items()
-                }
+                    padded_batch = {
+                        field_name: pad_sequence(tensors, batch_first=True).to(model.device)
+                        for field_name, tensors in unpadded_batch.items()
+                    }
 
-                batch_logits = log_softmax(model(**padded_batch)[0], dim=-1).cpu()
-                z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
-                for i, instance_logits, input_length, instance_context, instance_continuation in z:
-                    instance_logits = instance_logits[input_length-len(instance_continuation):input_length].unsqueeze(0)
+                    batch_logits = log_softmax(model(**padded_batch)[0], dim=-1).cpu()
+                    z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
+                    for i, instance_logits, input_length, instance_context, instance_continuation in z:
+                        instance_logits = instance_logits[input_length-len(instance_continuation):input_length].unsqueeze(0)
 
-                    greedy_tokens = instance_logits.argmax(dim=-1)
-                    instance_continuation = instance_continuation.unsqueeze(0)
-                    max_equal = (greedy_tokens == instance_continuation).all()
+                        greedy_tokens = instance_logits.argmax(dim=-1)
+                        instance_continuation = instance_continuation.unsqueeze(0)
+                        max_equal = (greedy_tokens == instance_continuation).all()
 
-                    instance_logits = torch.gather(instance_logits, 2, instance_continuation.unsqueeze(-1)).squeeze(-1)
+                        instance_logits = torch.gather(instance_logits, 2, instance_continuation.unsqueeze(-1)).squeeze(-1)
 
-                    instance_result: Any = (float(instance_logits.sum()), bool(max_equal))
-                    if requests[i].index is not None:
-                        instance_result = instance_result[requests[i].index]
-                    results[i] = instance_result
+                        instance_result: Any = (float(instance_logits.sum()), bool(max_equal))
+                        if requests[i].index is not None:
+                            instance_result = instance_result[requests[i].index]
+                        results[i] = instance_result
 
         assert None not in results
         return results

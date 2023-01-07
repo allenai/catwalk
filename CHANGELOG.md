@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Huggingface's accelerate project, but only for inference
 - Promptsource now supports few-shot ICL.
 - Compatibility with the latest version of torchmetrics
+- The training step now supports early stopping.
 
 ### Fixed
 

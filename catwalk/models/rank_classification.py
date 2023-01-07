@@ -57,7 +57,7 @@ class RankClassificationModel(Model):
         batch_size: int = 32,
         max_instances_in_memory: int = 32 * 1024,
         num_shots: int = 0,
-        fewshot_seed: int = None
+        fewshot_seed: Optional[int] = None
     ) -> Iterator[Dict[str, Any]]:
         model = self._make_model(
             self.pretrained_model_name_or_path,
@@ -84,7 +84,7 @@ class RankClassificationModel(Model):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         num_shots: int = 0,
-        fewshot_seed: int = None
+        fewshot_seed: Optional[int] = None
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
@@ -271,26 +271,25 @@ class EncoderDecoderRCModel(RankClassificationModel):
         # actually do the processing
         results: List[Optional[float]] = [None] * len(ordered_indices)
         with torch.inference_mode():
-            batches_of_indices = more_itertools.chunked(
-                Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries"),
-                batch_size)
-            for batch_of_indices in batches_of_indices:
-                unpadded_batch = collections.defaultdict(list)
-                for index in batch_of_indices:
-                    for field_name, model_input in model_inputs[index].items():
-                        unpadded_batch[field_name].append(model_input)
-                padded_batch = {
-                    field_name: pad_sequence(tensors, batch_first=True).to(model.device)
-                    for field_name, tensors in unpadded_batch.items()
-                }
+            with Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries") as ordered_indices_tqdm:
+                batches_of_indices = more_itertools.chunked(ordered_indices_tqdm, batch_size)
+                for batch_of_indices in batches_of_indices:
+                    unpadded_batch = collections.defaultdict(list)
+                    for index in batch_of_indices:
+                        for field_name, model_input in model_inputs[index].items():
+                            unpadded_batch[field_name].append(model_input)
+                    padded_batch = {
+                        field_name: pad_sequence(tensors, batch_first=True).to(model.device)
+                        for field_name, tensors in unpadded_batch.items()
+                    }
 
-                batch_logits = log_softmax(model(**padded_batch).logits, dim=-1)
+                    batch_logits = log_softmax(model(**padded_batch).logits, dim=-1)
 
-                for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
-                    instance_logits = instance_logits[:len(decoder_input_ids)]
-                    instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1).to(model.device))
-                    denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(decoder_input_ids)
-                    results[i] = float(instance_logits.sum()) / denom
+                    for i, instance_logits, decoder_input_ids in zip(batch_of_indices, batch_logits, unpadded_batch["labels"]):
+                        instance_logits = instance_logits[:len(decoder_input_ids)]
+                        instance_logits = torch.gather(instance_logits, 1, decoder_input_ids.unsqueeze(-1).to(model.device))
+                        denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(decoder_input_ids)
+                        results[i] = float(instance_logits.sum()) / denom
 
         assert None not in results
         return cast(Sequence[float], results)
@@ -357,36 +356,35 @@ class DecoderOnlyRCModel(RankClassificationModel):
         # actually do the processing
         results: List[Optional[float]] = [None] * len(ordered_indices)
         with torch.inference_mode():
-            batches_of_indices = more_itertools.chunked(
-                Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries"),
-                batch_size)
-            for batch_of_indices in batches_of_indices:
-                unpadded_batch = collections.defaultdict(list)
-                input_lengths = []
-                batch_contexts = []
-                batch_continuations = []
-                for index in batch_of_indices:
-                    for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
-                        ids = torch.cat([context_ids, continuation_ids])
-                        ids = ids[-(tokenizer.model_max_length+1):][:-1]
-                        unpadded_batch[field_name].append(ids)
+            with Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries") as ordered_indices_tqdm:
+                batches_of_indices = more_itertools.chunked(ordered_indices_tqdm, batch_size)
+                for batch_of_indices in batches_of_indices:
+                    unpadded_batch = collections.defaultdict(list)
+                    input_lengths = []
+                    batch_contexts = []
+                    batch_continuations = []
+                    for index in batch_of_indices:
+                        for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
+                            ids = torch.cat([context_ids, continuation_ids])
+                            ids = ids[-(tokenizer.model_max_length+1):][:-1]
+                            unpadded_batch[field_name].append(ids)
 
-                    input_lengths.append(len(unpadded_batch["input_ids"][-1]))
-                    batch_contexts.append(cc_pairs[index]["input_ids"][0])
-                    batch_continuations.append(cc_pairs[index]["input_ids"][1])
+                        input_lengths.append(len(unpadded_batch["input_ids"][-1]))
+                        batch_contexts.append(cc_pairs[index]["input_ids"][0])
+                        batch_continuations.append(cc_pairs[index]["input_ids"][1])
 
-                padded_batch = {
-                    field_name: pad_sequence(tensors, batch_first=True).to(model.device)
-                    for field_name, tensors in unpadded_batch.items()
-                }
+                    padded_batch = {
+                        field_name: pad_sequence(tensors, batch_first=True).to(model.device)
+                        for field_name, tensors in unpadded_batch.items()
+                    }
 
-                batch_logits = log_softmax(model(**padded_batch)[0], dim=-1)
-                z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
-                for i, instance_logits, input_length, instance_context, instance_continuation in z:
-                    instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
-                    instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
-                    denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(instance_continuation)
-                    results[i] = float(instance_logits.sum()) / denom
+                    batch_logits = log_softmax(model(**padded_batch)[0], dim=-1)
+                    z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
+                    for i, instance_logits, input_length, instance_context, instance_continuation in z:
+                        instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
+                        instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
+                        denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(instance_continuation)
+                        results[i] = float(instance_logits.sum()) / denom
 
         assert None not in results
         return cast(Sequence[float], results)

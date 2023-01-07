@@ -9,6 +9,7 @@ from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 from catwalk.models.metaicl import MetaICLModel
 from catwalk.models.ia3 import IA3MetaICLModel
 from catwalk.models.promptsource import PromptsourceEncoderDecoderRCModel, PromptsourceDecoderOnlyRCModel
+from catwalk.models.soft_prompt import with_soft_prompt
 
 _ENCODER_DECODER_MODELS = {
     "t5-small",

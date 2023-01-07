@@ -49,13 +49,15 @@ def promptsource_convert(
     for template_name in dataset_templates.all_template_names:
         template = dataset_templates[template_name]
 
-        prompt = template.apply(instance)
-        if prompt is None:
+        prompt_really_special_just_for_mypy = template.apply(instance)
+        if prompt_really_special_just_for_mypy is None:
             continue
-        prompt, correct_answer = prompt
-        if correct_answer is not None:
-            assert len(correct_answer) == 1
-            correct_answer = correct_answer[0]
+        prompt, correct_answer_really_special_just_for_mypy = prompt_really_special_just_for_mypy
+        if correct_answer_really_special_just_for_mypy is None:
+            correct_answer = None
+        else:
+            assert len(correct_answer_really_special_just_for_mypy) == 1
+            correct_answer = correct_answer_really_special_just_for_mypy[0]
 
         answer_choices = template.get_answer_choices_list(instance)
         correct_choice_index: Optional[int]
@@ -91,6 +93,8 @@ def promptsource_convert(
 
 
 class WithPromptsourceMixin:
+    promptsource_templates: Optional[DatasetTemplates]
+
     def __init__(self, dataset_name: str, subset_name: Optional[str] = None):
         if (dataset_name, subset_name) in _promptsource_template_collection.keys:
             self.promptsource_templates = _promptsource_template_collection.get_dataset(dataset_name, subset_name)

@@ -49,15 +49,16 @@ class Model(Registrable, DetHashWithVersion, ABC):
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
         metrics = task.make_metrics()
-        for prediction in Tqdm.tqdm(predictions, desc="Calculating metrics"):
-            for metric_name, metric_args in prediction.items():
-                try:
-                    metric = metrics[metric_name]
-                except KeyError:
-                    continue
-                metric_args = tensor_args(metric_args)
-                metric_args = unsqueeze_args(metric_args)
-                metric.update(*metric_args)
+        with Tqdm.tqdm(predictions, desc="Calculating metrics") as predictions_tqdm:
+            for prediction in predictions_tqdm:
+                for metric_name, metric_args in prediction.items():
+                    try:
+                        metric = metrics[metric_name]
+                    except KeyError:
+                        continue
+                    metric_args = tensor_args(metric_args)
+                    metric_args = unsqueeze_args(metric_args)
+                    metric.update(*metric_args)
         return {
             metric_name: metric.compute().tolist()
             for metric_name, metric in metrics.items()
@@ -91,6 +92,11 @@ class TrainableModel(Model, torch.nn.Module, ABC):
         This method takes the input created by the :meth:`collate()` method and returns a dictionary that contains
         the loss under the key ``"loss"``.
         """
+        if self.inner_module is None:
+            raise NotImplementedError(
+                "If you want to be able to pass None as the inner_module to TrainableModule, "
+                "you need to override the forward() method."
+            )
         return self.inner_module.forward(*args, **kwargs)
 
     def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:

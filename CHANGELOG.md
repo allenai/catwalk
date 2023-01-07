@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.2.0](https://github.com/allenai/catwalk/releases/tag/v0.2.0) - 2022-12-02
+
 ### Changed
 
 - MetaICLTask now supports fewshots less than 16 and only support getting the test split
@@ -14,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - changed MetaICLModel formatting to always preserve whitespace, to reproduce MetaICL results
 - improved speed of rank classification models by aggregating sequence logits on GPU rather than on CPU
 - The promptsource templates now live directly inside of Catwalk. This avoids dependency issues.
+- Promptsource now applies the templates in parallel across all CPUs.
+- Replaced a dependency on `lmeval` with a copy of the source code
 
 ### Added
 
@@ -39,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Format conversions for a number of multiple choice models
 - Added an experiment config that trains many models on many tasks
 - Added promptsource support
+- Added support for soft prompts
+- Added more models, T0 variants of T5 and Eleuther variants of GPT
+- Added support for Huggingface's accelerate project, but only for inference
+- Promptsource now supports few-shot ICL.
+- Compatibility with the latest version of torchmetrics
 
 ### Fixed
 
@@ -53,6 +62,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Applied workaround for T5 bug in huggingface tokenizers
 - Fixed fine-tuning T5 ranked classification models
 - Fixed the names of the T5 1.1 models
+- Cached transformers now take `kwargs` into account.
+- Fixed various tasks: WSC, TriviaQA, Race, HeadQA
+- Fixed the case where different promptsource templates produce different numbers of answer choices
+- `tqdm` has to be closed or it'll start printing a bunch of newlines.
+
 
 ## [v0.1.0](https://github.com/allenai/catwalk/releases/tag/v0.1.0) - 2022-06-10
 

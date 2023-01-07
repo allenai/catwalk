@@ -10,8 +10,8 @@ from transformers import (AutoModelForMultipleChoice,
                           AutoTokenizer,
                           AutoModelForQuestionAnswering,
                           QuestionAnsweringPipeline, PreTrainedModel, PreTrainedTokenizer,
-                          AutoModelForSequenceClassification, TextClassificationPipeline)
-from torchmetrics.functional import accuracy
+                          AutoModelForSequenceClassification)
+from torchmetrics.functional.classification import multiclass_accuracy
 from transformers.tokenization_utils_base import LARGE_INTEGER
 
 from catwalk import cached_transformers
@@ -85,13 +85,14 @@ class HFAutoModel(Model):
         questions = [instance.question for instance in instances]
 
         pipe_results = pipe(context=contexts, question=questions, batch_size=batch_size)
-        for instance, prediction in zip(instances, Tqdm.tqdm(pipe_results, desc="Processing instances")):
-            yield {
-                "squad_metrics": (
-                    {"id": instance.id, "prediction_text": prediction["answer"]},
-                    {"id": instance.id, "answers": instance.answers}
-                )
-            }
+        with Tqdm.tqdm(pipe_results, desc="Processing instances") as instances_tqdm:
+            for instance, prediction in zip(instances, instances_tqdm):
+                yield {
+                    "squad_metrics": (
+                        {"id": instance.id, "prediction_text": prediction["answer"]},
+                        {"id": instance.id, "answers": instance.answers}
+                    )
+                }
                 
     @classmethod
     def _predict_mc(
@@ -103,40 +104,40 @@ class HFAutoModel(Model):
     ) -> Iterator[Dict[str, Any]]:
         # There is no Huggingface pipeline for this.
 
-        instances = Tqdm.tqdm(instances, desc="Processing instances")
         model.eval()
-        with torch.inference_mode():
-            for batch in more_itertools.chunked(instances, batch_size):
-                number_of_choices = max(len(instance.answer_choices) for instance in batch)
-                texts: List[Tuple[str, str]] = []
-                labels = []
-                for instance in batch:
-                    texts.extend(
-                        (instance.question, choice)
-                        for choice in instance.answer_choices
+        with Tqdm.tqdm(instances, desc="Processing instances") as instances:
+            with torch.inference_mode():
+                for batch in more_itertools.chunked(instances, batch_size):
+                    number_of_choices = max(len(instance.answer_choices) for instance in batch)
+                    texts: List[Tuple[str, str]] = []
+                    labels = []
+                    for instance in batch:
+                        texts.extend(
+                            (instance.question, choice)
+                            for choice in instance.answer_choices
+                        )
+                        while len(texts) % number_of_choices != 0:
+                            texts.append(("", ""))  # padding in the choices dimension
+                        labels.append(instance.correct_answer_index)
+                    tensors = tokenizer.batch_encode_plus(
+                        texts,
+                        padding=True,
+                        truncation="only_first",
+                        return_tensors="pt",
+                        pad_to_multiple_of=8,
                     )
-                    while len(texts) % number_of_choices != 0:
-                        texts.append(("", ""))  # padding in the choices dimension
-                    labels.append(instance.correct_answer_index)
-                tensors = tokenizer.batch_encode_plus(
-                    texts,
-                    padding=True,
-                    truncation="only_first",
-                    return_tensors="pt",
-                    pad_to_multiple_of=8,
-                )
-                results = model(
-                    return_dict=True,
-                    **{
-                        key: tensor.view(len(batch), number_of_choices, -1).to(model.device)
-                        for key, tensor in tensors.items()
-                    })
-                for instance, logits in zip(batch, results.logits.detach().cpu()):
-                    yield {
-                        "correct_answer_index": instance.correct_answer_index,
-                        "logits": logits,
-                        "acc": (logits, instance.correct_answer_index),
-                    }
+                    results = model(
+                        return_dict=True,
+                        **{
+                            key: tensor.view(len(batch), number_of_choices, -1).to(model.device)
+                            for key, tensor in tensors.items()
+                        })
+                    for instance, logits in zip(batch, results.logits.detach().cpu()):
+                        yield {
+                            "correct_answer_index": instance.correct_answer_index,
+                            "logits": logits,
+                            "acc": (logits, instance.correct_answer_index),
+                        }
 
     @classmethod
     def _predict_classification(
@@ -148,25 +149,25 @@ class HFAutoModel(Model):
     ) -> Iterator[Dict[str, Any]]:
         # There is no Huggingface pipeline for this.
         # HF's TextClassification pipeline only classifies single texts, not text pairs
-        instances = Tqdm.tqdm(instances, desc="Processing instances")
         model.eval()
-        with torch.inference_mode():
-            for batch in more_itertools.chunked(instances, batch_size):
-                tensors = tokenizer.batch_encode_plus(
-                    [instance.text for instance in batch],
-                    padding=True,
-                    truncation="only_first",
-                    return_tensors="pt",
-                    pad_to_multiple_of=8,
-                )
-                tensors = {k: v.to(model.device) for k, v in tensors.items()}
-                results = model(return_dict=True, **tensors)
-                for instance, logits in zip(batch, results.logits.detach().cpu()):
-                    yield {
-                        "label": instance.label,
-                        "logits": logits,
-                        "acc": (logits, instance.label),
-                    }
+        with Tqdm.tqdm(instances, desc="Processing instances") as instances:
+            with torch.inference_mode():
+                for batch in more_itertools.chunked(instances, batch_size):
+                    tensors = tokenizer.batch_encode_plus(
+                        [instance.text for instance in batch],
+                        padding=True,
+                        truncation="only_first",
+                        return_tensors="pt",
+                        pad_to_multiple_of=8,
+                    )
+                    tensors = {k: v.to(model.device) for k, v in tensors.items()}
+                    results = model(return_dict=True, **tensors)
+                    for instance, logits in zip(batch, results.logits.detach().cpu()):
+                        yield {
+                            "label": instance.label,
+                            "logits": logits,
+                            "acc": (logits, instance.label),
+                        }
 
     def trainable_copy(self, **kwargs) -> "TrainableHFAutoModel":
         return TrainableHFAutoModel(self.pretrained_model_name_or_path, **kwargs)
@@ -311,7 +312,7 @@ class TrainableHFAutoModel(TrainableModel):
 
     def _forward_mc(self, *args, **kwargs) -> Dict[str, Any]:
         results = self.mc_model.forward(*args, **kwargs)
-        results["acc"] = accuracy(results.logits, kwargs["labels"])
+        results["acc"] = multiclass_accuracy(results.logits, kwargs["labels"], num_classes=results.logits.size(-1))
         return results
 
     def _forward_qa(self, *args, **kwargs) -> Dict[str, Any]:
@@ -321,7 +322,7 @@ class TrainableHFAutoModel(TrainableModel):
     def _forward_classification(self, *args, **kwargs) -> Dict[str, Any]:
         assert self.classification_model is not None
         results = self.classification_model.forward(*args, **kwargs)
-        results["acc"] = accuracy(results.logits, kwargs["labels"])
+        results["acc"] = multiclass_accuracy(results.logits, kwargs["labels"], num_classes=results.logits.size(-1))
         return results
 
     def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:

@@ -1,7 +1,7 @@
 import collections
 import functools
 import logging
-from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List
+from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List, Optional
 
 import bettermap
 import torch
@@ -29,7 +29,7 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         num_shots: int = 0,
-        fewshot_seed: int = None,
+        fewshot_seed: Optional[int] = None,
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[Tuple[int, str], List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
@@ -47,11 +47,12 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
 
         map_fn = functools.partial(bettermap.map_in_chunks, chunk_size=64)
         #map_fn = map        # for debugging
-        rc_instances: List[Dict[str, RankClassificationInstance]] = \
-            list(Tqdm.tqdm(
-                map_fn(convert_instance, range(len(instances))),
-                total=len(instances),
-                desc="Converting instances"))
+        with Tqdm.tqdm(
+            map_fn(convert_instance, range(len(instances))),
+            total=len(instances),
+            desc="Converting instances"
+        ) as converted_instances_tqdm:
+            rc_instances: List[Dict[str, RankClassificationInstance]] = list(converted_instances_tqdm)
 
         # Remove prompts that have no gold answer, since we can't evaluate them.
         for instance_dict in rc_instances:
@@ -93,16 +94,17 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
                 torchmetrics.Accuracy(num_classes=None)
 
         metrics_seen = set()
-        for prediction in Tqdm.tqdm(predictions, desc="Calculating metrics"):
-            for metric_name, metric_args in prediction.items():
-                try:
-                    metric = metrics[metric_name]
-                except KeyError:
-                    continue
-                metric_args = tensor_args(metric_args)
-                metric_args = unsqueeze_args(metric_args)
-                metric.update(*metric_args)
-                metrics_seen.add(metric_name)
+        with Tqdm.tqdm(predictions, desc="Calculating metrics") as predictions_tqdm:
+            for prediction in predictions_tqdm:
+                for metric_name, metric_args in prediction.items():
+                    try:
+                        metric = metrics[metric_name]
+                    except KeyError:
+                        continue
+                    metric_args = tensor_args(metric_args)
+                    metric_args = unsqueeze_args(metric_args)
+                    metric.update(*metric_args)
+                    metrics_seen.add(metric_name)
         for metric_name in metrics.keys():
             if metric_name not in metrics_seen:
                 logger.warning("Metric %s was not seen in predictions.", metric_name)

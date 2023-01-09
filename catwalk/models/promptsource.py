@@ -1,25 +1,24 @@
 import collections
 import functools
 import logging
+from dataclasses import dataclass
 from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List, Optional
 
 import bettermap
 import torch
-import torchmetrics
 from tango.common import Tqdm
 
 from catwalk.models.rank_classification import RankClassificationModel, _Model, _Tokenizer, EncoderDecoderRCModel, \
     DecoderOnlyRCModel
 from catwalk.task import RankClassificationInstance, InstanceFormat, Task
 from catwalk.tasks.promptsource import WithPromptsourceMixin
-from catwalk.model import tensor_args, unsqueeze_args
 
 
 logger = logging.getLogger(__name__)
 
 
 class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
-    VERSION = EncoderDecoderRCModel.VERSION + "003met"
+    VERSION = EncoderDecoderRCModel.VERSION + "004acc"
 
     def predict_chunk(
         self: RankClassificationModel,
@@ -88,30 +87,35 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
         assert isinstance(task, WithPromptsourceMixin)
         templates = task.promptsource_templates
         assert templates is not None
-        metrics = {}
-        for template_name in templates.all_template_names:
-            metrics[template_name.strip().replace(" ", "_") + "_acc"] = \
-                torchmetrics.Accuracy(num_classes=None)
 
-        metrics_seen = set()
+        @dataclass
+        class AccuracyAccumulator:
+            instances_seen: int
+            num_correct: int
+
+        accaccs: Dict[str, AccuracyAccumulator] = {}
+        for template_name in templates.all_template_names:
+            accaccs[template_name.strip().replace(" ", "_") + "_acc"] = AccuracyAccumulator(0, 0)
+
         with Tqdm.tqdm(predictions, desc="Calculating metrics") as predictions_tqdm:
             for prediction in predictions_tqdm:
                 for metric_name, metric_args in prediction.items():
                     try:
-                        metric = metrics[metric_name]
+                        accacc = accaccs[metric_name]
                     except KeyError:
                         continue
-                    metric_args = tensor_args(metric_args)
-                    metric_args = unsqueeze_args(metric_args)
-                    metric.update(*metric_args)
-                    metrics_seen.add(metric_name)
-        for metric_name in metrics.keys():
-            if metric_name not in metrics_seen:
+
+                    logits, label = metric_args
+                    if logits.argmax() == label:
+                        accacc.num_correct += 1
+                    accacc.instances_seen += 1
+        for metric_name, accacc in accaccs.items():
+            if accacc.instances_seen <= 0:
                 logger.warning("Metric %s was not seen in predictions.", metric_name)
         return {
-            metric_name: metric.compute().tolist()
-            for metric_name, metric in metrics.items()
-            if metric_name in metrics_seen
+            metric_name: accacc.num_correct / accacc.instances_seen
+            for metric_name, accacc in accaccs.items()
+            if accacc.instances_seen > 0
         }
 
 

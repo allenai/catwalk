@@ -386,65 +386,22 @@ class Task(abc.ABC):
     # The name of a subset within `DATASET_PATH`.
     DATASET_NAME: str = None
 
-    def __init__(self, data_dir=None, cache_dir=None, download_mode=None):
-        """
-        :param data_dir: str
-            Stores the path to a local folder containing the `Task`'s data files.
-            Use this to specify the path to manually downloaded data (usually when
-            the dataset is not publicly accessible).
-        :param cache_dir: str
-            The directory to read/write the `Task` dataset. This follows the
-            HuggingFace `datasets` API with the default cache directory located at:
-                `~/.cache/huggingface/datasets`
-            NOTE: You can change the cache location globally for a given process
-            by setting the shell environment variable, `HF_DATASETS_CACHE`,
-            to another directory:
-                `export HF_DATASETS_CACHE="/path/to/another/directory"`
-        :param download_mode: datasets.DownloadMode
-            How to treat pre-existing `Task` downloads and data.
-            - `datasets.DownloadMode.REUSE_DATASET_IF_EXISTS`
-                Reuse download and reuse dataset.
-            - `datasets.DownloadMode.REUSE_CACHE_IF_EXISTS`
-                Reuse download with fresh dataset.
-            - `datasets.DownloadMode.FORCE_REDOWNLOAD`
-                Fresh download and fresh dataset.
-        """
-        self.download(data_dir, cache_dir, download_mode)
+    def __init__(self):
+        self._dataset = None
         self._training_docs = None
         self._fewshot_docs = None
 
-    def download(self, data_dir=None, cache_dir=None, download_mode=None):
+    @property
+    def dataset(self):
+        if self._dataset is None:
+            self.download()
+        return self._dataset
+
+    def download(self):
         """Downloads and returns the task dataset.
         Override this method to download the dataset from a custom API.
-
-        :param data_dir: str
-            Stores the path to a local folder containing the `Task`'s data files.
-            Use this to specify the path to manually downloaded data (usually when
-            the dataset is not publicly accessible).
-        :param cache_dir: str
-            The directory to read/write the `Task` dataset. This follows the
-            HuggingFace `datasets` API with the default cache directory located at:
-                `~/.cache/huggingface/datasets`
-            NOTE: You can change the cache location globally for a given process
-            by setting the shell environment variable, `HF_DATASETS_CACHE`,
-            to another directory:
-                `export HF_DATASETS_CACHE="/path/to/another/directory"`
-        :param download_mode: datasets.DownloadMode
-            How to treat pre-existing `Task` downloads and data.
-            - `datasets.DownloadMode.REUSE_DATASET_IF_EXISTS`
-                Reuse download and reuse dataset.
-            - `datasets.DownloadMode.REUSE_CACHE_IF_EXISTS`
-                Reuse download with fresh dataset.
-            - `datasets.DownloadMode.FORCE_REDOWNLOAD`
-                Fresh download and fresh dataset.
         """
-        self.dataset = datasets.load_dataset(
-            path=self.DATASET_PATH,
-            name=self.DATASET_NAME,
-            data_dir=data_dir,
-            cache_dir=cache_dir,
-            download_mode=download_mode,
-        )
+        self._dataset = datasets.load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
 
     def should_decontaminate(self):
         """Whether this task supports decontamination against model training set."""

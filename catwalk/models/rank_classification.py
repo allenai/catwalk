@@ -115,10 +115,8 @@ class RankClassificationModel(Model):
             result_tensor = torch.tensor(results_for_instance)
             metric_args = (result_tensor, instance.correct_choice)
             yield {
-                "acc": metric_args,
-                "f1": metric_args,
-                "precision": metric_args,
-                "recall": metric_args,
+                metric_name: metric_args
+                for metric_name in task.metrics.keys()
             }
 
     def _run_loglikelihood(

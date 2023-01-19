@@ -137,6 +137,7 @@ class HFAutoModel(Model):
                             "correct_answer_index": instance.correct_answer_index,
                             "logits": logits,
                             "acc": (logits, instance.correct_answer_index),
+                            "relative_improvement": (logits, instance.correct_answer_index),
                         }
 
     @classmethod

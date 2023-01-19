@@ -9,6 +9,7 @@ import torchmetrics
 from mypy_extensions import KwArg
 from tango.common import Registrable, det_hash
 
+import catwalk.metrics
 from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
 
@@ -35,7 +36,8 @@ except ImportError:
 @memoize
 def mc_metrics(num_classes: int):
     return {
-        "acc": partial(torchmetrics.classification.MulticlassAccuracy, num_classes=num_classes)
+        "acc": catwalk.metrics.AccuracyMetric,
+        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
     }
 
 

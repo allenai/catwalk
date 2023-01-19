@@ -18,7 +18,6 @@ executor:
     - ai2/general-cirrascale
     - ai2/allennlp-cirrascale
     - ai2/allennlp-elanding-a100-40g
-    - ai2/allennlp-elanding-a100-80g
     - ai2/aristo-cirrascale
     - ai2/mosaic-cirrascale-a100
     - ai2/mosaic-cirrascale

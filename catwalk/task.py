@@ -44,10 +44,8 @@ def mc_metrics(num_classes: int):
 @memoize
 def classification_metrics(num_classes: int):
     return {
-        "acc": partial(torchmetrics.classification.MulticlassAccuracy, num_classes=num_classes, average=None),
-        "f1": partial(torchmetrics.classification.MulticlassF1Score, num_classes=num_classes, average=None),
-        "precision": partial(torchmetrics.classification.MulticlassPrecision, num_classes=num_classes, average=None),
-        "recall": partial(torchmetrics.classification.MulticlassRecall, num_classes=num_classes, average=None)
+        "acc": catwalk.metrics.AccuracyMetric,
+        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
     }
 
 

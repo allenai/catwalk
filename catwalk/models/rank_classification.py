@@ -20,7 +20,7 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 
 
 class RankClassificationModel(Model):
-    VERSION = "001nul"
+    VERSION = "002met"
 
     def __init__(
         self,

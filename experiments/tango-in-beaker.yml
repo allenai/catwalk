@@ -23,7 +23,7 @@ executor:
     - ai2/mosaic-cirrascale
     - ai2/s2-cirrascale
     - ai2/s2-elanding
-    - ai2/dirkg-1gpu
+      #- ai2/dirkg-1gpu
   env_vars:
     - name: WANDB_API_KEY
       secret: WANDB_API_KEY

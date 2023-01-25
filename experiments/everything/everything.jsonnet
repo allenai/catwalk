@@ -34,7 +34,7 @@ local tasks = if debug then [
     ];
 
 local task2validate_every = {
-    "qqp": 1000,
+    "qqp": 5000,
     "mnli": 1000,
     "mnli_mismatched": 1000,
     "sst": 1000,

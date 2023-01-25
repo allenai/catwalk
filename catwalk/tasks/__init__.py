@@ -91,7 +91,7 @@ TASKS: Dict[str, Task] = {
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherClassificationTask(
         "rte",
-        answer_options=["entailment", "not entailment"]
+        answer_options=["True", "False"]
     ).add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
@@ -114,7 +114,7 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherClassificationTask("cola", answer_options=["false", "true"]).add_instance_conversion(
+    "cola": EleutherClassificationTask("cola", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(premise_field="sentence", hypothesis_field=None, id_field='idx')
     ),
@@ -132,8 +132,7 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(id_field='idx')
     ),
-    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]
-    ).add_instance_conversion(
+    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
             premise_field="sentence1",

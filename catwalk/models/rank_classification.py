@@ -26,7 +26,7 @@ class RankClassificationModel(Model):
         self,
         pretrained_model_name_or_path: str,
         *,
-        likelihood_averaging: str = 'char',
+        likelihood_averaging: str = 'token',
         **model_kwargs
     ):
         """

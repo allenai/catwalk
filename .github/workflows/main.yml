@@ -71,7 +71,7 @@ jobs:
         if: always()
         run: |
           . .venv/bin/activate
-          pip uninstall -y catwalk
+          pip uninstall -y ai2-catwalk
 
   release:
     name: Release

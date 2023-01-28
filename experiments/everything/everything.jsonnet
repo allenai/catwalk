@@ -62,10 +62,10 @@ local trainable_models2batchsize = if debug then {
     "bert-large-cased": 16,
     "roberta-base": 16,
     "roberta-large": 16,
-    "deberta-v3-base": 16,
-    "deberta-v3-small": 16,
-    "deberta-v3-large": 4,
-    "deberta-v2-xlarge": 2,
+    #"deberta-v3-base": 16,
+    #"deberta-v3-small": 16,
+    #"deberta-v3-large": 4,
+    #"deberta-v2-xlarge": 2,
     #"deberta-v2-xxlarge": 1,
 };
 
@@ -102,15 +102,15 @@ local shot_models2batchsize = if debug then {
     "rc::bloom-1b7": 16,
     "rc::bloom-3b": 16,
     "rc::bloom-7b1": 16,
-    "rc::opt-125m": 16,
-    "rc::opt-350m": 16,
-    "rc::opt-1.3b": 16,
-    "rc::opt-2.7b": 4,
-    "rc::opt-6.7b": 1,
+    #"rc::opt-125m": 16,
+    #"rc::opt-350m": 16,
+    #"rc::opt-1.3b": 16,
+    #"rc::opt-2.7b": 4,
+    #"rc::opt-6.7b": 1,
     #"rc::opt-13b": 16,
     #"rc::opt-30b": 16,
     #"rc::opt-66b": 16,
-    "rc::gpt-j-6b": 1,
+    #"rc::gpt-j-6b": 1,
 };
 
 local shot_models = std.objectFields(shot_models2batchsize);

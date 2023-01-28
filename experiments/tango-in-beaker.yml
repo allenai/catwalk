@@ -1,14 +1,14 @@
 # Define the workspace to use (where results will be stored).
 workspace:
-  type: beaker
+  type: gs
   # Change this to the Beaker workspace you want to use.
-  beaker_workspace: ai2/task-complexity
+  workspace: allennlp-catwalk
 
 # Define the executor to use (how steps will be run).
 executor:
   type: beaker
   # Change this to the Beaker workspace you want to use.
-  beaker_workspace: ai2/task-complexity
+  beaker_workspace: ai2/catwalk
   beaker_image: dirkg/catwalk
   # You probably want to leave this as 'base' unless you have your own image
   # that already has a conda environment under a different name.
@@ -16,6 +16,7 @@ executor:
   # These are the Beaker clusters that you want to use to run steps.
   clusters:
     - ai2/general-cirrascale
+    - ai2/general-cirrascale-a100-80g-ib
     - ai2/allennlp-cirrascale
     - ai2/allennlp-elanding-a100-40g
     - ai2/aristo-cirrascale

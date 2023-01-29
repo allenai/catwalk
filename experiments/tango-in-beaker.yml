@@ -32,7 +32,8 @@ executor:
       value: /google-auth.json
   datasets:
     - mount_path: /google-auth.json
-      secret: GOOGLE_AUTH_KEY_JSON
+      source:
+        secret: GOOGLE_AUTH_KEY_JSON
   priority: preemptible
   parallelism: 128
 

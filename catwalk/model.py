@@ -1,7 +1,7 @@
 import inspect
 from abc import ABC
 from copy import deepcopy
-from typing import Sequence, Dict, Any, Iterator, Tuple, List, Optional
+from typing import Sequence, Dict, Any, Iterator, Tuple, List, Optional, Union
 
 import torch
 from tango.common import Registrable, Tqdm
@@ -41,6 +41,17 @@ def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any, ...]:
     return tuple(fixed_args)
 
 
+_TorchmetricsResult = Union[torch.Tensor, Dict[str, '_TorchmetricsResult']]
+_CatwalkResult = Union[float, Dict[str, '_CatwalkResult']]
+
+
+def recursive_tolist(args: _TorchmetricsResult) -> _CatwalkResult:
+    if isinstance(args, dict):
+        return { key: recursive_tolist(value) for key, value in args.items() }
+    else:
+        return args.tolist()
+
+
 class Model(Registrable, DetHashWithVersion, ABC):
     VERSION = "002lst"
 
@@ -60,7 +71,7 @@ class Model(Registrable, DetHashWithVersion, ABC):
                     metric_args = unsqueeze_args(metric_args)
                     metric.update(*metric_args)
         return {
-            metric_name: metric.compute().tolist()
+            metric_name: recursive_tolist(metric.compute())
             for metric_name, metric in metrics.items()
         }
 

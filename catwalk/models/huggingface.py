@@ -79,7 +79,9 @@ class HFAutoModel(Model):
         tokenizer: PreTrainedTokenizer,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=model.device.index)
+        # The type annotation for QuestionAnsweringPipeline says `device` has to be an `int`, but when you look
+        # at the code, that's not actually correct.
+        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=model.device)  # type: ignore
         
         contexts = [instance.context for instance in instances]
         questions = [instance.question for instance in instances]

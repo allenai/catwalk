@@ -3,7 +3,7 @@ from typing import Dict, Optional
 import datasets
 
 from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
-    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics
+    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
@@ -14,7 +14,7 @@ from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
-    "wikitext": EleutherTask("wikitext"),
+    "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(

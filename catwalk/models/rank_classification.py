@@ -5,7 +5,6 @@ from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, O
 import more_itertools
 import torch
 from tango.common import Tqdm
-from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, GPT2LMHeadModel, \

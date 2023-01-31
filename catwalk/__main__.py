@@ -7,25 +7,25 @@ from catwalk.steps import TabulateMetricsStep
 from catwalk.tasks import TASK_SETS
 
 
-def main():
-    initialize_logging(log_level="WARNING")
+_parser = argparse.ArgumentParser()
+_parser.add_argument('--model', type=str, required=True)
+_parser.add_argument('--task', type=str, nargs="+")
+_parser.add_argument('--split', type=str)
+_parser.add_argument('--batch_size', type=int, default=32)
+_parser.add_argument('--num_shots', type=int)
+_parser.add_argument('--fewshot_seed', type=int)
+_parser.add_argument('--limit', type=int)
+_parser.add_argument(
+    '-d', '-w',
+    type=str,
+    default=None,
+    metavar="workspace",
+    dest="workspace",
+    help="the Tango workspace with the cache")
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, required=True)
-    parser.add_argument('--task', type=str, nargs="+")
-    parser.add_argument('--split', type=str)
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--num_shots', type=int)
-    parser.add_argument('--fewshot_seed', type=int)
-    parser.add_argument('--limit', type=int)
-    parser.add_argument(
-        '-d', '-w',
-        type=str,
-        default=None,
-        metavar="workspace",
-        dest="workspace",
-        help="the Tango workspace with the cache")
-    args = parser.parse_args()
+
+def main(args: argparse.Namespace):
+    initialize_logging(log_level="WARNING")
 
     if args.workspace is None:
         workspace = None
@@ -71,4 +71,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(_parser.parse_args())

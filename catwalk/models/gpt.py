@@ -146,7 +146,7 @@ class GPTModel(Model):
                     inputs = pad_sequence(
                         [mi.input_ids for mi in batch], batch_first=True)
                     outputs = model(inputs)
-                    outputs = log_softmax(outputs.logits, dim=-1).cpu()
+                    outputs = log_softmax(outputs.logits, dim=-1)
                     for mi, output in zip(batch, outputs):
                         # gets rid of padding
                         output = output[:len(mi.targets)]

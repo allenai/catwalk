@@ -110,6 +110,8 @@ class GPTModel(Model):
         ) -> Iterator[ModelInstance]:
             for text in texts:
                 token_ids = [tokenizer.eos_token_id] + tokenizer.encode(text)
+                # The next line puts the entire text into GPU memory. In principle this is a problem, because it
+                # might OOM when the text is long. In practice, that doesn't happen.
                 token_ids = torch.tensor(token_ids, dtype=torch.long, device=device)
                 window_start = 0
                 while True:

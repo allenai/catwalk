@@ -110,7 +110,7 @@ class GPTModel(Model):
         ) -> Iterator[ModelInstance]:
             for text in texts:
                 token_ids = [tokenizer.eos_token_id] + tokenizer.encode(text)
-                token_ids = torch.tensor(token_ids, dtype=torch.long)
+                token_ids = torch.tensor(token_ids, dtype=torch.long, device=device)
                 window_start = 0
                 while True:
                     window_end = window_start + tokenizer.model_max_length

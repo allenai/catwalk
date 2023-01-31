@@ -168,7 +168,7 @@ class GPTModel(Model):
                 yield last_text, float(summed_logprobs)
 
         model_instances = make_model_instances(
-            instance["text"] for instance in Tqdm.tqdm(
+            task.convert_instance(instance, InstanceFormat.ELEUTHER_REQUESTS).args[0] for instance in Tqdm.tqdm(
                 instances,
                 desc="Calculating log probabilities")
         )

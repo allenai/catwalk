@@ -39,11 +39,11 @@ class GPTModel(Model):
         return self._predict_perplexity(task, instances, batch_size=batch_size)
 
     def _predict_qa(
-            self,
-            task: Task,
-            instances: Sequence[Dict[str, Any]],
-            *,
-            batch_size: int = 32
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        *,
+        batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = cached_transformers.get(

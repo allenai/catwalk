@@ -43,7 +43,7 @@ with open("catwalk/version.py", "r") as version_file:
     exec(version_file.read(), VERSION)
 
 setup(
-    name="catwalk",
+    name="ai2-catwalk",
     version=VERSION["VERSION"],
     description="A library for evaluating language models.",
     long_description=open("README.md").read(),

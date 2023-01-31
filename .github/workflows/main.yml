@@ -71,7 +71,7 @@ jobs:
         if: always()
         run: |
           . .venv/bin/activate
-          pip uninstall -y catwalk
+          pip uninstall -y ai2-catwalk
 
   release:
     name: Release
@@ -79,7 +79,7 @@ jobs:
     needs: [checks]
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v1
 
       - name: Setup Python
         uses: actions/setup-python@v4

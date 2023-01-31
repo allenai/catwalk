@@ -10,7 +10,7 @@ accelerate
 bettermap
 
 # For the P3 datasets, which we get from huggingface datasets
-protobuf<=3.20
+protobuf<4.22
 
 # For lm-eval
 sacrebleu>=1.5.0

@@ -8,10 +8,9 @@ class PerplexityMetric(BaseAggregator):
     def __init__(
         self,
         nan_strategy: Union[str, float] = "warn",
-        compute_on_step: Optional[bool] = None,
         **kwargs: Dict[str, Any],
     ):
-        super().__init__("sum", [], nan_strategy, compute_on_step, **kwargs)
+        super().__init__("sum", [], nan_strategy, **kwargs)
         self.add_state("loglikelihood", default=torch.tensor(0.0, dtype=torch.float), dist_reduce_fx="sum")
         self.add_state("num_tokens", default=torch.tensor(0, dtype=torch.int), dist_reduce_fx="sum")
 

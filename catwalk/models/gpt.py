@@ -39,11 +39,11 @@ class GPTModel(Model):
         return self._predict_perplexity(task, instances, batch_size=batch_size)
 
     def _predict_qa(
-            self,
-            task: Task,
-            instances: Sequence[Dict[str, Any]],
-            *,
-            batch_size: int = 32
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        *,
+        batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = cached_transformers.get(
@@ -110,7 +110,9 @@ class GPTModel(Model):
         ) -> Iterator[ModelInstance]:
             for text in texts:
                 token_ids = [tokenizer.eos_token_id] + tokenizer.encode(text)
-                token_ids = torch.tensor(token_ids, dtype=torch.long)
+                # The next line puts the entire text into GPU memory. In principle this is a problem, because it
+                # might OOM when the text is long. In practice, that doesn't happen.
+                token_ids = torch.tensor(token_ids, dtype=torch.long, device=device)
                 window_start = 0
                 while True:
                     window_end = window_start + tokenizer.model_max_length
@@ -144,7 +146,7 @@ class GPTModel(Model):
                     inputs = pad_sequence(
                         [mi.input_ids for mi in batch], batch_first=True)
                     outputs = model(inputs)
-                    outputs = log_softmax(outputs.logits, dim=-1).cpu()
+                    outputs = log_softmax(outputs.logits, dim=-1)
                     for mi, output in zip(batch, outputs):
                         # gets rid of padding
                         output = output[:len(mi.targets)]
@@ -168,7 +170,7 @@ class GPTModel(Model):
                 yield last_text, float(summed_logprobs)
 
         model_instances = make_model_instances(
-            instance["text"] for instance in Tqdm.tqdm(
+            task.convert_instance(instance, InstanceFormat.ELEUTHER_REQUESTS).args[0] for instance in Tqdm.tqdm(
                 instances,
                 desc="Calculating log probabilities")
         )

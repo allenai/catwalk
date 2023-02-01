@@ -5,7 +5,6 @@ from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, O
 import more_itertools
 import torch
 from tango.common import Tqdm
-from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, GPT2LMHeadModel, \
@@ -20,13 +19,13 @@ _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
 
 
 class RankClassificationModel(Model):
-    VERSION = "001nul"
+    VERSION = "002met"
 
     def __init__(
         self,
         pretrained_model_name_or_path: str,
         *,
-        likelihood_averaging: str = 'char',
+        likelihood_averaging: str = 'token',
         **model_kwargs
     ):
         """
@@ -115,10 +114,8 @@ class RankClassificationModel(Model):
             result_tensor = torch.tensor(results_for_instance)
             metric_args = (result_tensor, instance.correct_choice)
             yield {
-                "acc": metric_args,
-                "f1": metric_args,
-                "precision": metric_args,
-                "recall": metric_args,
+                metric_name: metric_args
+                for metric_name in task.metrics.keys()
             }
 
     def _run_loglikelihood(
@@ -366,7 +363,9 @@ class DecoderOnlyRCModel(RankClassificationModel):
                     for index in batch_of_indices:
                         for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
                             ids = torch.cat([context_ids, continuation_ids])
-                            ids = ids[-(tokenizer.model_max_length+1):][:-1]
+                            if len(ids) > tokenizer.model_max_length+1:
+                                ids = ids[-(tokenizer.model_max_length+1):]
+                            ids = ids[:-1]
                             unpadded_batch[field_name].append(ids)
 
                         input_lengths.append(len(unpadded_batch["input_ids"][-1]))

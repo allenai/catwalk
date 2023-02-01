@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added more models, T0 variants of T5 and Eleuther variants of GPT
 - Added support for Huggingface's accelerate project, but only for inference
 - Promptsource now supports few-shot ICL.
+- The training step now supports early stopping.
 - Compatibility with the latest version of torchmetrics
 
 ### Fixed

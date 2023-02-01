@@ -3,7 +3,7 @@ from typing import Dict, Optional
 import datasets
 
 from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
-    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics
+    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
@@ -14,7 +14,7 @@ from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
-    "wikitext": EleutherTask("wikitext"),
+    "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -91,7 +91,7 @@ TASKS: Dict[str, Task] = {
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherClassificationTask(
         "rte",
-        answer_options=["entailment", "not entailment"]
+        answer_options=["True", "False"]
     ).add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
@@ -114,7 +114,7 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherClassificationTask("cola", answer_options=["false", "true"]).add_instance_conversion(
+    "cola": EleutherClassificationTask("cola", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(premise_field="sentence", hypothesis_field=None, id_field='idx')
     ),
@@ -132,8 +132,7 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(id_field='idx')
     ),
-    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]
-    ).add_instance_conversion(
+    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
             premise_field="sentence1",

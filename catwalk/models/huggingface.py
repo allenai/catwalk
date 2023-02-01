@@ -22,7 +22,7 @@ from catwalk.tasks.huggingface import HFQAInstance, HFMCInstance, HFClassificati
 
 @Model.register("catwalk::hf")
 class HFAutoModel(Model):
-    VERSION = "004acc"
+    VERSION = "005met"
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -139,6 +139,7 @@ class HFAutoModel(Model):
                             "correct_answer_index": instance.correct_answer_index,
                             "logits": logits,
                             "acc": (logits, instance.correct_answer_index),
+                            "relative_improvement": (logits, instance.correct_answer_index),
                         }
 
     @classmethod
@@ -169,6 +170,7 @@ class HFAutoModel(Model):
                             "label": instance.label,
                             "logits": logits,
                             "acc": (logits, instance.label),
+                            "relative_improvement": (logits, instance.label)
                         }
 
     def trainable_copy(self, **kwargs) -> "TrainableHFAutoModel":

@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 import datasets
+from torchmetrics import MeanMetric
 
 from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS
@@ -183,13 +184,13 @@ TASKS: Dict[str, Task] = {
     ).add_metrics(mc_metrics(2)),
     #"coqa": EleutherTask("coqa"),  # currently broken in the datasets library
     "drop": EleutherTask("drop").add_metrics(QA_METRICS),
-    "lambada": EleutherTask("lambada_standard"),
-    "lambada_cloze": EleutherTask("lambada_standard_cloze"),
-    "lambada_mt_en": EleutherTask("lambada_openai_mt_en"),
-    "lambada_mt_fr": EleutherTask("lambada_openai_mt_fr"),
-    "lambada_mt_de": EleutherTask("lambada_openai_mt_de"),
-    "lambada_mt_it": EleutherTask("lambada_openai_mt_it"),
-    "lambada_mt_es": EleutherTask("lambada_openai_mt_es"),
+    "lambada": EleutherTask("lambada_standard").add_metrics(PERPLEXITY_METRICS).add_metric("acc", MeanMetric),
+    "lambada_cloze": EleutherTask("lambada_standard_cloze").add_metrics(PERPLEXITY_METRICS),
+    "lambada_mt_en": EleutherTask("lambada_openai_mt_en").add_metrics(PERPLEXITY_METRICS),
+    "lambada_mt_fr": EleutherTask("lambada_openai_mt_fr").add_metrics(PERPLEXITY_METRICS),
+    "lambada_mt_de": EleutherTask("lambada_openai_mt_de").add_metrics(PERPLEXITY_METRICS),
+    "lambada_mt_it": EleutherTask("lambada_openai_mt_it").add_metrics(PERPLEXITY_METRICS),
+    "lambada_mt_es": EleutherTask("lambada_openai_mt_es").add_metrics(PERPLEXITY_METRICS),
     "prost": EleutherTask("prost", ranked_classification=True).add_metrics(mc_metrics(4)),
     "mc_taco": EleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
     "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),

@@ -70,6 +70,29 @@ class T5Model(Model, ABC):
                             "rouge": ([prediction], [[target]])
                         }
 
+    def _predict_summarization(self, task: Task, instances: Sequence[Dict[str, Any]], batch_size: int = 32) -> Iterator[Dict[str, Any]]:
+        examples = MappedSequence(task.instance_conversions[InstanceFormat.HF_SUMMARIZATION], instances)
+
+        model = self.get_model().eval()
+        tokenizer = self.get_tokenizer()
+        tokenizer.model_max_length = model.config.n_positions
+
+        with torch.inference_mode():
+            with Tqdm.tqdm(examples, desc="Processing instances") as examples_tqdm:
+                for batch in more_itertools.chunked(examples_tqdm, batch_size):
+                    model_input = tokenizer([f"summarize:{i.source}" for i in batch],
+                                            truncation="only_first",
+                                            padding="longest",
+                                            return_tensors="pt")
+
+                    model_output = model.generate(**model_input, max_new_tokens=50)
+                    model_output = tokenizer.batch_decode(model_output, clean_up_tokenization_spaces=True, skip_special_tokens=True)
+                    for instance, prediction in zip(batch, model_output):
+                        target = instance.target
+                        yield {
+                            "rouge": ([prediction], [target])
+                        }
+
     def predict(  # type: ignore
         self,
         task: Task,
@@ -81,6 +104,8 @@ class T5Model(Model, ABC):
             return self._predict_prompt(task, instances, batch_size=batch_size)
         elif task.has_instance_conversion(InstanceFormat.HF_QA):
             return self._predict_qa(task, instances, batch_size=batch_size)
+        elif task.has_instance_conversion(InstanceFormat.HF_SUMMARIZATION):
+            return self._predict_summarization(task, instances, batch_size=batch_size)
         
         raise UnsupportedTaskError(self, task)
         

@@ -235,8 +235,8 @@ class HFSummarizationInstance:
 def hfsummarization_convert(
     instance: Dict[str, Any],
     *,
-    source_field: str = "premise",
-    target_field: Optional[str] = "hypothesis",
+    source_field: str = "source",
+    target_field: str = "target",
     id_field: Optional[str] = None,
 ) -> HFSummarizationInstance:
     return HFSummarizationInstance(

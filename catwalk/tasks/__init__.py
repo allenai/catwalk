@@ -582,6 +582,9 @@ TASK_SETS = {
         "metaicl::tweet_eval-hate",
         "metaicl::tweet_eval-stance_atheism",
         "metaicl::tweet_eval-stance_feminist"
+    },
+    "s2": {
+        "scitldr"
     }
 }
 

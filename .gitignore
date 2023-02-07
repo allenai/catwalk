@@ -24,3 +24,6 @@ __pycache__/
 #PyTest
 /.pytest_cache/
 .DS_Store
+
+# Eggs
+*.egg-info/

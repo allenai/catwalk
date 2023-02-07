@@ -2,11 +2,12 @@ from typing import Dict, Optional
 
 import datasets
 
-from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
+from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, SUMMARIZATION_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
-from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
+from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, \
+    hfclassification_conversion, hfsummarization_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
@@ -449,6 +450,12 @@ TASKS: Dict[str, Task] = {
     "metaicl::numer_sense": MetaICLTask("numer_sense").add_metrics(classification_metrics(12)),
     "metaicl::race-high": MetaICLTask("race-high").add_metrics(mc_metrics(4)),
     "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(mc_metrics(5)),
+
+    # Summarization
+    "scitldr": HFDatasetsTask("scitldr").add_instance_conversion(
+        InstanceFormat.HF_SUMMARIZATION,
+        hfsummarization_conversion()
+    ).add_metrics(SUMMARIZATION_METRICS),
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):

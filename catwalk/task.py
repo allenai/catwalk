@@ -24,6 +24,9 @@ QA_METRICS = {
     "squad_metrics": torchmetrics.SQuAD,
 }
 
+SUMMARIZATION_METRICS = {
+    'summarization_metrics': torchmetrics.text.ROUGEScore
+}
 
 try:
     from functools import cache as memoize
@@ -59,6 +62,7 @@ class InstanceFormat(Enum):
     HF_MC = 2
     HF_QA = 8
     HF_CLASSIFICATION = 10
+    HF_SUMMARIZATION = 11
     ELEUTHER_DOC = 3
     ELEUTHER_CONTEXT = 4
     ELEUTHER_REQUESTS = 5

@@ -1,11 +1,12 @@
-import sys
-
 import pytest
 
 import catwalk.__main__
 from catwalk.steps import PredictStep, CalculateMetricsStep
 
+from .util import suite_A
 
+
+@suite_A
 def test_squad():
     args = catwalk.__main__._parser.parse_args([
         "--model", "bert-base-uncased",
@@ -17,6 +18,7 @@ def test_squad():
 
 
 @pytest.mark.parametrize("task", ["mnli", "cola", "rte"])
+@suite_A
 def test_gpt2_performance(task: str):
     model = "rc::gpt2"
     predictions = PredictStep(model=model, task=task, limit=100)

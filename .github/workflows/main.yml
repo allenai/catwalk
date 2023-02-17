@@ -41,16 +41,6 @@ jobs:
 
         include:
           - task:
-              name: Test
-              run: pytest --forked -n4 -v --color=yes tests/
-            python: '3.10'
-
-          - task:
-              name: Type check
-              run: mypy .
-            python: '3.10'
-
-          - task:
               name: Docs
               run: cd docs && make html SPHINXOPTS="-W --keep-going"
             python: '3.10'
@@ -82,8 +72,13 @@ jobs:
           . .venv/bin/activate
           pip uninstall -y ai2-catwalk
   tests:
-    name: Tests
+    name: Test - suite ${{ matrix.test_suite }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        test_suite: ["A", "B", "C"]
     steps:
       - name: Determine current commit SHA (pull request)
         if: github.event_name == 'pull_request'
@@ -116,9 +111,9 @@ jobs:
                   - "-n4"
                   - "--color=yes"
                   - "--durations=5"
-                  - "tests/test_spotchecks.py"
-                  - "-k"
-                  - "rte"
+                  - "tests/"
+                  - "-m"
+                  - "suite_${{ matrix.test_suite }}"
                 constraints:
                   cluster:
                     - ai2/general-cirrascale

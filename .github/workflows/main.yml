@@ -21,12 +21,12 @@ env:
   DEFAULT_PYTHON: 3.9
   BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
   BEAKER_WORKSPACE: ai2/catwalk-tests
-  BEAKER_IMAGE: petew/catwalk-testing
+  BEAKER_IMAGE: petew/catwalk-testing  # to rebuild this image, run 'make docker-testing'
 
 jobs:
   checks:
     name: Python ${{ matrix.python }} - ${{ matrix.task.name }}
-    runs-on: [self-hosted, CPU-only]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -129,9 +129,9 @@ jobs:
                 context:
                   priority: preemptible
                 datasets:
-                  mountPath: /root/.cache
-                  source:
-                    hostPath: /net/nfs/allennlp/catwalk-cache
+                  - mountPath: /root/.cache
+                    source:
+                      hostPath: /net/nfs/allennlp/catwalk-cache
                 result:
                   path: /unused
           token: ${{ secrets.BEAKER_TOKEN }}

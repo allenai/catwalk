@@ -119,7 +119,7 @@ jobs:
                   - "--durations=5"
                   - "tests/"
                   - "-m"
-                  - "{{ matrix.test_suite.mark }}"
+                  - "${{ matrix.test_suite.mark }}"
                 constraints:
                   cluster:
                     - ai2/general-cirrascale

@@ -90,7 +90,7 @@ jobs:
         run: |
           echo "COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
 
-      - name: GPU Tests
+      - name: Tests
         uses: allenai/beaker-run-action@v1.1
         with:
           spec: |

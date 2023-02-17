@@ -18,6 +18,10 @@ env:
   # Change this to invalidate existing cache.
   CACHE_PREFIX: v1
   PYTHON_PATH: ./
+  DEFAULT_PYTHON: 3.9
+  BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
+  BEAKER_WORKSPACE: ai2/catwalk-tests
+  BEAKER_IMAGE: petew/catwalk-testing
 
 jobs:
   checks:
@@ -32,10 +36,15 @@ jobs:
           - name: Build
             run: python setup.py check && python setup.py bdist_wheel sdist
 
-          - name: Test
-            run: pytest --forked -n4 -v --color=yes tests/
+          - name: Type check
+            run: mypy .
 
         include:
+          - task:
+              name: Test
+              run: pytest --forked -n4 -v --color=yes tests/
+            python: '3.10'
+
           - task:
               name: Type check
               run: mypy .
@@ -61,7 +70,7 @@ jobs:
           ${{ matrix.task.run }}
 
       - name: Upload package distribution files
-        if: matrix.task.name == 'Build'
+        if: matrix.task.name == 'Build' && matrix.python == env.DEFAULT_PYTHON
         uses: actions/upload-artifact@v3
         with:
           name: package
@@ -72,6 +81,61 @@ jobs:
         run: |
           . .venv/bin/activate
           pip uninstall -y ai2-catwalk
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine current commit SHA (pull request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "COMMIT_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+
+      - name: Determine current commit SHA (push)
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
+
+      - name: GPU Tests
+        uses: allenai/beaker-run-action@v1.1
+        with:
+          spec: |
+            version: v2
+            description: GPU Tests
+            tasks:
+              - name: tests
+                image:
+                  beaker: ${{ env.BEAKER_IMAGE }}
+                envVars:
+                  - name: COMMIT_SHA
+                    value: ${{ env.COMMIT_SHA }}
+                command:
+                  - "/entrypoint.sh"
+                  - "pytest"
+                  - "-v"
+                  - "--forked"
+                  - "-n4"
+                  - "--color=yes"
+                  - "--durations=5"
+                  - "tests/test_spotchecks.py"
+                  - "-k"
+                  - "rte"
+                constraints:
+                  cluster:
+                    - ai2/general-cirrascale
+                    - ai2/allennlp-cirrascale
+                    - ai2/aristo-cirrascale
+                    - ai2/mosaic-cirrascale
+                    - ai2/s2-cirrascale
+                context:
+                  priority: preemptible
+                datasets:
+                  mountPath: /root/.cache
+                  source:
+                    hostPath: /net/nfs/allennlp/catwalk-cache
+                result:
+                  path: /unused
+          token: ${{ secrets.BEAKER_TOKEN }}
+          workspace: ${{ env.BEAKER_WORKSPACE }}
 
   release:
     name: Release

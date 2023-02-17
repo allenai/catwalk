@@ -25,7 +25,7 @@ env:
 
 jobs:
   checks:
-    name: Python ${{ matrix.python }} - ${{ matrix.task.name }}
+    name: ${{ matrix.task.name }} (python ${{ matrix.python }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -115,7 +115,8 @@ jobs:
                   - "/entrypoint.sh"
                   - "pytest"
                   - "-v"
-                  - "--color=yes"
+                  - "--forked"
+                  - "-n4"
                   - "--durations=5"
                   - "tests/"
                   - "-m"

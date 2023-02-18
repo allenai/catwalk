@@ -4,7 +4,7 @@ from transformers import AdamW
 from catwalk import MODELS, TASKS
 from catwalk.steps import CalculateMetricsStep, FinetuneStep, PredictStep
 
-from .util import suite_A, suite_D
+from .util import suite_D
 
 
 @suite_D
@@ -44,7 +44,7 @@ def test_training():
     assert metrics_before != metrics_after
 
 
-@suite_A
+@suite_D
 def test_training_step_gpt():
     finetune_step = FinetuneStep(
         model="rc::tiny-gpt2",
@@ -59,7 +59,7 @@ def test_training_step_gpt():
     metrics_step.result()
 
 
-@suite_A
+@suite_D
 def test_training_step_t5():
     finetune_step = FinetuneStep(
         model="rc::t5-very-small-random",
@@ -74,7 +74,7 @@ def test_training_step_t5():
     metrics_step.result()
 
 
-@suite_A
+@suite_D
 def test_training_step_hf():
     finetune_step = FinetuneStep(
         model="tiny-bert",

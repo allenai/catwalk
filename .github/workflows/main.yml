@@ -80,7 +80,7 @@ jobs:
       matrix:
         test_suite:
           - name: A
-            mark: "not suite_B and not suite_C"
+            mark: "not suite_B and not suite_C and not suite_D"
 
           - name: B
             mark: "suite_B"

@@ -118,6 +118,7 @@ jobs:
                   - "--forked"
                   - "-n4"
                   - "--durations=5"
+                  - "--color=yes"
                   - "tests/"
                   - "-m"
                   - "${{ matrix.test_suite.mark }}"

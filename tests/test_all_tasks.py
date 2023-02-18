@@ -26,7 +26,7 @@ task_names = [
     pytest.param(
         task,
         id=task,
-        marks=pytest.mark.xfail if task in known_failures else None,  # type: ignore
+        marks=pytest.mark.xfail if task in known_failures else (),
     )
     for task in catwalk.tasks.TASKS.keys()
     if not task.startswith("p3::") and not task.startswith("mrqa::")

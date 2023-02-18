@@ -106,7 +106,7 @@ jobs:
         with:
           spec: |
             version: v2
-            description: GPU Tests
+            description: Catwalk tests - suite ${{ matrix.test_suite.name }}
             tasks:
               - name: tests
                 image:

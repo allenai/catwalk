@@ -87,6 +87,9 @@ jobs:
 
           - name: C
             mark: "suite_C"
+
+          - name: D
+            mark: "suite_D"
     steps:
       - name: Determine current commit SHA (pull request)
         if: github.event_name == 'pull_request'

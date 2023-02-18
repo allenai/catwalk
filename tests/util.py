@@ -11,3 +11,7 @@ def suite_B(test_method):
 
 def suite_C(test_method):
     return pytest.mark.suite_C(test_method)
+
+
+def suite_D(test_method):
+    return pytest.mark.suite_D(test_method)

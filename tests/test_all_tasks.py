@@ -10,10 +10,24 @@ from catwalk.tasks.huggingface import HFMCInstance
 
 from .util import suite_B, suite_C
 
+# These are tasks are known to fail for now due to an unreachable server.
+known_failures = {
+    "lambada_mt_en",
+    "lambada_mt_fr",
+    "lambada_mt_de",
+    "lambada_mt_it",
+    "lambada_mt_es",
+    "triviaqa",
+}
+
 # There are too many P3 tasks, so we just pick one.
 # MRQA dataset takes too long to load, so we skip it.
 task_names = [
-    task
+    pytest.param(
+        task,
+        id=task,
+        marks=pytest.mark.xfail if task in known_failures else None,  # type: ignore
+    )
     for task in catwalk.tasks.TASKS.keys()
     if not task.startswith("p3::") and not task.startswith("mrqa::")
 ]

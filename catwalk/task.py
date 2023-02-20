@@ -26,7 +26,7 @@ QA_METRICS = {
 
 
 try:
-    from functools import cache as memoize
+    from functools import cache as memoize  # type: ignore
 except ImportError:
     def memoize(user_function, /):      # type: ignore
         import functools

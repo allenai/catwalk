@@ -3,6 +3,8 @@ import pytest
 from catwalk import MODELS
 from catwalk.steps import PredictStep, CalculateMetricsStep
 
+from .util import suite_A
+
 task_names = [
     "arc_challenge",
     "boolq",
@@ -40,6 +42,7 @@ generation_params = [(t, m) for t in generation_task_names for m in generation_m
 params = params + generation_params
 
 @pytest.mark.parametrize("task_name,model_name", params)
+@suite_A
 def test_task_eval(task_name: str, model_name: str):
     if MODELS[model_name].supports_fewshot:
         predict_kwargs = {"num_shots": 3}

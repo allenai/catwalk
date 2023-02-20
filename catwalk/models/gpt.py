@@ -183,7 +183,7 @@ class GPTModel(Model):
 
         def group_model_predictions(
             model_predictions: Iterator[Tuple[str, torch.Tensor, bool]]
-        ) -> Iterator[Tuple[str, float]]:
+        ) -> Iterator[Tuple[str, float, bool]]:
             last_text = None
             summed_logprobs = 0.0
             summed_exact_match = True

@@ -128,6 +128,13 @@ class EleutherTask(Task, WithPromptsourceMixin):
         fewshot_instances: Optional[List[Dict[str, Any]]] = None,
         **kwargs
     ) -> RankClassificationInstance:
+        """
+        Converts the given instance to an instance for performing ranked classification
+
+        :param instance: the instance to convert
+        :param fewshot_instances: the number of few-show instances to include
+        :return: the instance in :class:`~catwalk.task.RankClassificationInstance` format
+        """
         if fewshot_instances is None:
             fewshot_instances = []
         prefix = ""

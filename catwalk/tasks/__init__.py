@@ -2,8 +2,8 @@ from typing import Dict, Optional
 
 import datasets
 
-from catwalk.task import MC_METRICS, InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
-    classification_metrics, BINARY_CLASSIFICATION_METRICS
+from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
+    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
@@ -14,7 +14,7 @@ from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
-    "wikitext": EleutherTask("wikitext"),
+    "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -23,7 +23,7 @@ TASKS: Dict[str, Task] = {
             answer_choices_fields=["sol1", "sol2"],
             correct_answer_index_field="label"
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(2)),
     "squad": HFDatasetsTask("squad").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion()
@@ -91,7 +91,7 @@ TASKS: Dict[str, Task] = {
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherClassificationTask(
         "rte",
-        answer_options=["entailment", "not entailment"]
+        answer_options=["True", "False"]
     ).add_instance_conversion(
         InstanceFormat.T5_PROMPT,
         t5_prompt_conversion(
@@ -114,7 +114,7 @@ TASKS: Dict[str, Task] = {
             use_fields=["premise", "hypothesis"]
         )
     ).add_metrics(ENTAILMENT_METRICS),
-    "cola": EleutherClassificationTask("cola", answer_options=["false", "true"]).add_instance_conversion(
+    "cola": EleutherClassificationTask("cola", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(premise_field="sentence", hypothesis_field=None, id_field='idx')
     ),
@@ -132,8 +132,7 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(id_field='idx')
     ),
-    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]
-    ).add_instance_conversion(
+    "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
             premise_field="sentence1",
@@ -173,7 +172,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="label",
             id_field="idx"
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(2)),
     "multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(QA_METRICS),
     #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
     "wic": EleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
@@ -181,7 +180,7 @@ TASKS: Dict[str, Task] = {
         "wsc",
         ranked_classification=True,
         promptsource_task_spec=('super_glue', 'wsc.fixed')
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(2)),
     #"coqa": EleutherTask("coqa"),  # currently broken in the datasets library
     "drop": EleutherTask("drop").add_metrics(QA_METRICS),
     "lambada": EleutherTask("lambada_standard"),
@@ -191,7 +190,7 @@ TASKS: Dict[str, Task] = {
     "lambada_mt_de": EleutherTask("lambada_openai_mt_de"),
     "lambada_mt_it": EleutherTask("lambada_openai_mt_it"),
     "lambada_mt_es": EleutherTask("lambada_openai_mt_es"),
-    "prost": EleutherTask("prost", ranked_classification=True).add_metrics(MC_METRICS),
+    "prost": EleutherTask("prost", ranked_classification=True).add_metrics(mc_metrics(4)),
     "mc_taco": EleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
     "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq", ranked_classification=True).add_instance_conversion(
@@ -202,7 +201,7 @@ TASKS: Dict[str, Task] = {
             answer_choices_fields=["correct_answer", "distractor1", "distractor2", "distractor3"],
             correct_answer_field="correct_answer"
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(4)),
     "qa4mre_2011": EleutherTask("qa4mre_2011", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -212,7 +211,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="correct_answer_id",
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(5)),
     "qa4mre_2012": EleutherTask("qa4mre_2012", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -222,7 +221,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="correct_answer_id",
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(5)),
     "qa4mre_2013": EleutherTask("qa4mre_2013", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -232,7 +231,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="correct_answer_id",
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(5)),
     "triviaqa": EleutherTask(
         "triviaqa",
         promptsource_task_spec=("trivia_qa", "unfiltered")
@@ -247,7 +246,7 @@ TASKS: Dict[str, Task] = {
             id_field="id",
             answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(4)),
     "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -258,7 +257,7 @@ TASKS: Dict[str, Task] = {
             id_field="id",
             answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(4)),
     "logiqa": EleutherTask("logiqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -267,7 +266,7 @@ TASKS: Dict[str, Task] = {
             answer_choices_fields="options",
             correct_answer_index_field="label"
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(4)),
     "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -277,7 +276,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="label",
             answer_mappings={'0': 0, '1': 1, '2': 2, '3': 3}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(4)),
     "openbookqa": EleutherTask("openbookqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -287,9 +286,9 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="answerKey",
             id_field="id"
         )
-    ).add_metrics(MC_METRICS),
-    "race": HFDatasetsTask("race", "high"),
-    "eleuther::race": RaceEleutherTask().add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(4)),
+    "race": HFDatasetsTask("race", "high").add_metrics(mc_metrics(4)),
+    "eleuther::race": RaceEleutherTask().add_metrics(mc_metrics(4)),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -305,7 +304,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="ra",
             answer_mappings={1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(5)),
     "headqa_en": EleutherTask("headqa_en", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -321,8 +320,8 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="ra",
             answer_mappings={1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
         )
-    ).add_metrics(MC_METRICS),
-    "mathqa": EleutherTask("mathqa", ranked_classification=True).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(5)),
+    "mathqa": EleutherTask("mathqa", ranked_classification=True).add_metrics(mc_metrics(5)),
     "webqs": EleutherTask("webqs").add_metrics(QA_METRICS),
     "wsc273": EleutherTask("wsc273", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "winogrande": EleutherTask("winogrande", ranked_classification=True).add_instance_conversion(
@@ -334,7 +333,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="answer",
             answer_mappings={'1': 0, '2': 1}
         )
-    ).add_metrics(MC_METRICS),
+    ).add_metrics(mc_metrics(2)),
     "anli_r1": EleutherTask("anli_r1", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "anli_r2": EleutherTask("anli_r2", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "anli_r3": EleutherTask("anli_r3", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
@@ -387,7 +386,7 @@ TASKS: Dict[str, Task] = {
     "raft::twitter_complaints": RaftTask("twitter_complaints"),
 
     # MetaICL
-    "metaicl::piqa": MetaICLTask("piqa").add_metrics(MC_METRICS),
+    "metaicl::piqa": MetaICLTask("piqa").add_metrics(mc_metrics(2)),
     "metaicl::boolq": MetaICLTask("boolq").add_metrics(classification_metrics(2)),
 
     "metaicl::tweet_eval-stance_feminist": MetaICLTask("tweet_eval-stance_feminist").add_metrics(classification_metrics(3)),
@@ -425,31 +424,31 @@ TASKS: Dict[str, Task] = {
     "metaicl::sick": MetaICLTask("sick").add_metrics(classification_metrics(3)),
     # "metaicl::superglue-cb": MetaICLTask("superglue-cb").add_metrics(classification_metrics(3)),
 
-    "metaicl::ai2_arc": MetaICLTask("ai2_arc").add_metrics(MC_METRICS),
-    "metaicl::codah": MetaICLTask("codah").add_metrics(MC_METRICS),
-    "metaicl::cosmos_qa": MetaICLTask("cosmos_qa").add_metrics(MC_METRICS),
-    "metaicl::dream": MetaICLTask("dream").add_metrics(MC_METRICS),
-    "metaicl::hellaswag": MetaICLTask("hellaswag").add_metrics(MC_METRICS),
-    "metaicl::openbookqa": MetaICLTask("openbookqa").add_metrics(MC_METRICS),
-    "metaicl::qasc": MetaICLTask("qasc").add_metrics(MC_METRICS),
-    "metaicl::quail": MetaICLTask("quail").add_metrics(MC_METRICS),
-    "metaicl::quarel": MetaICLTask("quarel").add_metrics(MC_METRICS),
-    "metaicl::quartz-no_knowledge": MetaICLTask("quartz-no_knowledge").add_metrics(MC_METRICS),
-    "metaicl::quartz-with_knowledge": MetaICLTask("quartz-with_knowledge").add_metrics(MC_METRICS),
-    "metaicl::sciq": MetaICLTask("sciq").add_metrics(MC_METRICS),
-    "metaicl::superglue-copa": MetaICLTask("superglue-copa").add_metrics(MC_METRICS),
-    "metaicl::swag": MetaICLTask("swag").add_metrics(MC_METRICS),
-    "metaicl::wino_grande": MetaICLTask("wino_grande").add_metrics(MC_METRICS),
-    "metaicl::wiqa": MetaICLTask("wiqa").add_metrics(MC_METRICS),
-    "metaicl::unifiedqa:qasc": MetaICLTask("unifiedqa:qasc").add_metrics(MC_METRICS),
-    "metaicl::unifiedqa:qasc_with_ir": MetaICLTask("unifiedqa:qasc_with_ir").add_metrics(MC_METRICS),
-    "metaicl::unifiedqa:openbookqa": MetaICLTask("unifiedqa:openbookqa").add_metrics(MC_METRICS),
-    "metaicl::unifiedqa:openbookqa_with_ir": MetaICLTask("unifiedqa:openbookqa_with_ir").add_metrics(MC_METRICS),
-    "metaicl::unifiedqa:mctest": MetaICLTask("unifiedqa:mctest").add_metrics(MC_METRICS),
-    "metaicl::unifiedqa:ai2_science_middle": MetaICLTask("unifiedqa:ai2_science_middle").add_metrics(MC_METRICS),
+    "metaicl::ai2_arc": MetaICLTask("ai2_arc").add_metrics(mc_metrics(4)),
+    "metaicl::codah": MetaICLTask("codah").add_metrics(mc_metrics(4)),
+    "metaicl::cosmos_qa": MetaICLTask("cosmos_qa").add_metrics(mc_metrics(4)),
+    "metaicl::dream": MetaICLTask("dream").add_metrics(mc_metrics(3)),
+    "metaicl::hellaswag": MetaICLTask("hellaswag").add_metrics(mc_metrics(4)),
+    "metaicl::openbookqa": MetaICLTask("openbookqa").add_metrics(mc_metrics(4)),
+    "metaicl::qasc": MetaICLTask("qasc").add_metrics(mc_metrics(8)),
+    "metaicl::quail": MetaICLTask("quail").add_metrics(mc_metrics(4)),
+    "metaicl::quarel": MetaICLTask("quarel").add_metrics(mc_metrics(2)),
+    "metaicl::quartz-no_knowledge": MetaICLTask("quartz-no_knowledge").add_metrics(mc_metrics(2)),
+    "metaicl::quartz-with_knowledge": MetaICLTask("quartz-with_knowledge").add_metrics(mc_metrics(2)),
+    "metaicl::sciq": MetaICLTask("sciq").add_metrics(mc_metrics(4)),
+    "metaicl::superglue-copa": MetaICLTask("superglue-copa").add_metrics(mc_metrics(2)),
+    "metaicl::swag": MetaICLTask("swag").add_metrics(mc_metrics(4)),
+    "metaicl::wino_grande": MetaICLTask("wino_grande").add_metrics(mc_metrics(2)),
+    "metaicl::wiqa": MetaICLTask("wiqa").add_metrics(mc_metrics(3)),
+    "metaicl::unifiedqa:qasc": MetaICLTask("unifiedqa:qasc").add_metrics(mc_metrics(8)),
+    "metaicl::unifiedqa:qasc_with_ir": MetaICLTask("unifiedqa:qasc_with_ir").add_metrics(mc_metrics(8)),
+    "metaicl::unifiedqa:openbookqa": MetaICLTask("unifiedqa:openbookqa").add_metrics(mc_metrics(4)),
+    "metaicl::unifiedqa:openbookqa_with_ir": MetaICLTask("unifiedqa:openbookqa_with_ir").add_metrics(mc_metrics(4)),
+    "metaicl::unifiedqa:mctest": MetaICLTask("unifiedqa:mctest").add_metrics(mc_metrics(4)),
+    "metaicl::unifiedqa:ai2_science_middle": MetaICLTask("unifiedqa:ai2_science_middle").add_metrics(mc_metrics(4)),
     "metaicl::numer_sense": MetaICLTask("numer_sense").add_metrics(classification_metrics(12)),
-    "metaicl::race-high": MetaICLTask("race-high").add_metrics(MC_METRICS),
-    "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(MC_METRICS),
+    "metaicl::race-high": MetaICLTask("race-high").add_metrics(mc_metrics(4)),
+    "metaicl::commonsense_qa": MetaICLTask("commonsense_qa").add_metrics(mc_metrics(5)),
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):

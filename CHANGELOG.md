@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed the way we compute SQuAD metrics.
+
+
+## [v0.2.2](https://github.com/allenai/catwalk/releases/tag/v0.2.2) - 2023-01-27
+
+### Changed
+
+- Changed the package name to ai2-catwalk to avoid a name conflict on Pypi.
+
+
+## [v0.2.1](https://github.com/allenai/catwalk/releases/tag/v0.2.1) - 2023-01-26
+
+### Fixed
+
+- Fixed the release process
+
+
 ## [v0.2.0](https://github.com/allenai/catwalk/releases/tag/v0.2.0) - 2022-12-02
 
 ### Changed
@@ -47,6 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added more models, T0 variants of T5 and Eleuther variants of GPT
 - Added support for Huggingface's accelerate project, but only for inference
 - Promptsource now supports few-shot ICL.
+- The training step now supports early stopping.
+- Compatibility with the latest version of torchmetrics
 
 ### Fixed
 

@@ -9,13 +9,10 @@ import torchmetrics
 from mypy_extensions import KwArg
 from tango.common import Registrable, det_hash
 
+import catwalk.metrics
 from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
 
-
-MC_METRICS = {
-    "acc": torchmetrics.Accuracy,
-}
 
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
@@ -28,18 +25,33 @@ QA_METRICS = {
 }
 
 
+try:
+    from functools import cache as memoize  # type: ignore
+except ImportError:
+    def memoize(user_function, /):      # type: ignore
+        import functools
+        return functools.lru_cache(maxsize=None)(user_function)
+
+
+@memoize
+def mc_metrics(num_classes: int):
+    return {
+        "acc": catwalk.metrics.AccuracyMetric,
+        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+    }
+
+
+@memoize
 def classification_metrics(num_classes: int):
     return {
-        "acc": torchmetrics.Accuracy,
-        "f1": partial(torchmetrics.F1Score, num_classes=num_classes, average=None),
-        "precision": partial(torchmetrics.Precision, num_classes=num_classes, average=None),
-        "recall": partial(torchmetrics.Recall, num_classes=num_classes, average=None)
+        "acc": catwalk.metrics.AccuracyMetric,
+        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
     }
 
 
 ENTAILMENT_METRICS = classification_metrics(2)
 
-BINARY_CLASSIFICATION_METRICS = ENTAILMENT_METRICS
+BINARY_CLASSIFICATION_METRICS = classification_metrics(2)
 
 
 class InstanceFormat(Enum):

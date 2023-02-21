@@ -18,11 +18,15 @@ env:
   # Change this to invalidate existing cache.
   CACHE_PREFIX: v1
   PYTHON_PATH: ./
+  DEFAULT_PYTHON: 3.9
+  BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
+  BEAKER_WORKSPACE: ai2/catwalk-tests
+  BEAKER_IMAGE: petew/catwalk-testing  # to rebuild this image, run 'make docker-testing'
 
 jobs:
   checks:
-    name: Python ${{ matrix.python }} - ${{ matrix.task.name }}
-    runs-on: [self-hosted, CPU-only]
+    name: ${{ matrix.task.name }} (python ${{ matrix.python }})
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -32,15 +36,10 @@ jobs:
           - name: Build
             run: python setup.py check && python setup.py bdist_wheel sdist
 
-          - name: Test
-            run: pytest --forked -n4 -v --color=yes tests/
+          - name: Type check
+            run: mypy .
 
         include:
-          - task:
-              name: Type check
-              run: mypy .
-            python: '3.10'
-
           - task:
               name: Docs
               run: cd docs && make html SPHINXOPTS="-W --keep-going"
@@ -61,7 +60,7 @@ jobs:
           ${{ matrix.task.run }}
 
       - name: Upload package distribution files
-        if: matrix.task.name == 'Build'
+        if: matrix.task.name == 'Build' && matrix.python == env.DEFAULT_PYTHON
         uses: actions/upload-artifact@v3
         with:
           name: package
@@ -71,7 +70,78 @@ jobs:
         if: always()
         run: |
           . .venv/bin/activate
-          pip uninstall -y catwalk
+          pip uninstall -y ai2-catwalk
+  tests:
+    name: Test - suite ${{ matrix.test_suite.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        test_suite:
+          - name: A
+            mark: "not suite_B and not suite_C and not suite_D"
+
+          - name: B
+            mark: "suite_B"
+
+          - name: C
+            mark: "suite_C"
+
+          - name: D
+            mark: "suite_D"
+    steps:
+      - name: Determine current commit SHA (pull request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "COMMIT_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+
+      - name: Determine current commit SHA (push)
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
+
+      - name: Tests
+        uses: allenai/beaker-run-action@v1.1
+        with:
+          spec: |
+            version: v2
+            description: Catwalk tests - suite ${{ matrix.test_suite.name }}
+            tasks:
+              - name: tests
+                image:
+                  beaker: ${{ env.BEAKER_IMAGE }}
+                envVars:
+                  - name: COMMIT_SHA
+                    value: ${{ env.COMMIT_SHA }}
+                command:
+                  - "/entrypoint.sh"
+                  - "pytest"
+                  - "-v"
+                  - "--forked"
+                  - "-n4"
+                  - "--durations=5"
+                  - "--color=yes"
+                  - "tests/"
+                  - "-m"
+                  - "${{ matrix.test_suite.mark }}"
+                constraints:
+                  cluster:
+                    - ai2/general-cirrascale
+                    - ai2/allennlp-cirrascale
+                    - ai2/aristo-cirrascale
+                    - ai2/mosaic-cirrascale
+                    - ai2/s2-cirrascale
+                context:
+                  priority: preemptible
+                datasets:
+                  - mountPath: /root/.cache
+                    source:
+                      hostPath: /net/nfs/allennlp/catwalk-cache
+                result:
+                  path: /unused
+          token: ${{ secrets.BEAKER_TOKEN }}
+          workspace: ${{ env.BEAKER_WORKSPACE }}
 
   release:
     name: Release
@@ -79,7 +149,7 @@ jobs:
     needs: [checks]
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v1
 
       - name: Setup Python
         uses: actions/setup-python@v4

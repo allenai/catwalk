@@ -10,8 +10,8 @@ from transformers import (AutoModelForMultipleChoice,
                           AutoTokenizer,
                           AutoModelForQuestionAnswering,
                           QuestionAnsweringPipeline, PreTrainedModel, PreTrainedTokenizer,
-                          AutoModelForSequenceClassification, TextClassificationPipeline)
-from torchmetrics.functional import accuracy
+                          AutoModelForSequenceClassification)
+from torchmetrics.functional.classification import multiclass_accuracy
 from transformers.tokenization_utils_base import LARGE_INTEGER
 
 from catwalk import cached_transformers
@@ -22,7 +22,7 @@ from catwalk.tasks.huggingface import HFQAInstance, HFMCInstance, HFClassificati
 
 @Model.register("catwalk::hf")
 class HFAutoModel(Model):
-    VERSION = "004acc"
+    VERSION = "005met"
 
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -79,7 +79,9 @@ class HFAutoModel(Model):
         tokenizer: PreTrainedTokenizer,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=model.device.index)
+        # The type annotation for QuestionAnsweringPipeline says `device` has to be an `int`, but when you look
+        # at the code, that's not actually correct.
+        pipe = QuestionAnsweringPipeline(model=model, tokenizer=tokenizer, device=model.device)  # type: ignore
         
         contexts = [instance.context for instance in instances]
         questions = [instance.question for instance in instances]
@@ -137,6 +139,7 @@ class HFAutoModel(Model):
                             "correct_answer_index": instance.correct_answer_index,
                             "logits": logits,
                             "acc": (logits, instance.correct_answer_index),
+                            "relative_improvement": (logits, instance.correct_answer_index),
                         }
 
     @classmethod
@@ -167,6 +170,7 @@ class HFAutoModel(Model):
                             "label": instance.label,
                             "logits": logits,
                             "acc": (logits, instance.label),
+                            "relative_improvement": (logits, instance.label)
                         }
 
     def trainable_copy(self, **kwargs) -> "TrainableHFAutoModel":
@@ -312,7 +316,7 @@ class TrainableHFAutoModel(TrainableModel):
 
     def _forward_mc(self, *args, **kwargs) -> Dict[str, Any]:
         results = self.mc_model.forward(*args, **kwargs)
-        results["acc"] = accuracy(results.logits, kwargs["labels"])
+        results["acc"] = multiclass_accuracy(results.logits, kwargs["labels"], num_classes=results.logits.size(-1))
         return results
 
     def _forward_qa(self, *args, **kwargs) -> Dict[str, Any]:
@@ -322,7 +326,7 @@ class TrainableHFAutoModel(TrainableModel):
     def _forward_classification(self, *args, **kwargs) -> Dict[str, Any]:
         assert self.classification_model is not None
         results = self.classification_model.forward(*args, **kwargs)
-        results["acc"] = accuracy(results.logits, kwargs["labels"])
+        results["acc"] = multiclass_accuracy(results.logits, kwargs["labels"], num_classes=results.logits.size(-1))
         return results
 
     def collate_for_training(self, instances: Sequence[Tuple[Task, Instance]]) -> Any:

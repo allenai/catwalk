@@ -7,6 +7,7 @@
 
 # Python
 __pycache__/
+/ai2_catwalk.egg-info/
 /catwalk.egg-info/
 /build/
 /dist/

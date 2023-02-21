@@ -157,7 +157,6 @@ class GPTModel(Model):
                         token_ids[window_start:window_end],
                         token_ids[window_start+1:window_end+1])
 
-
         def make_model_predictions(
             model_instances: Iterator[ModelInstance]
         ) -> Iterator[Tuple[str, torch.Tensor, bool]]:

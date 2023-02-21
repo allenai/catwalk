@@ -175,8 +175,17 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         instance: Dict[str, Any],
         *,
         fewshot_instances: Optional[List[Dict[str, Any]]] = None,
-        **kwargs
+        **kwargs: Dict[str, Any]
     ) -> RankClassificationInstance:
+        """
+        Converts the given instance to an instance for performing ranked classification
+
+        :param instance: the instance to convert
+        :param fewshot_instances: a list of few-shot instances to include. These instances are given in
+                                  Huggingface dict format.
+        :param kwargs: extra arguments that are ignored
+        :return: the instance in :class:`~catwalk.task.RankClassificationInstance` format
+        """
         if fewshot_instances is None:
             fewshot_instances = []
         prefix = ""

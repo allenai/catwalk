@@ -175,7 +175,7 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         instance: Dict[str, Any],
         *,
         fewshot_instances: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Dict[str, Any]
+        **kwargs
     ) -> RankClassificationInstance:
         """
         Converts the given instance to an instance for performing ranked classification

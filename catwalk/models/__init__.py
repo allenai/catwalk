@@ -112,6 +112,10 @@ for hf_name in _DECODER_ONLY_MODELS:
     MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name)
     MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name)
 
+MODELS["rc::opt-175b"] = DecoderOnlyRCModel(
+    "/net/nfs.cirrascale/allennlp/opt/opt-175b-huggingface",
+    pretrained_tokenizer_name_or_path="facebook/opt-66b")
+
 
 def short_name_for_model_object(model: Model) -> Optional[str]:
     for model_name, model_object in MODELS.items():

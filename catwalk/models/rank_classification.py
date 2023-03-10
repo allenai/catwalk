@@ -25,6 +25,7 @@ class RankClassificationModel(Model):
         self,
         pretrained_model_name_or_path: str,
         *,
+        pretrained_tokenizer_name_or_path: Optional[str] = None,
         likelihood_averaging: str = 'token',
         **model_kwargs
     ):
@@ -41,12 +42,19 @@ class RankClassificationModel(Model):
         """
         assert likelihood_averaging in {'char', 'token'}
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        if pretrained_tokenizer_name_or_path is None:
+            pretrained_tokenizer_name_or_path = pretrained_model_name_or_path
+        self.pretrained_tokenizer_name_or_path = pretrained_tokenizer_name_or_path
+
         self.likelihood_averaging = likelihood_averaging
         self.model_kwargs = model_kwargs
 
     @classmethod
     def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> _Model:
         raise NotImplementedError
+
+    def _make_tokenizer(self) -> AutoTokenizer:
+        return cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_tokenizer_name_or_path)
 
     def predict(  # type: ignore
         self,
@@ -62,7 +70,7 @@ class RankClassificationModel(Model):
             self.pretrained_model_name_or_path,
             device_map="auto" if torch.cuda.device_count() > 0 else None,
             **self.model_kwargs).eval()
-        tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
+        tokenizer = self._make_tokenizer()
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
             yield from self.predict_chunk(

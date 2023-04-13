@@ -102,11 +102,12 @@ def main(args: argparse.Namespace):
             metrics_explicit = metrics.result(workspace)
             output = {"task": task, "model": args.model, "split": split, "limit": limit, "metrics": metrics_explicit,
                       "num_instances": len(instances)}
+            logger.info(f"Results from task {task}: {output}")
             output["per_instance"] = [{"instance": guess_instance_id(inst), "prediction": prediction} for \
                                         inst, prediction in zip(instances, predictions_explicit)]
             verbose_output.append(output)
             if args.full_output_file:
-                logger.info(f"Saving verbose output in {args.full_output_file}...")
+                logger.info(f"Saving full output in {args.full_output_file}...")
                 with open(args.full_output_file, 'w') as file:
                     for d in verbose_output:
                         file.write(json.dumps(sanitize(d)) + "\n")

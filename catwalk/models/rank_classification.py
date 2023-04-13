@@ -34,7 +34,7 @@ class RankClassificationModel(Model):
 
         pretrained_model_name_or_path : `str`
             The name of the transformer, for example `"gpt2-large"`
-        likelihood_averaging : `str`, optional (default = `char`)
+        likelihood_averaging : `str`, optional (default = `token`)
             The method for averaging the sum likelihood of the continuation. 'char' averages by 
             character length, 'token' averages by token length.
         model_kwargs:

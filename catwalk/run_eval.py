@@ -115,7 +115,7 @@ def main(args: argparse.Namespace):
         with open(args.metrics_file, 'w') as file:
             for d in verbose_output:
                 del d['per_instance']  # Destructive
-            file.write(json.dumps(sanitize(verbose_output)))
+            file.write(json.dumps(sanitize({"metrics": verbose_output})))
     table_step = TabulateMetricsStep(metrics=metric_task_dict)
     table_step_result = table_step.result(workspace)
     logger.info("Overall metrics:\n  " + "\n  ".join(table_step_result))

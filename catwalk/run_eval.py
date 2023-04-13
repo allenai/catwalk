@@ -99,7 +99,8 @@ def main(args: argparse.Namespace):
             instances = get_instances(task_obj, split, limit, random_subsample_seed)
             predictions_explicit = list(predictions.result(workspace))
             metrics_explicit = metrics.result(workspace)
-            output = {"task": task, "model": args.model, "split": split, "limit": limit, "metrics": metrics_explicit}
+            output = {"task": task, "model": args.model, "split": split, "limit": limit, "metrics": metrics_explicit,
+                      "num_instances": len(instances)}
             output["per_instance"] = [{"instance": guess_instance_id(inst), "prediction": prediction} for \
                                         inst, prediction in zip(instances, predictions_explicit)]
             verbose_output.append(output)

@@ -289,7 +289,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(mc_metrics(4)),
     "race": HFDatasetsTask("race", "high").add_metrics(mc_metrics(4)),
-    "eleuther::race": RaceEleutherTask().add_metrics(mc_metrics(4)),
+    "eai::race": RaceEleutherTask().add_metrics(mc_metrics(4)),
     "headqa_es": EleutherTask("headqa_es", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(

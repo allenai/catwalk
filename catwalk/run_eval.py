@@ -64,6 +64,7 @@ def main(args: argparse.Namespace):
             tasks |= TASK_SETS[task]
         except KeyError:
             tasks.add(task)
+    tasks = sorted(list(tasks))  # Make the task ordering more predictable
 
     kwargs = {}
     if args.num_shots is not None:

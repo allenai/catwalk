@@ -28,7 +28,7 @@ import torch
 
 from catwalk.task import Task, WithAnswerOptionsMixin
 from catwalk.tasks import TASKS
-from catwalk.tasks import short_name_for_task_object
+from catwalk.tasks import get_instances, short_name_for_task_object
 from catwalk.model import Model
 from catwalk.models import MODELS
 from catwalk.models import short_name_for_model_object
@@ -66,9 +66,7 @@ class PredictStep(Step):
             split = task.default_split
 
         results = SqliteSparseSequence(self.work_dir_for_run / "result.sqlite")
-        instances = task.get_split(split)
-        if limit is not None and len(instances) > limit:
-            instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
+        instances = get_instances(task, split, limit, random_subsample_seed)
         instances = instances[len(results):]
         for result in model.predict(task, instances, **kwargs):
             results.append(result)

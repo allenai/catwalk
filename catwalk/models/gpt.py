@@ -20,9 +20,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 @Model.register("catwalk::gpt")
 class GPTModel(Model):
-    def __init__(self, pretrained_model_name_or_path: str):
+    def __init__(self, pretrained_model_name_or_path: str, **model_kwargs):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        
+        self.model_kwargs = model_kwargs
+
     def _convert_instances(self, instances: Sequence[Dict[str, Any]], instance_format, task) -> MappedSequence:
         return MappedSequence(lambda instance: task.convert_instance(instance, instance_format), instances)
 
@@ -47,7 +48,7 @@ class GPTModel(Model):
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = cached_transformers.get(
-            AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+            AutoModelForCausalLM, self.pretrained_model_name_or_path, False, **self.model_kwargs).eval().to(device)
         tokenizer = cached_transformers.get_tokenizer(
             AutoTokenizer, self.pretrained_model_name_or_path)
         tokenizer.pad_token = tokenizer.eos_token
@@ -93,7 +94,7 @@ class GPTModel(Model):
     ) -> Iterator[Dict[str, Any]]:
         device = resolve_device()
         model = cached_transformers.get(
-            AutoModelForCausalLM, self.pretrained_model_name_or_path, False).eval().to(device)
+            AutoModelForCausalLM, self.pretrained_model_name_or_path, False, **self.model_kwargs).eval().to(device)
         tokenizer = cached_transformers.get_tokenizer(
             AutoTokenizer, self.pretrained_model_name_or_path)
 

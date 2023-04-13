@@ -26,8 +26,9 @@ class EAIGPT(Model):
     This is the decoder-only variant. There is also an encoder/decoder variant at :class:`.EAIT5`.
     """
 
-    def __init__(self, pretrained_model_name_or_path: str):
+    def __init__(self, pretrained_model_name_or_path: str, **model_kwargs):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.model_kwargs = model_kwargs
 
     def predict(  # type: ignore
         self,
@@ -44,6 +45,7 @@ class EAIGPT(Model):
             self.pretrained_model_name_or_path,
             False,
             device_map="auto" if torch.cuda.device_count() > 0 else None,
+            **self.model_kwargs,
         ).eval()
         tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
 
@@ -170,8 +172,10 @@ class EAIGPT(Model):
                         field_name: pad_sequence(tensors, batch_first=True).to(model.device)
                         for field_name, tensors in unpadded_batch.items()
                     }
+                    #print(f"padded_batch = {padded_batch}")
 
                     batch_logits = log_softmax(model(**padded_batch)[0], dim=-1).cpu()
+                    #print(f"batch_logits = {batch_logits}")
                     z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
                     for i, instance_logits, input_length, instance_context, instance_continuation in z:
                         instance_logits = instance_logits[input_length-len(instance_continuation):input_length].unsqueeze(0)
@@ -186,6 +190,8 @@ class EAIGPT(Model):
                         if requests[i].index is not None:
                             instance_result = instance_result[requests[i].index]
                         results[i] = instance_result
+                        #print(f"input_length = {input_length}   cont = {len(instance_continuation)}   result = {results[i]}")
+                        #print(instance_logits)
 
         assert None not in results
         return results

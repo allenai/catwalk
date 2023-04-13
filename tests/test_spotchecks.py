@@ -23,7 +23,7 @@ def test_squad():
     catwalk.__main__.main(args)
 
 
-@pytest.mark.parametrize("task", ["mnli", "cola", "rte", "multirc"])
+@pytest.mark.parametrize("task", ["mnli", "cola", "rte", "eai::multirc"])
 @suite_C
 def test_gpt2_performance(task: str):
     model = "rc::gpt2"

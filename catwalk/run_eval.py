@@ -118,8 +118,7 @@ def main(args: argparse.Namespace):
             file.write(json.dumps(sanitize(verbose_output)))
     table_step = TabulateMetricsStep(metrics=metric_task_dict)
     table_step_result = table_step.result(workspace)
-    logger.info("Overall metrics:")
-    logger.info("\n  " + "\n  ".join(table_step_result))
+    logger.info("Overall metrics:\n  " + "\n  ".join(table_step_result))
 
 
 if __name__ == "__main__":

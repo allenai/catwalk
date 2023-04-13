@@ -26,7 +26,7 @@ _parser.add_argument('-d', '-w', type=str, default=None, metavar="workspace", de
 
 
 def main(args: argparse.Namespace):
-    initialize_logging(log_level="WARNING")
+    initialize_logging(log_level="INFO")
     logger = logging.getLogger()
 
     if args.workspace is None:
@@ -104,12 +104,12 @@ def main(args: argparse.Namespace):
             output["per_instance"] = [{"instance": guess_instance_id(inst), "prediction": prediction} for \
                                         inst, prediction in zip(instances, predictions_explicit)]
             verbose_output.append(output)
+            if args.full_output_file:
+                logger.info(f"Saving verbose output in {args.full_output_file}...")
+                with open(args.full_output_file, 'w') as file:
+                    for d in verbose_output:
+                        file.write(json.dumps(sanitize(d)) + "\n")
 
-    if args.full_output_file:
-        logger.info(f"Saving verbose output in {args.full_output_file}...")
-        with open(args.full_output_file, 'w') as file:
-            for d in verbose_output:
-                file.write(json.dumps(sanitize(d)) + "\n")
     if args.metrics_file:
         logger.info(f"Saving metrics in {args.metrics_file}...")
         with open(args.metrics_file, 'w') as file:

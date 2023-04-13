@@ -14,7 +14,7 @@ task_names = [
     "lambada",
     "mc_taco",
     "mrpc",
-    "multirc",
+    "eai::multirc",
     "openbookqa",
     "qnli",
     "qqp",

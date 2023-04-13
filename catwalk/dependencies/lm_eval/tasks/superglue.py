@@ -259,10 +259,10 @@ class MultiRC(Task):
         ll_true_choice, _ = rf.loglikelihood(ctx, f" {true_choice}")
         ll_false_choice, _ = rf.loglikelihood(ctx, f" {false_choice}")
 
-        return ll_true_choice, ll_false_choice
+        return ll_false_choice, ll_true_choice
 
     def process_results(self, doc, results):
-        ll_true_choice, ll_false_choice = results
+        ll_false_choice, ll_true_choice = results
         pred = ll_true_choice > ll_false_choice
         return {"acc": (pred, doc)}
 

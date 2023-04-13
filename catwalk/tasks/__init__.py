@@ -174,7 +174,7 @@ TASKS: Dict[str, Task] = {
             id_field="idx"
         )
     ).add_metrics(mc_metrics(2)),
-    "multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "eai::multirc": EleutherTask("multirc", ranked_classification=True).add_metrics(mc_metrics(2)),
     #"record": EleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
     "wic": EleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "wsc": EleutherTask(
@@ -468,7 +468,7 @@ TASK_SETS = {
         "mathqa",
         "mc_taco",
         "mrpc",
-        "multirc",
+        "eai::multirc",
         "openbookqa",
         "piqa",
         "prost",

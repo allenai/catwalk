@@ -104,13 +104,19 @@ for hf_name in _ENCODER_DECODER_MODELS:
     MODELS[f"rc::{name}"] = EncoderDecoderRCModel(hf_name)
     MODELS[f"promptsource::{name}"] = PromptsourceEncoderDecoderRCModel(hf_name)
 
+
+def add_decoder_only_model(name, hf_name, **kwargs):
+    MODELS[name] = GPTModel(hf_name, **kwargs)
+    MODELS[f"eai::{name}"] = EAIGPT(hf_name, **kwargs)
+    MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name, **kwargs)
+    MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name, **kwargs)
+    MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name, **kwargs)
+
+
 for hf_name in _DECODER_ONLY_MODELS:
     name = _shorten_hf_name(hf_name)
-    MODELS[name] = GPTModel(hf_name)
-    MODELS[f"eai::{name}"] = EAIGPT(hf_name)
-    MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
-    MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name)
-    MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name)
+    add_decoder_only_model(name, hf_name)
+
 
 MODELS["rc::opt-175b"] = DecoderOnlyRCModel(
     "/net/nfs.cirrascale/allennlp/opt/opt-175b-huggingface",

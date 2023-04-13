@@ -37,7 +37,7 @@ except ImportError:
 def mc_metrics(num_classes: int):
     return {
         "acc": catwalk.metrics.AccuracyMetric,
-        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        # "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
     }
 
 
@@ -45,7 +45,7 @@ def mc_metrics(num_classes: int):
 def classification_metrics(num_classes: int):
     return {
         "acc": catwalk.metrics.AccuracyMetric,
-        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        # "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
     }
 
 

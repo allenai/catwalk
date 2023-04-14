@@ -44,7 +44,7 @@ wnli
 boolq
 cb
 copa
-multirc
+eai::multirc
 wic
 wsc
 drop
@@ -68,7 +68,7 @@ arc_challenge
 logiqa
 hellaswag
 openbookqa
-race
+eai::race
 headqa_es
 headqa_en
 mathqa

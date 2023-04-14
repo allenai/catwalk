@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the way we compute SQuAD metrics.
 - Fixed wikitext on GPT2
 - Fixed lambada on GPT2
+- Fixed the implementation of MultiRC
 
 
 ## [v0.2.2](https://github.com/allenai/catwalk/releases/tag/v0.2.2) - 2023-01-27

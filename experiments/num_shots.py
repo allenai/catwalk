@@ -20,7 +20,7 @@ DEFAULT_TASKS = {
     "mathqa",
     "mc_taco",
     "mrpc",
-    "multirc",
+    "eai::multirc",
     "openbookqa",
     "piqa",
     "pubmedqa",

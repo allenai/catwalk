@@ -26,7 +26,7 @@ _parser.add_argument('-d', '-w', type=str, default=None, metavar="workspace", de
 
 
 def main(args: argparse.Namespace):
-    initialize_logging(log_level="WARNING")
+    initialize_logging(log_level="INFO")
     logger = logging.getLogger()
 
     if args.workspace is None:
@@ -64,6 +64,7 @@ def main(args: argparse.Namespace):
             tasks |= TASK_SETS[task]
         except KeyError:
             tasks.add(task)
+    tasks = sorted(list(tasks))  # Make the task ordering more predictable
 
     kwargs = {}
     if args.num_shots is not None:
@@ -101,25 +102,25 @@ def main(args: argparse.Namespace):
             metrics_explicit = metrics.result(workspace)
             output = {"task": task, "model": args.model, "split": split, "limit": limit, "metrics": metrics_explicit,
                       "num_instances": len(instances)}
+            logger.info(f"Results from task {task}: {output}")
             output["per_instance"] = [{"instance": guess_instance_id(inst), "prediction": prediction} for \
                                         inst, prediction in zip(instances, predictions_explicit)]
             verbose_output.append(output)
+            if args.full_output_file:
+                logger.info(f"Saving full output in {args.full_output_file}...")
+                with open(args.full_output_file, 'w') as file:
+                    for d in verbose_output:
+                        file.write(json.dumps(sanitize(d)) + "\n")
 
-    if args.full_output_file:
-        logger.info(f"Saving verbose output in {args.full_output_file}...")
-        with open(args.full_output_file, 'w') as file:
-            for d in verbose_output:
-                file.write(json.dumps(sanitize(d)) + "\n")
     if args.metrics_file:
         logger.info(f"Saving metrics in {args.metrics_file}...")
         with open(args.metrics_file, 'w') as file:
             for d in verbose_output:
                 del d['per_instance']  # Destructive
-            file.write(json.dumps(sanitize(verbose_output)))
+            file.write(json.dumps(sanitize({"metrics": verbose_output})))
     table_step = TabulateMetricsStep(metrics=metric_task_dict)
     table_step_result = table_step.result(workspace)
-    logger.info("Overall metrics:")
-    logger.info("\n  " + "\n  ".join(table_step_result))
+    logger.info("Overall metrics:\n  " + "\n  ".join(table_step_result))
 
 
 if __name__ == "__main__":

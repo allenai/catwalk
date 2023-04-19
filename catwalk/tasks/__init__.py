@@ -249,6 +249,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
     ).add_metrics(mc_metrics(4)),
+    "arc_easy:mc": EleutherTask("arc_easy:mc", ranked_classification=True).add_metrics(mc_metrics(4)),
     "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -260,6 +261,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
     ).add_metrics(mc_metrics(4)),
+    "arc_challenge:mc": EleutherTask("arc_challenge:mc", ranked_classification=True).add_metrics(mc_metrics(4)),
     "logiqa": EleutherTask("logiqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(

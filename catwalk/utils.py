@@ -1,4 +1,5 @@
 from typing import Any
+import dataclasses
 import torch
 
 def sanitize(x: Any) -> Any:
@@ -22,6 +23,8 @@ def sanitize(x: Any) -> Any:
         return "None"
     elif hasattr(x, "to_json"):
         return x.to_json()
+    elif dataclasses.is_dataclass(x):
+        return sanitize(dataclasses.asdict(x))
     else:
         raise ValueError(
             f"Cannot sanitize {x} of type {type(x)}. "

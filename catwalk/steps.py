@@ -95,8 +95,8 @@ class CalculateMetricsStep(Step):
             model = MODELS[model]
         if isinstance(task, str):
             task = TASKS[task]
-
-        return model.calculate_metrics(task, predictions)
+        predictions_raw = [p.get('prediction', p) for p in predictions]
+        return model.calculate_metrics(task, predictions_raw)
 
 
 @Step.register("catwalk::finetune")

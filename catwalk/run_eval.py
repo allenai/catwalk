@@ -22,6 +22,7 @@ _parser.add_argument('--fewshot_seed', type=int)
 _parser.add_argument('--limit', type=int)
 _parser.add_argument('--full_output_file', type=str, default=None, help="Filename for verbose output")
 _parser.add_argument('--metrics_file', type=str, default=None, help="Filename for metrics output")
+_parser.add_argument('--num_model_inputs', type=int, default=0, help="Number of sample model inputs in full output, for sanity checks")
 _parser.add_argument('-d', '-w', type=str, default=None, metavar="workspace", dest="workspace", help="the Tango workspace with the cache")
 
 
@@ -71,6 +72,8 @@ def main(args: argparse.Namespace):
         kwargs["num_shots"] = args.num_shots
     if args.fewshot_seed is not None:
         kwargs["fewshot_seed"] = args.fewshot_seed
+    if args.num_model_inputs:
+        kwargs["num_model_inputs"] = args.num_model_inputs
     random_subsample_seed = None
 
     metric_task_dict = {}
@@ -78,7 +81,7 @@ def main(args: argparse.Namespace):
         verbose_output = []
     for task in tasks:
         logger.info(f"Processing task: {task}")
-        predictions = PredictStep(
+        full_predictions = PredictStep(
             model=args.model,
             task=task,
             split=args.split,
@@ -88,7 +91,7 @@ def main(args: argparse.Namespace):
         metrics = CalculateMetricsStep(
             model=args.model,
             task=task,
-            predictions=predictions)
+            predictions=full_predictions)
         metric_task_dict[task] = metrics
         if save_output:
             task_obj = task
@@ -98,13 +101,20 @@ def main(args: argparse.Namespace):
             if split is None:
                 split = task_obj.default_split
             instances = get_instances(task_obj, split, limit, random_subsample_seed)
-            predictions_explicit = list(predictions.result(workspace))
+            predictions_explicit = list(full_predictions.result(workspace))
             metrics_explicit = metrics.result(workspace)
             output = {"task": task, "model": args.model, "split": split, "limit": limit, "metrics": metrics_explicit,
                       "num_instances": len(instances)}
             logger.info(f"Results from task {task}: {output}")
-            output["per_instance"] = [{"instance": guess_instance_id(inst), "prediction": prediction} for \
-                                        inst, prediction in zip(instances, predictions_explicit)]
+            per_instance = []
+            for inst, p in zip(instances, predictions_explicit):
+                res1 = {"instance": guess_instance_id(inst), "prediction": p.get('prediction', p)}
+                if 'model_input' in p:
+                    res1['model_input'] = p['model_input']
+                per_instance.append(res1)
+            output["per_instance"] = per_instance
+            if per_instance:
+                logger.info(f"First instance details for task {task}: {per_instance[0]}")
             verbose_output.append(output)
             if args.full_output_file:
                 logger.info(f"Saving full output in {args.full_output_file}...")

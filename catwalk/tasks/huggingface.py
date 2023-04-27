@@ -222,3 +222,31 @@ def hfclassification_conversion(
 ) -> InstanceConversion:
     # We're doing this in this stupid way because this makes the conversion function picklable.
     return functools.partial(hfclassification_convert, **kwargs)
+
+
+
+@dataclass
+class HFSummarizationInstance:
+    id: Optional[str]
+    source: str
+    target: str
+
+
+def hfsummarization_convert(
+    instance: Dict[str, Any],
+    *,
+    source_field: str = "source",
+    target_field: str = "target",
+    id_field: Optional[str] = None,
+) -> HFSummarizationInstance:
+    return HFSummarizationInstance(
+        id=str(get_from_dict(instance, id_field)) if id_field else None,
+        source=str(get_from_dict(instance, source_field)),
+        target=str(get_from_dict(instance, target_field)))
+
+
+def hfsummarization_conversion(
+    **kwargs,
+) -> InstanceConversion:
+    # We're doing this in this stupid way because this makes the conversion function picklable.
+    return functools.partial(hfsummarization_convert, **kwargs)

@@ -610,6 +610,10 @@ class MultipleChoiceTask(Task):
 
         return lls
 
+    def unconditioned_prompt(self):
+        # Used in unconditioned scoring of answers for normalization
+        return "Answer:"
+
     def process_results(self, doc, results):
         gold = doc["gold"]
 

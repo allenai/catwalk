@@ -4,6 +4,7 @@ from catwalk.model import Model
 from catwalk.models.eleuther import EAIGPT, EAIT5
 from catwalk.models.gpt import GPTModel
 from catwalk.models.huggingface import HFAutoModel
+from catwalk.models.language_model import DecoderOnlyLanguageModel
 from catwalk.models.rank_classification import EncoderDecoderRCModel, DecoderOnlyRCModel
 from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 from catwalk.models.metaicl import MetaICLModel
@@ -109,6 +110,7 @@ def add_decoder_only_model(name, hf_name, **kwargs):
     MODELS[name] = GPTModel(hf_name, **kwargs)
     MODELS[f"eai::{name}"] = EAIGPT(hf_name, **kwargs)
     MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name, **kwargs)
+    MODELS[f"lm::{name}"] = DecoderOnlyLanguageModel(hf_name, **kwargs)
     MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name, **kwargs)
     MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name, **kwargs)
 

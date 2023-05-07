@@ -42,24 +42,35 @@ class RelativeAccuracyImprovementMetric(AccuracyMetric):
 
 class MultipleChoiceMetrics():
 
+    # Tracks 4 different scoring possibilities for multiple-choice continuations:
+    #   raw: Total probability of continuation
+    #   per_token: Average probability per token
+    #   per_char: Average probability per character (for comparing to certain Eleuther/LLaMA numbers)
+    #   uncond: Probability divided by "unconditional" probability  (optional)
+
     def __init__(self, primary_metric="acc_per_token"):
         self.primary_metric = primary_metric
-        self.state = {"count": 0, "total_raw": 0, "total_per_token": 0,
-                      "total_per_char": 0, "total_uncond_norm": 0,
-                      "predicted_indices_raw": {},
-                      "predicted_indices_per_token": {},
-                      "predicted_indices_per_char": {},
-                      "total_probability_mass": 0}
+        self.scoring_types = ["raw", "per_token", "per_char", "uncond"]
+        self.state = {"count": 0, "total_probability_mass": 0}
+        for scoring in self.scoring_types:
+            self.state[f'total_{scoring}'] = 0
+            self.state[f'predicted_indices_{scoring}'] = {}
 
     def get_metrics(self, data):
-        logits = {"raw": [], "per_token": [], "per_char": []}
+        logits = {}
+        for scoring in self.scoring_types:
+            logits[scoring] = []
         for prediction in data['model_output']:
             logits["raw"].append(prediction['sum_logits'])
             logits["per_token"].append(prediction['sum_logits'] / prediction['num_tokens'])
             logits["per_char"].append(prediction['sum_logits'] / prediction['num_chars'])
+            if 'sum_logits_uncond' in prediction:
+                logits["uncond"].append(prediction['sum_logits'] - prediction['sum_logits_uncond'])
         gold_index = data["correct_choice"]
         metrics = {}
-        for scoring in ["raw", "per_token", "per_char"]:
+        if len(logits['uncond']) == 0:
+            del logits['uncond']
+        for scoring in logits.keys():
             pred_index = int(np.argmax(logits[scoring]))  # int to avoid numpy numbers and keep tango happy
             acc = 1 if pred_index == gold_index else 0
             metrics[f"acc_{scoring}"] = acc
@@ -72,8 +83,11 @@ class MultipleChoiceMetrics():
     def update(self, data):
         metrics = data.get("metrics", self.get_metrics(data))
         self.state['count'] += 1
-        for scoring in ["raw", "per_token", "per_char"]:
-            self.state[f'total_{scoring}'] += metrics[f'acc_{scoring}']
+        for scoring in self.scoring_types:
+            key = f"acc_{scoring}"
+            if key not in metrics:
+                continue
+            self.state[f'total_{scoring}'] += metrics[key]
             pred_index = metrics[f"predicted_index_{scoring}"]
             index_tally = self.state[f'predicted_indices_{scoring}']
             index_tally[pred_index] = index_tally.get(pred_index, 0) + 1
@@ -85,8 +99,12 @@ class MultipleChoiceMetrics():
         if count == 0:
             return {}
         final_metrics = {}
-        for scoring in ["raw", "per_token", "per_char"]:
-            final_metrics[f"acc_{scoring}"] = self.state[f'total_{scoring}'] / count
+        for scoring in self.scoring_types:
+            key = f'total_{scoring}'
+            # hack to not score "uncond" accuracy if there isn't any total for it
+            if key not in self.state or (self.state[key] == 0 and scoring == "uncond"):
+                continue
+            final_metrics[f"acc_{scoring}"] = self.state[key] / count
             index_tallies = []
             for index, tally in self.state[f'predicted_indices_{scoring}'].items():
                 index_tallies.append((index, tally / count))

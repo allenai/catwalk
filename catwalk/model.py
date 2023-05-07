@@ -49,7 +49,9 @@ def recursive_tolist(args: _TorchmetricsResult) -> _CatwalkResult:
     if isinstance(args, dict):
         return { key: recursive_tolist(value) for key, value in args.items() }
     else:
-        return args.tolist()
+        if hasattr(args, "tolist"):
+            return args.tolist()
+        return args
 
 
 class Model(Registrable, DetHashWithVersion, ABC):
@@ -62,14 +64,26 @@ class Model(Registrable, DetHashWithVersion, ABC):
         metrics = task.make_metrics()
         with Tqdm.tqdm(predictions, desc="Calculating metrics") as predictions_tqdm:
             for prediction in predictions_tqdm:
-                for metric_name, metric_args in prediction.items():
-                    try:
-                        metric = metrics[metric_name]
-                    except KeyError:
-                        continue
-                    metric_args = tensor_args(metric_args)
-                    metric_args = unsqueeze_args(metric_args)
-                    metric.update(*metric_args)
+                # For models proving model_output (LM models), the metric is called directly
+                if 'model_output' in prediction:
+                    prediction['metrics'] = {}
+                    for metric_name, metric in metrics.items():
+                        # We'll update the prediction with its individual metrics
+                        try:
+                            prediction['metrics'].update(metric.get_metrics(prediction))
+                        except:
+                            # TODO Fix this when needed
+                            raise ValueError(f"Metric {metric_name} doesn't support get_metrics")
+                        metric.update(prediction)
+                else:
+                    for metric_name, metric_args in prediction.items():
+                        try:
+                            metric = metrics[metric_name]
+                        except KeyError:
+                            continue
+                        metric_args = tensor_args(metric_args)
+                        metric_args = unsqueeze_args(metric_args)
+                        metric.update(*metric_args)
         return {
             metric_name: recursive_tolist(metric.compute())
             for metric_name, metric in metrics.items()

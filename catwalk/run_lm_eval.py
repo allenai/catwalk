@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import time
 
 from tango.common.logging import initialize_logging
 
@@ -28,7 +29,6 @@ _parser.add_argument('--limit', type=int, help="Max number of instances for a ta
 _parser.add_argument('--full_output_file', type=str, default=None, help="Filename for verbose output")
 _parser.add_argument('--metrics_file', type=str, default=None, help="Filename for metrics output")
 _parser.add_argument('--num_recorded_inputs', type=int, default=0, help="Number of sample model inputs in full output, for sanity checks")
-#_parser.add_argument('-d', '-w', type=str, default=None, metavar="workspace", dest="workspace", help="the Tango workspace with the cache")
 
 
 def main(args: argparse.Namespace):
@@ -115,12 +115,12 @@ def main(args: argparse.Namespace):
                 logger.info(f"Using unconditioned prompt for {task_name}: '{prompt}'")
                 task['unconditioned_prompt'] = prompt
 
-    metric_task_dict = {}
     verbose_output = []
 
     valid_model_args = ['split', 'limit', 'batch_size', 'num_shots',
                         'fewshot_seed', 'num_recorded_inputs', 'unconditioned_prompt']
     for task in tasks:
+        start_time = time.time()
         task_name = task['name']
         task_obj = task['task_obj']
         logger.info(f"Processing task: {task_name}")
@@ -139,7 +139,8 @@ def main(args: argparse.Namespace):
         output = {"task": task_name, "model": args.model,
                   "task_options": filter_dict_keys(task_dict, valid_model_args, remove_none=True),
                   "metrics": metrics,
-                  "num_instances": len(instances)}
+                  "num_instances": len(instances),
+                  "processing_time_seconds": time.time() - start_time}
         logger.info(f"Results from task {task_name}: {output}")
         per_instance = []
         for inst, p in zip(instances, predictions_updated):

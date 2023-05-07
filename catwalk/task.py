@@ -24,7 +24,6 @@ QA_METRICS = {
     "squad_metrics": torchmetrics.SQuAD,
 }
 
-
 try:
     from functools import cache as memoize  # type: ignore
 except ImportError:
@@ -37,7 +36,14 @@ except ImportError:
 def mc_metrics(num_classes: int):
     return {
         "acc": catwalk.metrics.AccuracyMetric,
-        # "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+    }
+
+@memoize
+def rc_metrics(primary="acc_per_token"):
+    return {
+        # This is a special type of metric which uses full prediction dict, not tensors
+        "mc_metrics": partial(catwalk.metrics.MultipleChoiceMetrics, primary_metric=primary)
     }
 
 
@@ -45,7 +51,7 @@ def mc_metrics(num_classes: int):
 def classification_metrics(num_classes: int):
     return {
         "acc": catwalk.metrics.AccuracyMetric,
-        # "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
     }
 
 
@@ -71,7 +77,6 @@ class InstanceFormat(Enum):
 class RankClassificationInstance:
     choices: List[Tuple[str, str]]
     correct_choice: Optional[int]
-
 
 InstanceConversion = Union[Callable[[Dict[str, Any]], Any], Callable[[Dict[str, Any], KwArg()], Any]]
 

@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+from pydoc import locate
 import time
 import torch
 
@@ -18,7 +19,7 @@ from catwalk.utils import guess_instance_id, sanitize, filter_dict_keys
 # Catwalk eval script which is focused on LM models referenced on the fly
 
 _parser = argparse.ArgumentParser()
-_parser.add_argument('--model', type=str, required=True)
+_parser.add_argument('--model', type=str, required=True, help="Name of model")
 _parser.add_argument('--task', type=str, nargs="+")
 _parser.add_argument('--task_file', type=str, help="Jsonl file with task specs")
 _parser.add_argument('--split', type=str, default="validation")
@@ -31,6 +32,8 @@ _parser.add_argument('--limit', type=int, help="Max number of instances for a ta
 _parser.add_argument('--full_output_file', type=str, default=None, help="Filename for verbose output")
 _parser.add_argument('--metrics_file', type=str, default=None, help="Filename for metrics output")
 _parser.add_argument('--num_recorded_inputs', type=int, default=0, help="Number of sample model inputs in full output, for sanity checks")
+_parser.add_argument('--model_path', type=str, help="Explicit path to load model from")
+_parser.add_argument('--model_class', type=str, help="Custom Python class for loading model")
 
 
 def main(args: argparse.Namespace):
@@ -53,6 +56,13 @@ def main(args: argparse.Namespace):
             raise ValueError(f"Unknown model {args.model}")
         hf_name = model_args['pretrained']
         del model_args['pretrained']
+        if args.model_path:
+            hf_name = args.model_path
+        if args.model_class:
+            model_args['model_class'] = locate(args.model_class)
+            # Assuming tokenizer will be loaded with model, so fail if trying to load it otherwise
+            model_args['pretrained_tokenizer_name_or_path'] = 'UnknownTokenizer'
+
         logger.info(f"Dynamically adding decoder-only models for: {model_name}")
         add_decoder_only_model(model_name, hf_name, **model_args)
         if args.model not in MODELS:
@@ -130,7 +140,8 @@ def main(args: argparse.Namespace):
         model_obj.pretrained_model_name_or_path,
         device_map="auto" if torch.cuda.device_count() > 0 else None,
         **model_obj.model_kwargs).eval()
-    tokenizer_cached = model_obj._make_tokenizer()
+    if not hasattr(model_cached, "tokenizer"):
+        tokenizer_cached = model_obj._make_tokenizer()
 
     valid_model_args = ['split', 'limit', 'batch_size', 'max_batch_tokens', 'num_shots', 'model_max_length',
                         'fewshot_seed', 'num_recorded_inputs', 'unconditioned_prompt']

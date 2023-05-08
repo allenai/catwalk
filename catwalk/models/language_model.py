@@ -73,7 +73,10 @@ class LanguageModel(Model):
             self.pretrained_model_name_or_path,
             device_map="auto" if torch.cuda.device_count() > 0 else None,
             **self.model_kwargs).eval()
-        tokenizer = self._make_tokenizer()
+        if hasattr(model, "tokenizer"):
+            tokenizer = model.tokenizer
+        else:
+            tokenizer = self._make_tokenizer()
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
             yield from self.predict_chunk(

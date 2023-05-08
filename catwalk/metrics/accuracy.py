@@ -51,16 +51,25 @@ class MultipleChoiceMetrics():
     def __init__(self, primary_metric="acc_per_token"):
         self.primary_metric = primary_metric
         self.scoring_types = ["raw", "per_token", "per_char", "uncond"]
-        self.state = {"count": 0, "total_probability_mass": 0}
+        self.state = {"count": 0, "total_probability_mass": 0,
+                      "total_token_count": 0, "max_token_count": 0, "count_inputs": 0}
         for scoring in self.scoring_types:
             self.state[f'total_{scoring}'] = 0
             self.state[f'predicted_indices_{scoring}'] = {}
 
     def get_metrics(self, data):
+        # Try to avoid double processing data (shouldn't happen)
+        if 'metrics' in data and 'probability_mass' in data['metrics']:
+            return data['metrics']
         logits = {}
         for scoring in self.scoring_types:
             logits[scoring] = []
         for prediction in data['model_output']:
+            token_count = prediction.get('num_tokens_all', 0)
+            self.state['total_token_count'] += token_count
+            self.state['count_inputs'] += 1
+            if token_count > self.state['max_token_count']:
+                self.state['max_token_count'] = token_count
             logits["raw"].append(prediction['sum_logits'])
             logits["per_token"].append(prediction['sum_logits'] / prediction['num_tokens'])
             logits["per_char"].append(prediction['sum_logits'] / prediction['num_chars'])
@@ -111,6 +120,9 @@ class MultipleChoiceMetrics():
             index_tallies.sort(key=lambda x: -x[1])
             final_metrics[f'predicted_indices_{scoring}'] = index_tallies
         final_metrics['avg_total_probability_mass'] = self.state["total_probability_mass"] / count
+        final_metrics['primary_metric'] = self.primary_metric
+        final_metrics['total_token_count'] = self.state['total_token_count']
+        final_metrics['max_token_count'] = self.state['max_token_count']
         if self.primary_metric in final_metrics:
             final_metrics['acc'] = final_metrics[self.primary_metric]
         return final_metrics

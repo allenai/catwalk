@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import time
+import torch
 
 from tango.common.logging import initialize_logging
 
@@ -22,9 +23,10 @@ _parser.add_argument('--task', type=str, nargs="+")
 _parser.add_argument('--task_file', type=str, help="Jsonl file with task specs")
 _parser.add_argument('--split', type=str, default="validation")
 _parser.add_argument('--batch_size', type=int, default=32)
-_parser.add_argument('--max_tokens_in_batch', type=int, help="Limit batch size to max tokens")
+_parser.add_argument('--max_batch_tokens', type=int, help="Limit batch size to max tokens")
+_parser.add_argument('--model_max_length', type=int, help="Max input length the model should accept")
 _parser.add_argument('--num_shots', type=int, help="Number of examples in prompt")
-_parser.add_argument('--fewshot_seed', type=int, help="Random seed for picking prompt examples")
+_parser.add_argument('--fewshot_seed', type=int, help="Random seed for picking fixed prompt examples, leave out for varied examples")
 _parser.add_argument('--limit', type=int, help="Max number of instances for a task")
 _parser.add_argument('--full_output_file', type=str, default=None, help="Filename for verbose output")
 _parser.add_argument('--metrics_file', type=str, default=None, help="Filename for metrics output")
@@ -61,6 +63,10 @@ def main(args: argparse.Namespace):
     default_task_args["split"] = args.split
     default_task_args["batch_size"] = args.batch_size
 
+    if args.model_max_length is not None:
+        default_task_args["model_max_length"] = args.model_max_length
+    if args.max_batch_tokens is not None:
+        default_task_args["max_batch_tokens"] = args.max_batch_tokens
     if args.num_shots is not None:
         default_task_args["num_shots"] = args.num_shots
     if args.fewshot_seed is not None:
@@ -117,7 +123,16 @@ def main(args: argparse.Namespace):
 
     verbose_output = []
 
-    valid_model_args = ['split', 'limit', 'batch_size', 'num_shots',
+    # Initial loading of model done here for early failures and overrides if needed
+    model_obj = MODELS[args.model]
+    logger.info("Loading model...")
+    model_cached = model_obj._make_model(
+        model_obj.pretrained_model_name_or_path,
+        device_map="auto" if torch.cuda.device_count() > 0 else None,
+        **model_obj.model_kwargs).eval()
+    tokenizer_cached = model_obj._make_tokenizer()
+
+    valid_model_args = ['split', 'limit', 'batch_size', 'max_batch_tokens', 'num_shots', 'model_max_length',
                         'fewshot_seed', 'num_recorded_inputs', 'unconditioned_prompt']
     for task in tasks:
         start_time = time.time()
@@ -127,11 +142,11 @@ def main(args: argparse.Namespace):
         task_dict = task.copy()
         task_dict.update(default_task_args)
         predictions = PredictStep().run(
-            model=MODELS[args.model],
+            model=model_obj,
             task=task_obj,
             **filter_dict_keys(task_dict, valid_model_args))
         metrics, predictions_updated = CalculateMetricsStep().run(
-            model=MODELS[args.model],
+            model=model_obj,
             task=task_obj,
             predictions=predictions)
         instances = get_instances(task_obj,

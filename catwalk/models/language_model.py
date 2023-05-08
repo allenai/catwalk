@@ -1,17 +1,16 @@
 import collections
-import functools
-from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, Optional, cast, Callable
+from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, Optional
 
 import more_itertools
 import torch
 from tango.common import Tqdm
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, GPT2LMHeadModel, \
+from transformers import AutoModelForCausalLM, T5ForConditionalGeneration, GPT2LMHeadModel, \
     AutoTokenizer, GPT2Tokenizer, T5TokenizerFast
 
 from catwalk import cached_transformers
-from catwalk.model import Model, TrainableModel, Instance
+from catwalk.model import Model
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance
 
 _Model = Union[T5ForConditionalGeneration, GPT2LMHeadModel]
@@ -62,9 +61,11 @@ class LanguageModel(Model):
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32,
+        max_batch_tokens: int = None, # If set, max number of tokens in a batch
         max_instances_in_memory: int = 32 * 1024,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
+        model_max_length: Optional[int] = None, # Max input length model should support
         num_recorded_inputs: Optional[int] = 0,  # Number of instances to log in detail
         unconditioned_prompt: Optional[str] = None, # Optional unconditioned prompt, e.g., "Answer:"
     ) -> Iterator[Dict[str, Any]]:
@@ -81,8 +82,10 @@ class LanguageModel(Model):
                 model,
                 tokenizer,
                 batch_size=batch_size,
+                max_batch_tokens=max_batch_tokens,
                 num_shots=num_shots,
                 fewshot_seed=fewshot_seed,
+                model_max_length=model_max_length,
                 num_recorded_inputs=num_recorded_inputs,
                 unconditioned_prompt=unconditioned_prompt
             )
@@ -94,8 +97,10 @@ class LanguageModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
+        max_batch_tokens: int = None,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
+        model_max_length: Optional[int] = None,
         num_recorded_inputs: Optional[int] = 0,
         unconditioned_prompt: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
@@ -124,7 +129,9 @@ class LanguageModel(Model):
                     tuples.append((unconditioned_prompt, instance_request[1]))
 
         # run the requests
-        results = self._run_loglikelihood(tuples, model, tokenizer, batch_size)
+        results = self._run_loglikelihood(tuples, model, tokenizer, batch_size,
+                                          max_batch_tokens=max_batch_tokens,
+                                          model_max_length=model_max_length)
 
         # collect the results
         for instance_index, instance in enumerate(rc_instances):
@@ -147,6 +154,8 @@ class LanguageModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
+        max_batch_tokens: int = None,
+        model_max_length: Optional[int] = None
     ) -> Sequence[float]:
         raise NotImplementedError
 
@@ -181,7 +190,13 @@ class DecoderOnlyLanguageModel(LanguageModel):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
+        max_batch_tokens: int = None,
+        model_max_length: Optional[int] = None
     ) -> Sequence[Dict]:
+
+        truncation_length = tokenizer.model_max_length
+        if model_max_length:
+            truncation_length = min(truncation_length, model_max_length)
         tokenized_contexts = tokenizer([t[0] for t in tuples], add_special_tokens=False)
         tokenized_continuations = tokenizer([self._prefix_with_space(t[1]) for t in tuples], add_special_tokens=False)
 
@@ -208,23 +223,33 @@ class DecoderOnlyLanguageModel(LanguageModel):
             for cc_pair in cc_pairs
         ], dtype=torch.int)
         ordered_indices = torch.argsort(lengths, descending=True)
-        del lengths
 
         # actually do the processing
         results: List[Optional[float]] = [None] * len(ordered_indices)
+        last_index = 0
         with torch.inference_mode():
             with Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries") as ordered_indices_tqdm:
-                batches_of_indices = more_itertools.chunked(ordered_indices_tqdm, batch_size)
-                for batch_of_indices in batches_of_indices:
+                while last_index < len(ordered_indices):
+                    next_batch_size = batch_size
+                    if max_batch_tokens:
+                        current_length = min(lengths[ordered_indices[last_index]].item(), truncation_length)
+                        next_batch_size = min(next_batch_size, max_batch_tokens // current_length)
+                        if next_batch_size < 1:
+                            next_batch_size = 1
+                    first_index = last_index
+                    last_index = min(first_index + next_batch_size, len(ordered_indices))
+                    ordered_indices_tqdm.update(last_index - first_index)
                     unpadded_batch = collections.defaultdict(list)
                     input_lengths = []
                     batch_contexts = []
                     batch_continuations = []
+                    batch_of_indices = ordered_indices[first_index:last_index]
                     for index in batch_of_indices:
                         for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
                             ids = torch.cat([context_ids, continuation_ids])
-                            if len(ids) > tokenizer.model_max_length+1:
-                                ids = ids[-(tokenizer.model_max_length+1):]
+                            # Possibly do truncation_length+1 instead here? (like older code)
+                            if len(ids) > truncation_length:
+                                ids = ids[-truncation_length:]
                             ids = ids[:-1]
                             unpadded_batch[field_name].append(ids)
 
@@ -242,10 +267,8 @@ class DecoderOnlyLanguageModel(LanguageModel):
                     for i, instance_logits, input_length, instance_context, instance_continuation in z:
                         instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
                         instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
-                        # denom = len(tuples[i][1]) if self.likelihood_averaging == 'char' else len(instance_continuation)
-                        results[i] = {"sum_logits": float(instance_logits.sum()), "num_tokens": len(tuples[i][1]),
-                                      "num_chars": len(instance_continuation)}
-                        # results[i] = float(instance_logits.sum()) / denom
-
+                        results[i] = {"sum_logits": float(instance_logits.sum()), "num_tokens": len(instance_continuation),
+                                      "num_chars": len(tuples[i][1]), "num_tokens_all": input_length + 1}
+        del lengths
         assert None not in results
         return results

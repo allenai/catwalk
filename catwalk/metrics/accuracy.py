@@ -40,7 +40,7 @@ class RelativeAccuracyImprovementMetric(AccuracyMetric):
         return (super().compute() - self.baseline) / self.baseline
 
 
-class MultipleChoiceMetrics():
+class RankedClassificationMetrics():
 
     # Tracks 4 different scoring possibilities for multiple-choice continuations:
     #   raw: Total probability of continuation

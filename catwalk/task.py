@@ -43,7 +43,7 @@ def mc_metrics(num_classes: int):
 def rc_metrics(primary="acc_per_token"):
     return {
         # This is a special type of metric which uses full prediction dict, not tensors
-        "mc_metrics": partial(catwalk.metrics.MultipleChoiceMetrics, primary_metric=primary)
+        "rc_metrics": partial(catwalk.metrics.RankedClassificationMetrics, primary_metric=primary)
     }
 
 

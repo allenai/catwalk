@@ -46,6 +46,13 @@ def rc_metrics(primary="acc_per_token"):
         "rc_metrics": partial(catwalk.metrics.RankedClassificationMetrics, primary_metric=primary)
     }
 
+@memoize
+def ppl_metrics(primary="ppl_token"):
+    return {
+        # This is a special type of metric which uses full prediction dict, not tensors
+        "ppl_metrics": partial(catwalk.metrics.PerplexityMetrics, primary_metric=primary)
+    }
+
 
 @memoize
 def classification_metrics(num_classes: int):

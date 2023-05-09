@@ -1,5 +1,6 @@
 from typing import Union, Optional, Dict, Any
 
+import math
 import torch
 from torchmetrics.aggregation import BaseAggregator
 
@@ -28,3 +29,56 @@ class PerplexityMetric(BaseAggregator):
     def compute(self) -> torch.Tensor:
         return torch.exp(-self.loglikelihood / self.num_tokens)
 
+class PerplexityMetrics():
+
+    # Tracks different perplexity metrics, such as:
+    #   ppl_token: perplexity per token
+    #   ppl_char: perplexity per character
+    #   ppl_byte: perplexity per byte
+    #   ppl_word: perplexity per word
+    # It computes both per-doc perplexities and overall perplexity averaged over all tokens/chars/etc
+
+    def __init__(self, primary_metric="ppl_token"):
+        self.primary_metric = primary_metric
+        self.scoring_types = ["token", "char", "word", "byte"]
+        self.state = {"count": 0, "total_tokens_input": 0, "max_token_count": 0, "total_sum_logits": 0}
+        for scoring in self.scoring_types:
+            self.state[f'total_{scoring}s'] = 0
+
+    def get_metrics(self, data):
+        # Try to avoid double processing data
+        if 'metrics' in data and 'ppl_token' in data['metrics']:
+            return data['metrics']
+        logits = {}
+        for scoring in self.scoring_types:
+            logits[scoring] = []
+        prediction = data['model_output']
+        token_count = prediction.get('num_tokens_all', 0)
+        self.state['total_tokens_input'] += token_count
+        if token_count > self.state['max_token_count']:
+            self.state['max_token_count'] = token_count
+        self.state['total_sum_logits'] += prediction['sum_logits']
+        metrics = {"bits_per_byte": -prediction['sum_logits'] / (prediction['num_bytes'] * math.log(2))}
+        for scoring in self.scoring_types:
+            self.state[f'total_{scoring}s'] += prediction[f'num_{scoring}s']
+            metrics[f"ppl_{scoring}"] = math.exp(-prediction['sum_logits'] / prediction[f'num_{scoring}s'])
+        if self.primary_metric in metrics:
+            metrics['ppl_primary'] = metrics[self.primary_metric]
+        return metrics
+
+    def update(self, data):
+        _ = data.get("metrics", self.get_metrics(data))
+        self.state['count'] += 1
+
+    def compute(self):
+        count = self.state['count']
+        total_logits = self.state['total_sum_logits']
+        final_metrics = {"bits_per_byte": -total_logits / (self.state['total_bytes'] * math.log(2))}
+        for scoring in self.scoring_types:
+            final_metrics[f"ppl_{scoring}"] = math.exp(-total_logits / self.state[f'total_{scoring}s'])
+        final_metrics['primary_metric'] = self.primary_metric
+        final_metrics['total_tokens_input'] = self.state['total_tokens_input']
+        final_metrics['max_token_count'] = self.state['max_token_count']
+        if self.primary_metric in final_metrics:
+            final_metrics['ppl_primary'] = final_metrics[self.primary_metric]
+        return final_metrics

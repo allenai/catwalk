@@ -99,6 +99,10 @@ class ARCEasyMC(ARCEasy):
         }
         return out_doc
 
+    def unconditioned_prompt(self):
+        # Don't need unconditioned normalization here
+        return None
+
 
 class ARCChallenge(ARCEasy):
     DATASET_PATH = "ai2_arc"

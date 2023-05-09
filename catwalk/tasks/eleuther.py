@@ -164,11 +164,15 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         *,
         answer_options: Sequence[str],
         version_override: Optional[str] = None,
+        metrics = None,
     ):
         EleutherTask.__init__(self, eleuther_task, version_override=version_override, ranked_classification=True)
         WithAnswerOptionsMixin.__init__(self, answer_options)
         self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
-        self.add_metrics(classification_metrics(len(answer_options)))
+        if not metrics:
+            self.add_metrics(classification_metrics(len(answer_options)))
+        else:
+            self.add_metrics(metrics)
 
     def instance_as_rank_classification(
         self,

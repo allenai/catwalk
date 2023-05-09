@@ -1,5 +1,6 @@
 from typing import Any
 import dataclasses
+import numpy
 import torch
 
 def sanitize(x: Any) -> Any:
@@ -7,12 +8,24 @@ def sanitize(x: Any) -> Any:
     Sanitize turns PyTorch types into basic Python types so they can be serialized into JSON.
     """
 
+    if isinstance(x, float) and numpy.isnan(x):
+        # NaN should turn into string "NaN"
+        return "NaN"
     if isinstance(x, (str, float, int, bool)):
         # x is already serializable
         return x
     elif isinstance(x, torch.Tensor):
         # tensor needs to be converted to a list (and moved to cpu if necessary)
         return x.cpu().tolist()
+    elif isinstance(x, numpy.ndarray):
+        # array needs to be converted to a list
+        return x.tolist()
+    elif isinstance(x, numpy.number):
+        # NumPy numbers need to be converted to Python numbers
+        return x.item()
+    elif isinstance(x, numpy.bool_):
+        # Numpy bool_ need to be converted to python bool.
+        return bool(x)
     elif isinstance(x, dict):
         # Dicts need their values sanitized
         return {key: sanitize(value) for key, value in x.items()}
@@ -40,3 +53,11 @@ def guess_instance_id(instance, max_val_length=30):
         if isinstance(value, str) and len(value) <= max_val_length:
             return {key: value}
     return {"id": "NA"}
+
+
+#Filter dict on list of keys
+def filter_dict_keys(dictionary, key_list, remove_none=False):
+    res = {k:v for k,v in dictionary.items() if k in key_list}
+    if remove_none:
+        res = {k: v for k, v in res.items() if v is not None}
+    return res

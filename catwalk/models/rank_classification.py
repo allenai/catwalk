@@ -65,7 +65,7 @@ class RankClassificationModel(Model):
         max_instances_in_memory: int = 32 * 1024,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
-        num_model_inputs: Optional[int] = 0,  # Number of instances to log in detail
+        num_recorded_inputs: Optional[int] = 0,  # Number of instances to log in detail
     ) -> Iterator[Dict[str, Any]]:
         model = self._make_model(
             self.pretrained_model_name_or_path,
@@ -82,7 +82,7 @@ class RankClassificationModel(Model):
                 batch_size=batch_size,
                 num_shots=num_shots,
                 fewshot_seed=fewshot_seed,
-                num_model_inputs=num_model_inputs,
+                num_recorded_inputs=num_recorded_inputs,
             )
 
     def predict_chunk(
@@ -94,7 +94,7 @@ class RankClassificationModel(Model):
         batch_size: int = 32,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
-        num_model_inputs: Optional[int] = 0, # Number of model inputs to log in detail
+        num_recorded_inputs: Optional[int] = 0, # Number of model inputs to log in detail
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
@@ -125,7 +125,7 @@ class RankClassificationModel(Model):
             result_tensor = torch.tensor(results_for_instance)
             metric_args = (result_tensor, instance.correct_choice)
             prediction = {metric_name: metric_args for metric_name in task.metrics.keys()}
-            if instance_index >= num_model_inputs:
+            if instance_index >= num_recorded_inputs:
                 yield prediction
             else:
                 model_input = [tuples[i] for i in tuple_indices]

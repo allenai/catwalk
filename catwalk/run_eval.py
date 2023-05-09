@@ -22,7 +22,7 @@ _parser.add_argument('--fewshot_seed', type=int)
 _parser.add_argument('--limit', type=int)
 _parser.add_argument('--full_output_file', type=str, default=None, help="Filename for verbose output")
 _parser.add_argument('--metrics_file', type=str, default=None, help="Filename for metrics output")
-_parser.add_argument('--num_model_inputs', type=int, default=0, help="Number of sample model inputs in full output, for sanity checks")
+_parser.add_argument('--num_recorded_inputs', type=int, default=0, help="Number of sample model inputs in full output, for sanity checks")
 _parser.add_argument('-d', '-w', type=str, default=None, metavar="workspace", dest="workspace", help="the Tango workspace with the cache")
 
 
@@ -72,8 +72,8 @@ def main(args: argparse.Namespace):
         kwargs["num_shots"] = args.num_shots
     if args.fewshot_seed is not None:
         kwargs["fewshot_seed"] = args.fewshot_seed
-    if args.num_model_inputs:
-        kwargs["num_model_inputs"] = args.num_model_inputs
+    if args.num_recorded_inputs:
+        kwargs["num_recorded_inputs"] = args.num_recorded_inputs
     random_subsample_seed = None
 
     metric_task_dict = {}

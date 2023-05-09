@@ -135,13 +135,14 @@ def main(args: argparse.Namespace):
 
     # Initial loading of model done here for early failures and overrides if needed
     model_obj = MODELS[args.model]
-    logger.info("Loading model...")
-    model_cached = model_obj._make_model(
-        model_obj.pretrained_model_name_or_path,
-        device_map="auto" if torch.cuda.device_count() > 0 else None,
-        **model_obj.model_kwargs).eval()
-    if not hasattr(model_cached, "tokenizer"):
-        tokenizer_cached = model_obj._make_tokenizer()
+    if hasattr(model_obj, "_make_model"):
+        logger.info("Loading model...")
+        model_cached = model_obj._make_model(
+            model_obj.pretrained_model_name_or_path,
+            device_map="auto" if torch.cuda.device_count() > 0 else None,
+            **model_obj.model_kwargs).eval()
+        if not hasattr(model_cached, "tokenizer"):
+            tokenizer_cached = model_obj._make_tokenizer()
 
     valid_model_args = ['split', 'limit', 'batch_size', 'max_batch_tokens', 'num_shots', 'model_max_length',
                         'fewshot_seed', 'num_recorded_inputs', 'unconditioned_prompt']
@@ -170,7 +171,7 @@ def main(args: argparse.Namespace):
         logger.info(f"Results from task {task_name}: {output}")
         per_instance = []
         for inst, p in zip(instances, predictions_updated):
-            res1 = {"instance": guess_instance_id(inst), "prediction": p.get('prediction', p)}
+            res1 = {"instance": guess_instance_id(inst, idx=len(per_instance)), "prediction": p.get('prediction', p)}
             if 'model_input' in p:
                 res1['model_input'] = p['model_input']
             per_instance.append(res1)

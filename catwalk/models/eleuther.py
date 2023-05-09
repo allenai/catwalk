@@ -8,7 +8,7 @@ from tango.common import Tqdm
 from tango.integrations.torch.util import resolve_device
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, GPT2Tokenizer, GPT2LMHeadModel, \
+from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Tokenizer, GPT2LMHeadModel, \
     AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5TokenizerFast
 
 from catwalk import cached_transformers
@@ -38,7 +38,8 @@ class EAIGPT(Model):
         batch_size: int = 32,
         max_instances_in_memory: int = 16 * 1024,
         max_gen_toks: int = 256,
-        num_shots: int = 0
+        num_shots: int = 0,
+        **kwargs
     ) -> Iterator[Dict[str, Any]]:
         model = cached_transformers.get(
             AutoModelForCausalLM,
@@ -47,7 +48,7 @@ class EAIGPT(Model):
             device_map="auto" if torch.cuda.device_count() > 0 else None,
             **self.model_kwargs,
         ).eval()
-        tokenizer = cached_transformers.get_tokenizer(GPT2Tokenizer, self.pretrained_model_name_or_path)
+        tokenizer = cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_model_name_or_path)
 
         for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
             yield from self.predict_chunk(

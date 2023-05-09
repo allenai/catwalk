@@ -1,3 +1,3 @@
 from catwalk.metrics.entropy import EntropyMetric
-from catwalk.metrics.perplexity import PerplexityMetric
+from catwalk.metrics.perplexity import PerplexityMetric, PerplexityMetrics
 from catwalk.metrics.accuracy import AccuracyMetric, RankedClassificationMetrics, RelativeAccuracyImprovementMetric

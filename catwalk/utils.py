@@ -45,13 +45,15 @@ def sanitize(x: Any) -> Any:
             "that returns a JSON-like object.")
 
 
-def guess_instance_id(instance, max_val_length=30):
+def guess_instance_id(instance, max_val_length=30, idx=None):
     for key in ['id', 'qid', 'q_id', 'line', 'identifier']:
         if key in instance:
             return {key: instance[key]}
     for key, value in instance.items():
         if isinstance(value, str) and len(value) <= max_val_length:
             return {key: value}
+    if idx is not None:
+        return {"instance_idx": idx}
     return {"id": "NA"}
 
 

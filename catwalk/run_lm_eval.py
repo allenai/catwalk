@@ -16,6 +16,10 @@ from catwalk.tasks.tasks_lm import TASKS_LM
 
 from catwalk.utils import guess_instance_id, sanitize, filter_dict_keys
 
+# Temporary workaround!
+import sys
+sys.path.append("/stage")
+
 # Catwalk eval script which is focused on LM models referenced on the fly
 
 _parser = argparse.ArgumentParser()

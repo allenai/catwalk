@@ -8,6 +8,7 @@ from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, rc_metrics, ppl_metrics, PERPLEXITY_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
+from catwalk.tasks.perplexity_jsonl import PerplexityJsonLTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
 from catwalk.tasks.p3 import P3Task
 from catwalk.tasks.raft import RaftTask
@@ -19,6 +20,7 @@ from catwalk.tasks.t5 import t5_prompt_conversion
 # Usually will use TASKS from __init__.py as fallback
 
 TASKS_LM: Dict[str, Task] = {
+    "ppl_custom": PerplexityJsonLTask().add_metrics(ppl_metrics(primary="ppl_token")),
     "wikitext": EleutherTask("wikitext").add_metrics(ppl_metrics(primary="ppl_token")),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_per_token")),
     "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"], metrics=rc_metrics(primary="acc_raw")),

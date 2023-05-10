@@ -79,6 +79,8 @@ class PerplexityMetrics():
         final_metrics['primary_metric'] = self.primary_metric
         final_metrics['total_tokens_input'] = self.state['total_tokens_input']
         final_metrics['max_token_count'] = self.state['max_token_count']
+        final_metrics['num_instances'] = count
+        final_metrics['total_tokens'] = self.state['total_tokens']
         if self.primary_metric in final_metrics:
             final_metrics['ppl_primary'] = final_metrics[self.primary_metric]
         return final_metrics

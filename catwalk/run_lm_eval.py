@@ -108,9 +108,18 @@ def main(args: argparse.Namespace):
     # Normalize the tasks, check that they exist, etc
     for task in tasks:
         task_name = task['name']
-        if task_name not in TASKS and task_name not in TASKS_LM:
+        if task_name in TASKS_LM:
+            task_obj = TASKS_LM[task_name]
+        elif task_name in TASKS:
+            task_obj = TASKS[task_name]
+        else:
             raise ValueError(f"Task name {task_name} not known!")
-        task_obj = TASKS_LM.get(task_name, TASKS[task_name])
+        if "task_options" in task:
+            if not hasattr(task_obj, "clone"):
+                raise ValueError("Cannot specify task_options for this task")
+            task_obj = task_obj.clone(**task['task_options'])
+        if "task_rename" in task:
+            task['name'] = task_name = task["task_rename"]
         task['task_obj'] = task_obj
         if 'split' not in task and not default_task_args['split']:
             task['split'] = task_obj.default_split

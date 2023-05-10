@@ -61,7 +61,7 @@ class PerplexityMetrics():
         metrics = {"bits_per_byte": -prediction['sum_logits'] / (prediction['num_bytes'] * math.log(2))}
         for scoring in self.scoring_types:
             self.state[f'total_{scoring}s'] += prediction[f'num_{scoring}s']
-            metrics[f"ppl_{scoring}"] = math.exp(-prediction['sum_logits'] / prediction[f'num_{scoring}s'])
+            metrics[f"ppl_{scoring}"] = safe_exp(-prediction['sum_logits'] / max(prediction[f'num_{scoring}s'], 1))
         if self.primary_metric in metrics:
             metrics['ppl_primary'] = metrics[self.primary_metric]
         return metrics
@@ -75,7 +75,7 @@ class PerplexityMetrics():
         total_logits = self.state['total_sum_logits']
         final_metrics = {"bits_per_byte": -total_logits / (self.state['total_bytes'] * math.log(2))}
         for scoring in self.scoring_types:
-            final_metrics[f"ppl_{scoring}"] = math.exp(-total_logits / self.state[f'total_{scoring}s'])
+            final_metrics[f"ppl_{scoring}"] = safe_exp(-total_logits / max(self.state[f'total_{scoring}s'], 1))
         final_metrics['primary_metric'] = self.primary_metric
         final_metrics['total_tokens_input'] = self.state['total_tokens_input']
         final_metrics['max_token_count'] = self.state['max_token_count']
@@ -84,3 +84,11 @@ class PerplexityMetrics():
         if self.primary_metric in final_metrics:
             final_metrics['ppl_primary'] = final_metrics[self.primary_metric]
         return final_metrics
+
+
+def safe_exp(x):
+    try:
+        ans = math.exp(x)
+    except OverflowError:
+        ans = 1e30
+    return ans

@@ -89,9 +89,11 @@ def main(args: argparse.Namespace):
     if args.task_file:
         with open(args.task_file, 'r') as file:
             for line in file:
-                task_spec = json.loads(line.strip())
-                tasks.append(task_spec)
-                task_names.add(task_spec['name'])
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    task_spec = json.loads(line)
+                    tasks.append(task_spec)
+                    task_names.add(task_spec['name'])
 
     if args.task:
         for task in args.task:
@@ -177,10 +179,17 @@ def main(args: argparse.Namespace):
                   "metrics": metrics,
                   "num_instances": len(instances),
                   "processing_time_seconds": time.time() - start_time}
+        if "task_options" in task_dict:
+            output["custom_task_options"] = task_dict['task_options']
         logger.info(f"Results from task {task_name}: {output}")
         per_instance = []
-        for inst, p in zip(instances, predictions_updated):
-            res1 = {"instance": guess_instance_id(inst, idx=len(per_instance)), "prediction": p.get('prediction', p)}
+        for instance, p in zip(instances, predictions_updated):
+            instance_id = guess_instance_id(instance, idx=len(per_instance))
+            if "keep_instance_fields" in task_dict:
+                for field in task_dict['keep_instance_fields']:
+                    if field in instance:
+                        instance_id[field] = instance[field]
+            res1 = {"instance": instance_id, "prediction": p.get('prediction', p)}
             if 'model_input' in p:
                 res1['model_input'] = p['model_input']
             per_instance.append(res1)

@@ -6,6 +6,8 @@ import json
 from catwalk.task import Task, InstanceFormat
 from cached_path import cached_path
 
+# Task for evaluating a generic set of files (or URLs) on perplexity metrics
+
 class PerplexityJsonLTask(Task):
     def __init__(
         self,

@@ -58,7 +58,8 @@ class EAIGPT(Model):
                 tokenizer,
                 batch_size=batch_size,
                 max_gen_toks=max_gen_toks,
-                num_shots=num_shots)
+                num_shots=num_shots,
+                **kwargs)
 
     def predict_chunk(
         self,
@@ -221,6 +222,11 @@ class EAIGPT(Model):
         untils_per_instance = [
             r.args[1] for r in requests
         ]
+        if hasattr(model, "config") and hasattr(model.config, "n_positions"):
+            model_max_length = model.config.n_positions
+        else:
+            model_max_length = 2048
+        model_max_length = kwargs.get("model_max_length", model_max_length)
 
         results = []
         for tokenized_context, untils in Tqdm.tqdm(
@@ -240,7 +246,7 @@ class EAIGPT(Model):
             # truncate from left if no room for generation
             context_tensor = torch.tensor(
                 [
-                    tokenized_context[max_gen_toks - model.config.n_positions :]
+                    tokenized_context[max_gen_toks - model_max_length :]
                 ]
             ).to(model.device)
 

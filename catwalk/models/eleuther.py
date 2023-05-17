@@ -267,7 +267,8 @@ class EAIGPT(Model):
                 continuation = continuation.split(term)[0]
 
             results.append(continuation)
-
+        for inp, out in list(zip(requests, results))[:5]:
+            print(f"INPUT: {inp.args[0]}\nOUTPUT: {out}")
         return results
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, float]:

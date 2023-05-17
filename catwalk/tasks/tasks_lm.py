@@ -38,6 +38,7 @@ TASKS_LM: Dict[str, Task] = {
         promptsource_task_spec=('super_glue', 'wsc.fixed')
     ).add_metrics(rc_metrics(primary="acc_raw")),
     # "drop": EleutherTask("drop").add_metrics(QA_METRICS),
+    "naturalqs_short_open": EleutherTask("naturalqs_short_open"),
     # "lambada": EleutherTask("lambada_standard").add_metrics(PERPLEXITY_METRICS).add_metric("acc", MeanMetric),
     # "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),

@@ -1,3 +1,4 @@
+from functools import partial
 import os
 import random
 from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar, Tuple
@@ -10,6 +11,7 @@ from catwalk.tasks.promptsource import WithPromptsourceMixin
 
 from catwalk.dependencies.lm_eval.base import Task as EAITask
 from catwalk.dependencies.lm_eval.tasks import get_task as get_eai_task
+from catwalk.metrics import EleutherMetrics
 
 T = TypeVar("T")
 
@@ -27,6 +29,7 @@ class EleutherTask(Task, WithPromptsourceMixin):
         version_override: Optional[str] = None,
         ranked_classification: bool = False,
         promptsource_task_spec: Optional[Tuple[str, str]] = None,
+        eleuther_metrics: bool = False,  # Whether to directly use Eleuther metrics
     ):
         Task.__init__(self, version_override=version_override)
 
@@ -52,6 +55,8 @@ class EleutherTask(Task, WithPromptsourceMixin):
         self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
         if ranked_classification:
             self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
+        if eleuther_metrics:
+            self.add_metric("eleuther_metrics", partial(EleutherMetrics, inner_task=self.inner_task))
 
         if promptsource_task_spec is None:
             WithPromptsourceMixin.__init__(self, self.dataset_path, self.dataset_name)
@@ -92,11 +97,16 @@ class EleutherTask(Task, WithPromptsourceMixin):
     def instance_as_eleuther_doc(self, instance: Dict[str, Any]) -> Dict[str, Any]:
         return self.inner_task._process_doc(instance)
 
-    def instance_to_eleuther_context(self, instance: Dict[str, Any], *, num_fewshot: int = 0) -> str:
-        return self.inner_task.fewshot_context(self.instance_as_eleuther_doc(instance), num_fewshot, rnd=random)
+    def instance_to_eleuther_context(self,
+                                     instance: Dict[str, Any],
+                                     *,
+                                     num_fewshot: int = 0,
+                                     fewshot_seed: int = 18830087) -> str:
+        rnd = random.Random(fewshot_seed)
+        return self.inner_task.fewshot_context(self.instance_as_eleuther_doc(instance), num_fewshot, rnd=rnd)
 
-    def instance_as_eleuther_requests(self, instance: Dict[str, Any], *, num_fewshot: int = 0):
-        context = self.instance_to_eleuther_context(instance, num_fewshot=num_fewshot)
+    def instance_as_eleuther_requests(self, instance: Dict[str, Any], *, num_fewshot: int =0, fewshot_seed=None):
+        context = self.instance_to_eleuther_context(instance, num_fewshot=num_fewshot, fewshot_seed=fewshot_seed)
         return self.inner_task.construct_requests(self.instance_as_eleuther_doc(instance), context)
 
     def _guess_label(self, instance: Dict[str, Any]) -> int:

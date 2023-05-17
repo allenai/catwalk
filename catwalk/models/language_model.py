@@ -80,7 +80,9 @@ class LanguageModel(Model):
         else:
             tokenizer = self._make_tokenizer()
 
-        if task.has_instance_conversion(InstanceFormat.RANK_CLASSIFICATION):
+        if "eleuther_metrics" in task.metrics:
+            predictor = self.predict_chunk_eleuther
+        elif task.has_instance_conversion(InstanceFormat.RANK_CLASSIFICATION):
             predictor = self.predict_chunk_rank_classification
         elif task.has_instance_conversion(InstanceFormat.ELEUTHER_DOC):
             # Assume perplexity tasks here, only for Eleuther tasks for now, but easy to add others
@@ -230,8 +232,99 @@ class LanguageModel(Model):
                     res["model_input"].append(inp)
             yield res
 
+    # For tasks we're coopting directly from Eleuther
+    def predict_chunk_eleuther(
+        self,
+        task: Task,
+        instances: Sequence[Dict[str, Any]],
+        model: GPT2LMHeadModel,
+        tokenizer: GPT2Tokenizer,
+        *,
+        num_shots: int = 0,
+        fewshot_seed: Optional[int] = None,
+        model_max_length: Optional[int] = None,
+        num_recorded_inputs: Optional[int] = 0,
+        unconditioned_prompt: Optional[str] = None,
+        **kwargs
+    ) -> Iterator[Dict[str, Any]]:
+        instance_index_to_request_indices = collections.defaultdict(lambda: collections.defaultdict(list))
+        requests = collections.defaultdict(list)
+
+        # get all the requests
+        for instance_index, instance in enumerate(instances):
+            assert fewshot_seed is None
+            instance_requests = task.convert_instance(
+                instance,
+                InstanceFormat.ELEUTHER_REQUESTS,
+                num_fewshot=num_shots,
+                fewshot_seed=fewshot_seed if fewshot_seed is not None else instance_index)
+            if not isinstance(instance_requests, (list, tuple)):
+                instance_requests = [instance_requests]
+            for instance_request in instance_requests:
+                request_type = instance_request.request_type
+                instance_index_to_request_indices[instance_index][request_type].append(len(requests[request_type]))
+                requests[request_type].append(instance_request)
+
+        # run the requests
+        results: Dict[str, Sequence] = {}
+        request_type_to_fn= {
+            "loglikelihood": (self._run_loglikelihood, lambda x: (x["sum_logits"], x['is_greedy'])),
+            "loglikelihood_rolling": (self._run_loglikelihood_rolling, lambda x: [x["sum_logits"]]),
+            "greedy_until": (self._run_greedy_until, lambda x: x["text"])
+        }
+        for request_type, requests_per_type in requests.items():
+            results[request_type] = request_type_to_fn[request_type][0](
+                [tuple(r.args) for r in requests_per_type],
+                model,
+                tokenizer,
+                **kwargs
+            )
+        for instance_index, instance in enumerate(instances):
+            doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
+            results_for_instance: List = []
+            model_outputs_for_instance = []
+            model_inputs = collections.defaultdict(list)
+            for request_type, request_indices in instance_index_to_request_indices[instance_index].items():
+                for i in request_indices:
+                    result = results[request_type][i]
+                    # Look up the appropriate key
+                    eleuther_result = request_type_to_fn[request_type][1](result)
+                    results_for_instance.append(eleuther_result)
+                    model_outputs_for_instance.append(result)
+                    if instance_index < num_recorded_inputs:
+                        model_inputs[request_type].append(requests[request_type][i].args)
+
+            metrics = task.inner_task.process_results(doc, results_for_instance)
+            res = {"model_output": model_outputs_for_instance, "metrics": metrics}
+            if instance_index < num_recorded_inputs:
+                res["model_input"] = model_inputs
+
+            yield res
+
 
     def _run_loglikelihood(
+        self,
+        tuples: Sequence[Tuple[str, str]],
+        model: _Model,
+        tokenizer: _Tokenizer,
+        batch_size: int = 32,
+        max_batch_tokens: int = None,
+        model_max_length: Optional[int] = None
+    ) -> Sequence[float]:
+        raise NotImplementedError
+
+    def _run_loglikelihood_rolling(
+        self,
+        tuples: Sequence[Tuple[str, str]],
+        model: _Model,
+        tokenizer: _Tokenizer,
+        batch_size: int = 32,
+        max_batch_tokens: int = None,
+        model_max_length: Optional[int] = None
+    ) -> Sequence[float]:
+        raise NotImplementedError
+
+    def _run_greedy_until(
         self,
         tuples: Sequence[Tuple[str, str]],
         model: _Model,
@@ -368,8 +461,71 @@ class DecoderOnlyLanguageModel(LanguageModel):
                     for i, instance_logits, input_length, instance_context, instance_continuation in z:
                         instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
                         instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
+                        greedy_tokens = instance_logits.argmax(dim=-1)
+                        is_greedy = bool((greedy_tokens == instance_continuation.unsqueeze(0)).all())
                         results[i] = {"sum_logits": float(instance_logits.sum()), "num_tokens": len(instance_continuation),
-                                     "num_tokens_all": input_length + 1}
+                                     "num_tokens_all": input_length + 1, "is_greedy": is_greedy}
         del lengths
         assert None not in results
         return results
+
+    def _run_greedy_until(
+        self,
+        requests,
+        model: GPT2LMHeadModel,
+        tokenizer: GPT2Tokenizer,
+        max_gen_toks: int = 256,
+        **kwargs
+    ) -> Sequence:
+
+        tokenized_contexts = tokenizer([r[0] for r in requests])["input_ids"]
+        # the stop generation phrases
+        untils_per_instance = [
+            r[1] for r in requests
+        ]
+        if hasattr(model, "config") and hasattr(model.config, "n_positions"):
+            model_max_length = model.config.n_positions
+        else:
+            model_max_length = 2048
+        model_max_length = kwargs.get("model_max_length", model_max_length)
+
+        results = []
+        for tokenized_context, untils in Tqdm.tqdm(
+            zip(tokenized_contexts, untils_per_instance),
+            desc="Running greedy_until queries",
+            total=len(tokenized_contexts),
+        ):
+            # there can be multiple stop phrases with multiple tokens
+            if isinstance(untils, str):
+                untils = [untils]
+            # if any of the stop phrases are single tokens we can use that for early termination
+            primary_until = None
+            for tokenized_until in tokenizer(untils)["input_ids"]:
+                if len(tokenized_until) == 1:
+                    primary_until = tokenized_until[0]
+
+            # truncate from left if no room for generation
+            context_tensor = torch.tensor(
+                [
+                    tokenized_context[max_gen_toks - model_max_length :]
+                ]
+            ).to(model.device)
+
+            full_text_tensor = model.generate(
+                context_tensor,
+                max_length=context_tensor.shape[1] + max_gen_toks,
+                eos_token_id=primary_until,
+                do_sample=False,
+                pad_token_id=primary_until, # temporary hack to suppress irrelevant warning until batch processing is added
+            )
+            continuation_tensor = full_text_tensor[0, context_tensor.shape[1] :]
+            continuation = tokenizer.decode(continuation_tensor.tolist())
+            raw_continuation = continuation
+            # truncate by all the additional until phrases
+            for term in untils:
+                continuation = continuation.split(term)[0]
+            results.append({"text": continuation, "raw_text": raw_continuation})
+
+        return results
+
+

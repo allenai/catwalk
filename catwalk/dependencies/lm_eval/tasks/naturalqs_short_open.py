@@ -112,7 +112,6 @@ class NaturalQsShortOpen(Task):
             if gold_answer[0].strip():
                 max_em = max(max_em, exact_match)
                 max_f1 = max(max_f1, f1_score)
-        print(preds, golds, max_f1)
         return {"em": max_em, "f1": max_f1}
 
     def get_metrics(self, predicted, gold):

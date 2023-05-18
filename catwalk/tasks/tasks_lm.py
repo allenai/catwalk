@@ -20,6 +20,8 @@ from catwalk.tasks.t5 import t5_prompt_conversion
 # Usually will use TASKS from __init__.py as fallback
 
 TASKS_LM: Dict[str, Task] = {
+    "squad2": EleutherTask("squad2", eleuther_metrics=True),
+    "drop": EleutherTask("drop", eleuther_metrics=True),
     "ppl_custom": PerplexityJsonLTask().add_metrics(ppl_metrics(primary="ppl_token")),
     "wikitext": EleutherTask("wikitext").add_metrics(ppl_metrics(primary="ppl_token")),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_per_token")),

@@ -66,9 +66,9 @@ class Model(Registrable, DetHashWithVersion, ABC):
             for prediction in predictions_tqdm:
                 # For models proving model_output (LM models), the metric is called directly
                 if 'model_output' in prediction:
-                    prediction['metrics'] = {}
+                    prediction['metrics'] = prediction.get("metrics", {})
                     for metric_name, metric in metrics.items():
-                        # We'll update the prediction with its individual metrics
+                        # We'll update the prediction with its individual metrics if need be
                         try:
                             prediction['metrics'].update(metric.get_metrics(prediction))
                         except:

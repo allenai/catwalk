@@ -462,7 +462,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
                         instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
                         instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
                         greedy_tokens = instance_logits.argmax(dim=-1)
-                        is_greedy = bool((greedy_tokens == instance_continuation.unsqueeze(0)).all())
+                        is_greedy = bool((greedy_tokens == instance_continuation.unsqueeze(0).to(model.device)).all())
                         results[i] = {"sum_logits": float(instance_logits.sum()), "num_tokens": len(instance_continuation),
                                      "num_tokens_all": input_length + 1, "is_greedy": is_greedy}
         del lengths

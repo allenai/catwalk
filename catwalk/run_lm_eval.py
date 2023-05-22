@@ -34,7 +34,7 @@ _parser.add_argument('--metrics_file', type=str, default=None, help="Filename fo
 _parser.add_argument('--num_recorded_inputs', type=int, default=0, help="Number of sample model inputs in full output, for sanity checks")
 _parser.add_argument('--model_path', type=str, help="Explicit path to load model from")
 _parser.add_argument('--model_class', type=str, help="Custom Python class for loading model")
-_parser.add_argument('--random_subsample_seed', type=int, help="Random seed for subsampling task instances")
+_parser.add_argument('--random_subsample_seed', type=int, help="Random seed for subsampling task instances using limit")
 
 
 def main(args: argparse.Namespace):

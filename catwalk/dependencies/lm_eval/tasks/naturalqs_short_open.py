@@ -1,45 +1,42 @@
 """
-DROP: A Reading Comprehension Benchmark Requiring Discrete Reasoning Over Paragraphs
-https://aclanthology.org/attachments/N19-1246.Supplementary.pdf
+Natural Questions: a Benchmark for Question Answering Research
+https://storage.googleapis.com/pub-tools-public-publication-data/pdf/1f7b46b5378d757553d3e92ead36bda2e4254244.pdf
 
-DROP is a QA dataset which tests comprehensive understanding of paragraphs. In
-this crowdsourced, adversarially-created, 96k question-answering benchmark, a
-system must resolve multiple references in a question, map them onto a paragraph,
-and perform discrete operations over them (such as addition, counting, or sorting).
+The Natural Questions (NQ) corpus is a question-answering dataset that contains
+questions from real users and requires QA systems to read and comprehend an entire
+Wikipedia article that may or may not contain the answer to the question. The
+inclusion of real user questions, and the requirement that solutions should read
+an entire page to find the answer, cause NQ to be a more realistic and challenging
+task than prior QA datasets.
 
-Homepage: https://allenai.org/data/drop
+We use the much smaller nq_open dataset that only focuses on the short answers
 
-Acknowledgement: This implementation is based on the official evaluation for `DROP`:
-https://github.com/allenai/allennlp-reading-comprehension/blob/master/allennlp_rc/eval/drop_eval.py
+Homepage: https://ai.google.com/research/NaturalQuestions
 """
-import inspect
-import numpy as np
 import re
-import string
-import catwalk.dependencies.lm_eval.datasets.drop.drop
+from itertools import islice
+
+import numpy as np
 from scipy.optimize import linear_sum_assignment
+import string
 from catwalk.dependencies.lm_eval.base import Task, rf
 from catwalk.dependencies.lm_eval.metrics import mean
 
-
 _CITATION = """
-@misc{dua2019drop,
-    title={DROP: A Reading Comprehension Benchmark Requiring Discrete Reasoning Over Paragraphs},
-    author={Dheeru Dua and Yizhong Wang and Pradeep Dasigi and Gabriel Stanovsky and Sameer Singh and Matt Gardner},
+@article{47761,
+    title={Natural Questions: a Benchmark for Question Answering Research},
+    author={Tom Kwiatkowski and Jennimaria Palomaki and Olivia Redfield and Michael Collins and Ankur Parikh and Chris Alberti and Danielle Epstein and Illia Polosukhin and Matthew Kelcey and Jacob Devlin and Kenton Lee and Kristina N. Toutanova and Llion Jones and Ming-Wei Chang and Andrew Dai and Jakob Uszkoreit and Quoc Le and Slav Petrov},
     year={2019},
-    eprint={1903.00161},
-    archivePrefix={arXiv},
-    primaryClass={cs.CL}
+    journal={Transactions of the Association of Computational Linguistics}
 }
 """
-
 
 _ARTICLES = re.compile(r"\b(a|an|the)\b", re.UNICODE)
 
 
-class DROP(Task):
-    VERSION = 1
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.drop.drop)
+class NaturalQsShortOpen(Task):
+    VERSION = 0
+    DATASET_PATH = "nq_open"
     DATASET_NAME = None
 
     def has_training_docs(self):
@@ -52,76 +49,34 @@ class DROP(Task):
         return False
 
     def training_docs(self):
+        # Cache training for faster few-shot.
+        # Data is too large to fit in memory.
         if self._training_docs is None:
-            self._training_docs = list(map(self._process_doc, self.dataset["train"]))
+            self._training_docs = list(self.dataset["train"])
         return self._training_docs
 
     def validation_docs(self):
-        return map(self._process_doc, self.dataset["validation"])
+        return self.dataset["validation"]
 
-    def _process_doc(self, doc):
-        return {
-            "id": doc["query_id"],
-            "passage": doc["passage"],
-            "question": doc["question"],
-            "answers": self.get_answers(doc),
-        }
+    def fewshot_examples(self, k, rnd):
+        # Data is too large to fit in memory. We just sample from the first bit.
+        if self._training_docs is None:
+            self._training_docs = list(islice(self.training_docs(), 0, 100000))
 
-    @classmethod
-    def get_answers(cls, qa):
-        def _flatten_validated_answers(validated_answers):
-            """Flattens a dict of lists of validated answers.
-            {"number": ['1', '8'], ...}
-            -> [{"number": ['1'], ...}, {"number": ['8'], ...}]
-            """
-            valid_answers = []
-            for i in range(len(validated_answers["number"])):
-                valid_answers.append(
-                    {
-                        "number": validated_answers["number"][i],
-                        "date": validated_answers["date"][i],
-                        "spans": validated_answers["spans"][i],
-                    }
-                )
-            return valid_answers
-
-        answers = []
-        answers_set = set()
-        candidates = [qa["answer"]] + _flatten_validated_answers(
-            qa["validated_answers"]
-        )
-        for candidate in candidates:
-            answer = cls.parse_answer(candidate)
-            if answer in answers_set:
-                continue
-            answers_set.add(answer)
-            answers.append(answer)
-        return answers
-
-    @classmethod
-    def parse_answer(cls, answer):
-        # NOTE: Everything is returned as a tuple for uniformity and hashability.
-        if answer["number"] != "":
-            return (str(answer["number"]),)
-        if answer["spans"] != []:
-            return tuple(answer["spans"])
-        return (
-            " ".join(
-                [answer["date"]["day"], answer["date"]["month"], answer["date"]["year"]]
-            ).strip(),
-        )
+        return rnd.sample(self._training_docs, k)
 
     def doc_to_text(self, doc):
-        return f"Passage: {doc['passage']}\nQuestion: {doc['question']}\nAnswer:"
+        return "Q: " + doc["question"] + "\n" + "A:"
 
     def should_decontaminate(self):
         return True
 
     def doc_to_decontamination_query(self, doc):
-        return doc["passage"] + " " + doc["question"]
+        return doc["question"]
 
     def doc_to_target(self, doc):
-        return " " + ", ".join(doc["answers"][0])
+        short_answers = ", ".join(doc["answer"])
+        return short_answers
 
     def construct_requests(self, doc, ctx):
         """Uses RequestFactory to construct Requests and returns an iterable of
@@ -147,7 +102,9 @@ class DROP(Task):
         :param results:
             The results of the requests created in construct_requests.
         """
-        preds, golds = results, doc["answers"]
+        preds, golds = results, doc["answer"]
+        if not isinstance(preds, list):
+            preds = preds.split(", ")
         max_em = 0
         max_f1 = 0
         for gold_answer in golds:
@@ -169,7 +126,7 @@ class DROP(Task):
         gold_bags = self._answer_to_bags(gold)
 
         if set(predicted_bags[0]) == set(gold_bags[0]) and len(
-            predicted_bags[0]
+                predicted_bags[0]
         ) == len(gold_bags[0]):
             exact_match = 1.0
         else:

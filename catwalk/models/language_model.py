@@ -277,6 +277,7 @@ class LanguageModel(Model):
                 [tuple(r.args) for r in requests_per_type],
                 model,
                 tokenizer,
+                model_max_length=model_max_length,
                 **kwargs
             )
         for instance_index, instance in enumerate(instances):
@@ -490,6 +491,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
         else:
             model_max_length = 2048
         model_max_length = kwargs.get("model_max_length", model_max_length)
+        assert model_max_length > max_gen_toks
 
         results = []
         for tokenized_context, untils in Tqdm.tqdm(

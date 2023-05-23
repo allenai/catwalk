@@ -34,6 +34,7 @@ _parser.add_argument('--metrics_file', type=str, default=None, help="Filename fo
 _parser.add_argument('--num_recorded_inputs', type=int, default=0, help="Number of sample model inputs in full output, for sanity checks")
 _parser.add_argument('--model_path', type=str, help="Explicit path to load model from")
 _parser.add_argument('--model_class', type=str, help="Custom Python class for loading model")
+_parser.add_argument('--random_subsample_seed', type=int, help="Random seed for subsampling task instances using limit")
 
 
 def main(args: argparse.Namespace):
@@ -83,6 +84,8 @@ def main(args: argparse.Namespace):
         default_task_args["fewshot_seed"] = args.fewshot_seed
     if args.num_recorded_inputs:
         default_task_args["num_recorded_inputs"] = args.num_recorded_inputs
+    if args.random_subsample_seed:
+        default_task_args["random_subsample_seed"] = args.random_subsample_seed
 
     tasks = []
     task_names = set()
@@ -156,7 +159,7 @@ def main(args: argparse.Namespace):
             tokenizer_cached = model_obj._make_tokenizer()
 
     valid_model_args = ['split', 'limit', 'batch_size', 'max_batch_tokens', 'num_shots', 'model_max_length',
-                        'fewshot_seed', 'num_recorded_inputs', 'unconditioned_prompt']
+                        'fewshot_seed', 'num_recorded_inputs', 'unconditioned_prompt', 'random_subsample_seed']
     for task in tasks:
         start_time = time.time()
         task_name = task['name']

@@ -283,7 +283,7 @@ class LanguageModel(Model):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
             results_for_instance: List = []
             model_outputs_for_instance = []
-            model_inputs = collections.defaultdict(list)
+            model_inputs = {}
             for request_type, request_indices in instance_index_to_request_indices[instance_index].items():
                 for i in request_indices:
                     result = results[request_type][i]
@@ -292,6 +292,8 @@ class LanguageModel(Model):
                     results_for_instance.append(eleuther_result)
                     model_outputs_for_instance.append(result)
                     if instance_index < num_recorded_inputs:
+                        if request_type not in model_inputs:
+                            model_inputs[request_type] = []
                         model_inputs[request_type].append(requests[request_type][i].args)
 
             metrics = task.inner_task.process_results(doc, results_for_instance)
@@ -474,7 +476,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
         requests,
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
-        max_gen_toks: int = 256,
+        max_gen_toks: int = 100,
         **kwargs
     ) -> Sequence:
 

@@ -15,6 +15,9 @@ from catwalk.tasks.metaicl import MetaICLTask
 from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 
+TASKS = {}
+# Comment out bulk of tasks to avoid spurious errors when trying to load them
+"""
 TASKS: Dict[str, Task] = {
     "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
@@ -581,6 +584,7 @@ TASK_SETS = {
         "metaicl::tweet_eval-stance_feminist"
     }
 }
+"""
 
 
 def short_name_for_task_object(task: Task) -> Optional[str]:

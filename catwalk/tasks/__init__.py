@@ -460,6 +460,8 @@ TASKS: Dict[str, Task] = {
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):
     TASKS[f"p3::{config}"] = P3Task(config)
+    
+"""
 
 TASK_SETS = {
     "iz": {
@@ -584,7 +586,6 @@ TASK_SETS = {
         "metaicl::tweet_eval-stance_feminist"
     }
 }
-"""
 
 
 def short_name_for_task_object(task: Task) -> Optional[str]:

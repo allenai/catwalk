@@ -376,6 +376,10 @@ class DecoderOnlyLanguageModel(LanguageModel):
         tokenized_contexts = tokenizer([t[0] for t in tuples], add_special_tokens=False)
         tokenized_continuations = tokenizer([self._prefix_with_space(t[1]) for t in tuples], add_special_tokens=False)
 
+        # We don't need token_type_ids, and it trips up some models apparently (like LLaMA)
+        if 'token_type_ids' in tokenized_contexts:
+            del tokenized_contexts['token_type_ids']
+            del tokenized_continuations['token_type_ids']
         # transpose the token ids so we can access them one instance at a time
         cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]] = []
         assert tokenized_contexts.keys() == tokenized_continuations.keys()

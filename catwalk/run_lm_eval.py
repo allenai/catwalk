@@ -186,15 +186,22 @@ def main(args: argparse.Namespace):
             output["custom_task_options"] = task_dict['task_options']
         logger.info(f"Results from task {task_name}: {output}")
         per_instance = []
-        for instance, p in zip(instances, predictions_updated):
+        for instance, pred in zip(instances, predictions_updated):
             instance_id = guess_instance_id(instance, idx=len(per_instance))
             if "keep_instance_fields" in task_dict:
                 for field in task_dict['keep_instance_fields']:
                     if field in instance:
                         instance_id[field] = instance[field]
-            res1 = {"instance": instance_id, "prediction": p.get('prediction', p)}
-            if 'model_input' in p:
-                res1['model_input'] = p['model_input']
+            prediction = pred.get('prediction', pred)
+            model_input = None
+            # Move model_input from prediction if need be
+            if 'model_input' in pred:
+                model_input = pred['model_input']
+                if 'model_input' in prediction:
+                    del prediction['model_input']
+            res1 = {"instance": instance_id, "prediction": prediction}
+            if model_input is not None:
+                res1['model_input'] = model_input
             per_instance.append(res1)
         output["per_instance"] = per_instance
         if per_instance:

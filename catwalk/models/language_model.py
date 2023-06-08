@@ -252,7 +252,6 @@ class LanguageModel(Model):
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
-            assert fewshot_seed is None
             instance_requests = task.convert_instance(
                 instance,
                 InstanceFormat.ELEUTHER_REQUESTS,

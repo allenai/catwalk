@@ -21,7 +21,7 @@ from catwalk.tasks.t5 import t5_prompt_conversion
 
 TASKS_LM: Dict[str, Task] = {
     "squad2": EleutherTask("squad2", eleuther_metrics=True),
-    "drop": EleutherTask("drop", eleuther_metrics=True),
+    "drop": EleutherTask("drop", eleuther_metrics=True, model_args = {"max_gen_toks": 50}),
     "ppl_custom": PerplexityJsonLTask().add_metrics(ppl_metrics(primary="ppl_token")),
     "wikitext": EleutherTask("wikitext").add_metrics(ppl_metrics(primary="ppl_token")),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_per_token")),
@@ -35,8 +35,7 @@ TASKS_LM: Dict[str, Task] = {
     "copa": EleutherTask("copa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),
     "wic": EleutherClassificationTask("wic", answer_options=["no", "yes"], metrics=rc_metrics(primary="acc_raw")),
     "wsc": EleutherClassificationTask("wsc", answer_options=["no", "yes"], metrics=rc_metrics(primary="acc_raw")),
-    # "drop": EleutherTask("drop").add_metrics(QA_METRICS),
-    "naturalqs_short_open": EleutherTask("naturalqs_short_open", eleuther_metrics=True),
+    "naturalqs_short_open": EleutherTask("naturalqs_short_open", eleuther_metrics=True, model_args = {"max_gen_toks": 50}),
     # "lambada": EleutherTask("lambada_standard").add_metrics(PERPLEXITY_METRICS).add_metric("acc", MeanMetric),
     # "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),

@@ -487,7 +487,6 @@ class DecoderOnlyLanguageModel(LanguageModel):
         max_gen_toks: int = 100,
         **kwargs
     ) -> Sequence:
-        print(f"MAX_GEN = {max_gen_toks}")
 
         tokenized_contexts = tokenizer([r[0] for r in requests])["input_ids"]
         # the stop generation phrases

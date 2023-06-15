@@ -498,6 +498,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
         else:
             model_max_length = 2048
         model_max_length = kwargs.get("model_max_length", model_max_length)
+        assert model_max_length is not None
         assert model_max_length > max_gen_toks
 
         results = []

@@ -252,7 +252,6 @@ class LanguageModel(Model):
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
-            assert fewshot_seed is None
             instance_requests = task.convert_instance(
                 instance,
                 InstanceFormat.ELEUTHER_REQUESTS,
@@ -272,12 +271,16 @@ class LanguageModel(Model):
             "loglikelihood_rolling": (self._run_loglikelihood_rolling, lambda x: [x["sum_logits"]]),
             "greedy_until": (self._run_greedy_until, lambda x: x["text"])
         }
+        extra_kw_args = {}
+        if hasattr(task, "model_args"):
+            extra_kw_args = task.model_args
         for request_type, requests_per_type in requests.items():
             results[request_type] = request_type_to_fn[request_type][0](
                 [tuple(r.args) for r in requests_per_type],
                 model,
                 tokenizer,
                 model_max_length=model_max_length,
+                **extra_kw_args,
                 **kwargs
             )
         for instance_index, instance in enumerate(instances):

@@ -113,16 +113,6 @@ class SciTLDR(Task):
         # minimal cleaning
         results = [res.replace("\n", " ").replace("\t", " ").replace("\r", " ").strip() for res in results]
         preds, golds = results, doc["target"]
-        # if not isinstance(preds, list):
-        #     preds = preds.split(", ")
-
-        # max_em = 0
-        # max_f1 = 0
-        # for gold_answer in golds:
-        #     exact_match, f1_score = self.get_metrics(preds, gold_answer)
-        #     if gold_answer[0].strip():
-        #         max_em = max(max_em, exact_match)
-        #         max_f1 = max(max_f1, f1_score)
         results = self.get_metrics(preds, golds)
         return results
 

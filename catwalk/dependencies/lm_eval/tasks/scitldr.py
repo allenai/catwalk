@@ -73,7 +73,7 @@ class SciTLDR(Task):
     def doc_to_text(self, doc):
         source_sentences = doc["source"]
         source = " ".join(source_sentences)
-        return f"Article: {source}\nTLDR: "
+        return f"Article: {source}\nTLDR:"
 
     def should_decontaminate(self):
         return True

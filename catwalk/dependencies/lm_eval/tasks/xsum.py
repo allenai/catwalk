@@ -71,7 +71,7 @@ class XSUM(Task):
         return rnd.sample(self._training_docs, k)
 
     def doc_to_text(self, doc):
-        return f"Article:{doc['document']}\nTLDR: "
+        return f"Article: {doc['document']}\nTLDR:"
 
     def should_decontaminate(self):
         return True

@@ -73,7 +73,7 @@ class SciTLDR(Task):
     def doc_to_text(self, doc):
         source_sentences = doc["source"]
         source = " ".join(source_sentences)
-        return f"Article: {source}\nTLDR: "
+        return f"Article: {source}\nTLDR:"
 
     def should_decontaminate(self):
         return True
@@ -97,7 +97,7 @@ class SciTLDR(Task):
             language description, as well as the few shot examples, and the question
             part of the document for `doc`.
         """
-        conts = [rf.greedy_until(ctx, ["<|endoftext|>", "\n\n"])]
+        conts = [rf.greedy_until(ctx, ["\n"])]
         return conts
 
     def process_results(self, doc, results):

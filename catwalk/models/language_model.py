@@ -536,7 +536,9 @@ class DecoderOnlyLanguageModel(LanguageModel):
             # truncate by all the additional until phrases
             for term in untils:
                 continuation = continuation.split(term)[0]
-            results.append({"text": continuation, "raw_text": raw_continuation})
+            results.append({"text": continuation, "raw_text": raw_continuation,
+                            "num_input_tokens": context_tensor.shape[1],
+                            "num_generated_tokens": len(continuation_tensor)})
 
         return results
 

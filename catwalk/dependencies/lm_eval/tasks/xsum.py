@@ -135,6 +135,19 @@ class XSUM(Task):
                 "fmeasure_max": np.max([score.fmeasure for score in value]) * 100,
             }
 
+        rouge_results["rouge_mean"] = (
+            rouge_results["rouge1"]["fmeasure_mean"]
+            + rouge_results["rouge2"]["fmeasure_mean"]
+            + rouge_results["rougeL"]["fmeasure_mean"]
+        ) / 3
+
+        # useful for multi-target summaries
+        rouge_results["rouge_mean_of_max"] = (
+            rouge_results["rouge1"]["fmeasure_max"]
+            + rouge_results["rouge2"]["fmeasure_max"]
+            + rouge_results["rougeL"]["fmeasure_max"]
+        ) / 3
+
         bert_score_results = self.bertscore.compute(
             predictions=predicted,
             references=gold_summary,

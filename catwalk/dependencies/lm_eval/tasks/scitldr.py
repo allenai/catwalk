@@ -42,7 +42,7 @@ class SciTLDR(Task):
         self.bertscore = load_metric("bertscore")
         self.bertscore_model_type = "microsoft/deberta-xlarge-mnli"
         self.rouge = load_metric("rouge")
-        self.metric_keys = {} # will be populated by get_metrics and used for aggregation
+        self.metric_keys = {}  # will be populated by get_metrics and used for aggregation
 
     def has_training_docs(self):
         return True
@@ -126,8 +126,11 @@ class SciTLDR(Task):
             predictions.append(predicted)
 
         rouge_results = self.rouge.compute(
-            predictions=predictions, references=gold_summaries, use_stemmer=True, use_aggregator=False,
-            rouge_types=["rouge1", "rouge2", "rougeL", "rougeLsum"]
+            predictions=predictions,
+            references=gold_summaries,
+            use_stemmer=True,
+            use_aggregator=False,
+            rouge_types=["rouge1", "rouge2", "rougeL", "rougeLsum"],
         )
         for key, value in rouge_results.items():
             rouge_results[key] = {
@@ -141,6 +144,19 @@ class SciTLDR(Task):
                 "fmeasure_mean": np.mean([score.fmeasure for score in value]) * 100,
                 "fmeasure_max": np.max([score.fmeasure for score in value]) * 100,
             }
+
+        rouge_results["rouge_mean"] = (
+            rouge_results["rouge1"]["fmeasure_mean"]
+            + rouge_results["rouge2"]["fmeasure_mean"]
+            + rouge_results["rougeL"]["fmeasure_mean"]
+        ) / 3
+
+        # useful for multi-target summaries (e.g., scitldr)
+        rouge_results["rouge_mean_of_max"] = (
+            rouge_results["rouge1"]["fmeasure_max"]
+            + rouge_results["rouge2"]["fmeasure_max"]
+            + rouge_results["rougeL"]["fmeasure_max"]
+        ) / 3
 
         bert_score_results = self.bertscore.compute(
             predictions=predictions,

@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar
 from tango.common.sequences import MappedSequence
 
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance, WithAnswerOptionsMixin, \
-    classification_metrics
+    classification_metrics, rc_metrics
 from catwalk.tasks.promptsource import WithPromptsourceMixin
 
 from catwalk.dependencies.lm_eval.base import Task as EAITask
@@ -322,3 +322,75 @@ class EleutherClassificationTaskWithRenamedSplits(EleutherTaskWithRenamedSplits,
         self.add_metrics(classification_metrics(len(answer_options)))
 
     instance_as_rank_classification = EleutherClassificationTask.instance_as_rank_classification
+
+SUBJECTS = [
+    "abstract_algebra",
+    "anatomy",
+    "astronomy",
+    "business_ethics",
+    "clinical_knowledge",
+    "college_biology",
+    "college_chemistry",
+    "college_computer_science",
+    "college_mathematics",
+    "college_medicine",
+    "college_physics",
+    "computer_security",
+    "conceptual_physics",
+    "econometrics",
+    "electrical_engineering",
+    "elementary_mathematics",
+    "formal_logic",
+    "global_facts",
+    "high_school_biology",
+    "high_school_chemistry",
+    "high_school_computer_science",
+    "high_school_european_history",
+    "high_school_geography",
+    "high_school_government_and_politics",
+    "high_school_macroeconomics",
+    "high_school_mathematics",
+    "high_school_microeconomics",
+    "high_school_physics",
+    "high_school_psychology",
+    "high_school_statistics",
+    "high_school_us_history",
+    "high_school_world_history",
+    "human_aging",
+    "human_sexuality",
+    "international_law",
+    "jurisprudence",
+    "logical_fallacies",
+    "machine_learning",
+    "management",
+    "marketing",
+    "medical_genetics",
+    "miscellaneous",
+    "moral_disputes",
+    "moral_scenarios",
+    "nutrition",
+    "philosophy",
+    "prehistory",
+    "professional_accounting",
+    "professional_law",
+    "professional_medicine",
+    "professional_psychology",
+    "public_relations",
+    "security_studies",
+    "sociology",
+    "us_foreign_policy",
+    "virology",
+    "world_religions",
+]
+
+
+def create_mmlu_tasks():
+    """Creates a dictionary of tasks from a list of subjects
+    :return: {task_name: task}
+        e.g. {hendrycksTest-abstract_algebra: Task, hendrycksTest-anatomy: Task}
+    """
+    return {f"mmlu_test_{sub}": create_eleuther_task(f"hendrycksTest-{sub}") for sub in SUBJECTS}
+
+
+def create_eleuther_task(subject):
+     return EleutherTask(subject, ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw"))

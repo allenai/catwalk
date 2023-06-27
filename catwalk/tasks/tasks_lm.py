@@ -7,7 +7,7 @@ from torchmetrics import MeanMetric
 from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
     classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, rc_metrics, ppl_metrics, PERPLEXITY_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
-    EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
+    EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits, create_mmlu_tasks
 from catwalk.tasks.perplexity_jsonl import PerplexityJsonLTask
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
 from catwalk.tasks.p3 import P3Task
@@ -36,6 +36,8 @@ TASKS_LM: Dict[str, Task] = {
     "wic": EleutherClassificationTask("wic", answer_options=["no", "yes"], metrics=rc_metrics(primary="acc_raw")),
     "wsc": EleutherClassificationTask("wsc", answer_options=["no", "yes"], metrics=rc_metrics(primary="acc_raw")),
     "naturalqs_short_open": EleutherTask("naturalqs_short_open", eleuther_metrics=True, model_args = {"max_gen_toks": 50}),
+    # hendrycksTest (57 tasks)
+    **create_mmlu_tasks(),
     # "lambada": EleutherTask("lambada_standard").add_metrics(PERPLEXITY_METRICS).add_metric("acc", MeanMetric),
     # "pubmedqa": EleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "sciq": EleutherTask("sciq", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),

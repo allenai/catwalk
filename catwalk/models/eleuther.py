@@ -163,8 +163,15 @@ class EAIGPT(Model):
                     for index in batch_of_indices:
                         for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
                             ids = torch.cat([context_ids, continuation_ids])
-                            ids = ids[-(tokenizer.model_max_length+1):][:-1]
+                            # Use truncation_length+1 since the last token is not in the input
+                            if len(ids) > (tokenizer.model_max_length+1):
+                                ids = ids[-(tokenizer.model_max_length+1):]
+                            ids = ids[:-1]
                             unpadded_batch[field_name].append(ids)
+                            # print(ids.shape())
+                            # print(tokenizer.model_max_length)
+                            # ids = ids[-(tokenizer.model_max_length+1):][:-1]
+                            # unpadded_batch[field_name].append(ids)
 
                         input_lengths.append(len(unpadded_batch["input_ids"][-1]))
                         batch_contexts.append(cc_pairs[index]["input_ids"][0])

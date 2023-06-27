@@ -48,6 +48,8 @@ TASKS_LM: Dict[str, Task] = {
     "arc_easy:mc": EleutherTask("arc_easy:mc", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),
     "arc_challenge": EleutherTask("arc_challenge", ranked_classification=True).add_metrics(rc_metrics(primary="acc_uncond")),
     "arc_challenge:mc": EleutherTask("arc_challenge:mc", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),
+    "eurlex": EleutherTask("eurlex", eleuther_metrics=True),
+    "unfair_tos": EleutherTask("unfair_tos", eleuther_metrics=True),
     # For logiqa the answer choices are shown, but full answer string, so trying acc_raw here
     "logiqa": EleutherTask("logiqa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),
     "hellaswag": EleutherTask("hellaswag", ranked_classification=True).add_metrics(rc_metrics(primary="acc_per_token")),

@@ -1,17 +1,17 @@
-from functools import partial
 import os
 import random
+from functools import partial
 from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar, Tuple
 
 from tango.common.sequences import MappedSequence
 
+from catwalk.dependencies.lm_eval.base import Task as EAITask
+from catwalk.dependencies.lm_eval.tasks import get_task as get_eai_task
+from catwalk.dependencies.lm_eval.tasks.hendrycks_test import SUBJECTS
+from catwalk.metrics import EleutherMetrics
 from catwalk.task import Task, InstanceFormat, RankClassificationInstance, WithAnswerOptionsMixin, \
     classification_metrics, rc_metrics
 from catwalk.tasks.promptsource import WithPromptsourceMixin
-
-from catwalk.dependencies.lm_eval.base import Task as EAITask
-from catwalk.dependencies.lm_eval.tasks import get_task as get_eai_task
-from catwalk.metrics import EleutherMetrics
 
 T = TypeVar("T")
 
@@ -209,7 +209,8 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         for fewshot_instance in fewshot_instances:
             as_rc = self.instance_as_rank_classification(fewshot_instance)
             if as_rc.correct_choice is None:
-                raise ValueError("Could not determine correct choice in ranked classification instance.")
+                raise ValueError(
+                    "Could not determine correct choice in ranked classification instance.")
             correct_choice = as_rc.choices[as_rc.correct_choice]
             prefix += f"{correct_choice[0].strip()} {correct_choice[1].strip()}\n\n"
 
@@ -323,65 +324,27 @@ class EleutherClassificationTaskWithRenamedSplits(EleutherTaskWithRenamedSplits,
 
     instance_as_rank_classification = EleutherClassificationTask.instance_as_rank_classification
 
-SUBJECTS = [
-    "abstract_algebra",
-    "anatomy",
-    "astronomy",
-    "business_ethics",
-    "clinical_knowledge",
-    "college_biology",
-    "college_chemistry",
-    "college_computer_science",
-    "college_mathematics",
-    "college_medicine",
-    "college_physics",
-    "computer_security",
-    "conceptual_physics",
-    "econometrics",
-    "electrical_engineering",
-    "elementary_mathematics",
-    "formal_logic",
-    "global_facts",
-    "high_school_biology",
-    "high_school_chemistry",
-    "high_school_computer_science",
-    "high_school_european_history",
-    "high_school_geography",
-    "high_school_government_and_politics",
-    "high_school_macroeconomics",
-    "high_school_mathematics",
-    "high_school_microeconomics",
-    "high_school_physics",
-    "high_school_psychology",
-    "high_school_statistics",
-    "high_school_us_history",
-    "high_school_world_history",
-    "human_aging",
-    "human_sexuality",
-    "international_law",
-    "jurisprudence",
-    "logical_fallacies",
-    "machine_learning",
-    "management",
-    "marketing",
-    "medical_genetics",
-    "miscellaneous",
-    "moral_disputes",
-    "moral_scenarios",
-    "nutrition",
-    "philosophy",
-    "prehistory",
-    "professional_accounting",
-    "professional_law",
-    "professional_medicine",
-    "professional_psychology",
-    "public_relations",
-    "security_studies",
-    "sociology",
-    "us_foreign_policy",
-    "virology",
-    "world_religions",
-]
+
+@Task.register("eleuther::mmlu")
+class EleutherMMLUTask(EleutherTask):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def fewshot_instances_split(self) -> str:
+        # Official MMLU eval uses the validation split
+        return "validation"
+
+    def get_fewshot_instances(
+            self,
+            num_shots: int, *args, **kwargs
+    ) -> Sequence[Dict[str, Any]]:
+        if num_shots <= 0:
+            return []
+        # Official MMLU eval uses the first k instances
+        instances = self.get_split(self.fewshot_instances_split)
+        return instances[:num_shots]
 
 
 def create_mmlu_tasks():
@@ -389,8 +352,9 @@ def create_mmlu_tasks():
     :return: {task_name: task}
         e.g. {hendrycksTest-abstract_algebra: Task, hendrycksTest-anatomy: Task}
     """
-    return {f"mmlu_test_{sub}": create_eleuther_task(f"hendrycksTest-{sub}") for sub in SUBJECTS}
+    return {f"mmlu_{sub}": create_eleuther_mmlu_task(f"hendrycksTest-{sub}") for sub in SUBJECTS}
 
 
-def create_eleuther_task(subject):
-     return EleutherTask(subject, ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw"))
+def create_eleuther_mmlu_task(subject):
+    return EleutherMMLUTask(subject, ranked_classification=True).add_metrics(
+        rc_metrics(primary="acc_raw"))

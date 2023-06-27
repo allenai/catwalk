@@ -168,10 +168,6 @@ class EAIGPT(Model):
                                 ids = ids[-(tokenizer.model_max_length+1):]
                             ids = ids[:-1]
                             unpadded_batch[field_name].append(ids)
-                            # print(ids.shape())
-                            # print(tokenizer.model_max_length)
-                            # ids = ids[-(tokenizer.model_max_length+1):][:-1]
-                            # unpadded_batch[field_name].append(ids)
 
                         input_lengths.append(len(unpadded_batch["input_ids"][-1]))
                         batch_contexts.append(cc_pairs[index]["input_ids"][0])

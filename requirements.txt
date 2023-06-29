@@ -13,6 +13,7 @@ wget
 datasets>=2.1.0
 accelerate
 bettermap
+tiktoken  # For Salesforce/xgen-* models
 
 # For the P3 datasets, which we get from huggingface datasets
 protobuf<=3.20

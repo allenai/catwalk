@@ -51,7 +51,7 @@ class Eurlex(Task):
         return self.dataset["test"]
     
     def doc_to_text(self, doc):
-        return "Output all labels from the following list of EuroVoc Concepts: " + self.EUROVOC_CONCEPTS + " that can be applied to the following text. TEXT: " + doc["text"] + "\n" + "A:"
+        return "Output all concepts from the list of EuroVoc concepts that can be applied to the text that follows. EUROVOC CONCEPTS: " + ", ".join(self.EUROVOC_CONCEPTS) + " TEXT: " + doc["text"] + "\n" + "A:"
     
     def should_decontaminate(self):
         return True
@@ -98,7 +98,7 @@ class Eurlex(Task):
         overlap = predictions_set.intersection(targets_set)
         precision = len(overlap) / len(predictions_set) if predictions_set else 0.0
         recall = len(overlap) / len(targets_set) if targets_set else 0.0
-        f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0.0 else 0.0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0.0 else 0.0
         return f1
     
     def aggregation(self):

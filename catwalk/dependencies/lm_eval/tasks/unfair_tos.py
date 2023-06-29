@@ -39,7 +39,7 @@ class UnfairTos(Task):
         return self.dataset["test"]
     
     def doc_to_text(self, doc):
-        return "Output all categories of unfairness from the following list: " + self.CATEGORIES + " that apply to the following clause. If none applies, output None. CLAUSE: " + doc["text"] + "\n" + "A:"
+        return "Output all categories of unfairness from the list that apply to the clause that follows. UNFAIRNESS CATEGORIES: " + ", ".join(self.CATEGORIES) + " CLAUSE: " + doc["text"] + "\n" + "A:"
     
     def should_decontaminate(self):
         return True

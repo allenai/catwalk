@@ -252,7 +252,6 @@ class LanguageModel(Model):
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
-            assert fewshot_seed is None
             instance_requests = task.convert_instance(
                 instance,
                 InstanceFormat.ELEUTHER_REQUESTS,
@@ -272,11 +271,16 @@ class LanguageModel(Model):
             "loglikelihood_rolling": (self._run_loglikelihood_rolling, lambda x: [x["sum_logits"]]),
             "greedy_until": (self._run_greedy_until, lambda x: x["text"])
         }
+        extra_kw_args = {}
+        if hasattr(task, "model_args"):
+            extra_kw_args = task.model_args
         for request_type, requests_per_type in requests.items():
             results[request_type] = request_type_to_fn[request_type][0](
                 [tuple(r.args) for r in requests_per_type],
                 model,
                 tokenizer,
+                model_max_length=model_max_length,
+                **extra_kw_args,
                 **kwargs
             )
         for instance_index, instance in enumerate(instances):
@@ -375,6 +379,10 @@ class DecoderOnlyLanguageModel(LanguageModel):
         tokenized_contexts = tokenizer([t[0] for t in tuples], add_special_tokens=False)
         tokenized_continuations = tokenizer([self._prefix_with_space(t[1]) for t in tuples], add_special_tokens=False)
 
+        # We don't need token_type_ids, and it trips up some models apparently (like LLaMA)
+        if 'token_type_ids' in tokenized_contexts:
+            del tokenized_contexts['token_type_ids']
+            del tokenized_continuations['token_type_ids']
         # transpose the token ids so we can access them one instance at a time
         cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]] = []
         assert tokenized_contexts.keys() == tokenized_continuations.keys()
@@ -490,6 +498,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
         else:
             model_max_length = 2048
         model_max_length = kwargs.get("model_max_length", model_max_length)
+        assert model_max_length > max_gen_toks
 
         results = []
         for tokenized_context, untils in Tqdm.tqdm(

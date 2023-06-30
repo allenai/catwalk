@@ -140,16 +140,16 @@ class GeneralHendrycksTest(MultipleChoiceTask):
         def format_example(doc, keys):
             """
             <prompt>
-            A. <choice1>
-            B. <choice2>
-            C. <choice3>
-            D. <choice4>
+             A. <choice1>
+             B. <choice2>
+             C. <choice3>
+             D. <choice4>
             Answer:
             """
 
             question = doc["question"].strip()
             choices = "".join(
-                [f"{key}. {choice}\n" for key, choice in zip(keys, doc["choices"])]
+                [f" {key}. {choice}\n" for key, choice in zip(keys, doc["choices"])]
             )
             prompt = f"{question}\n{choices}Answer:"
             return prompt

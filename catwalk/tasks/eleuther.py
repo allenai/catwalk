@@ -331,6 +331,42 @@ class EleutherMMLUTask(EleutherTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def instance_as_rank_classification(
+            self,
+            instance: Dict[str, Any],
+            *,
+            fewshot_seed: int = 18830087,
+            fewshot_instances: Optional[List[Dict[str, Any]]] = None,
+            **kwargs
+    ) -> RankClassificationInstance:
+        """
+        Converts the given instance to an instance for performing ranked classification
+
+        :param instance: the instance to convert
+        :param fewshot_instances: the number of few-show instances to include
+        :return: the instance in :class:`~catwalk.task.RankClassificationInstance` format
+        """
+        if fewshot_instances is None:
+            fewshot_instances = []
+
+        # This is safe to do with MMLU since the few shot examples are the first k examples from
+        # the validation set. So there is no randomness
+        prefix = self.inner_task.fewshot_context(self.instance_as_eleuther_doc(instance),
+                                                 num_fewshot=len(fewshot_instances),
+                                                 rnd=random.Random(fewshot_seed),
+                                                 **kwargs)
+        # construct the answer choice requests with the prefix (which includes the task instruction)
+        # as the context
+        requests = self.inner_task.construct_requests(ctx=prefix,
+                                                      doc=self.instance_as_eleuther_doc(instance))
+        choices = [
+            (r.args[0], r.args[1])
+            for r in requests
+        ]
+        label = self._guess_label(instance)
+        assert label < len(choices)
+        return RankClassificationInstance(choices, label)
+
     @property
     def fewshot_instances_split(self) -> str:
         # Official MMLU eval uses the validation split

@@ -146,7 +146,9 @@ class GeneralHendrycksTest(MultipleChoiceTask):
              D. <choice4>
             Answer:
             """
-
+            # NOTE: We added the space before the answer key which is not present in the original
+            # Eleuther code base. We made this change to ensure that the token associated with the
+            # answer choices here exactly matches the answer token used for evaluation.
             question = doc["question"].strip()
             choices = "".join(
                 [f" {key}. {choice}\n" for key, choice in zip(keys, doc["choices"])]

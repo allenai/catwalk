@@ -39,7 +39,7 @@ class UnfairTos(Task):
         return self.dataset["test"]
     
     def doc_to_text(self, doc):
-        return "Output all categories of unfairness from the list that apply to the clause that follows. UNFAIRNESS CATEGORIES: " + ", ".join(self.CATEGORIES) + " CLAUSE: " + doc["text"] + "\n" + "A:"
+        return "Output all categories of unfairness from the list that apply to the clause that follows. UNFAIRNESS CATEGORIES: " + ", ".join(self.CATEGORIES) + "\nCLAUSE: " + doc["text"] + "\n" + "Categories:"
     
     def should_decontaminate(self):
         return True
@@ -79,9 +79,9 @@ class UnfairTos(Task):
             The results of the requests created in construct_requests.
         """
         target_concepts = [self.CATEGORIES[i] for i in doc["labels"]] if doc["labels"] else ["None"]
-        predicted_concepts = [result.strip() for result in results.split(",")]
-        metrics = self.get_metrics(predicted_concepts, target_concepts)
-        return metrics
+        predicted_concepts = [result.strip() for result in results[0].split(",")]
+        f1, precision, recall = self.get_metrics(predicted_concepts, target_concepts)
+        return {"f1": f1, "precision": precision, "recall": recall}
     
     def get_metrics(self, predctions, targets):
         predictions_set = set(predctions)
@@ -90,7 +90,7 @@ class UnfairTos(Task):
         precision = len(overlap) / len(predictions_set) if predictions_set else 0.0
         recall = len(overlap) / len(targets_set) if targets_set else 0.0
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0.0 else 0.0
-        return f1
+        return f1, precision, recall
     
     def aggregation(self):
         """
@@ -98,7 +98,7 @@ class UnfairTos(Task):
             A dictionary where keys are the names of submetrics and values are
             functions that aggregate a list of metrics
         """
-        return {"f1": mean}
+        return {"f1": mean, "precision": mean, "recall": mean}
     
     def higher_is_better(self):
         """
@@ -106,4 +106,4 @@ class UnfairTos(Task):
             A dictionary where keys are the names of submetrics and values are
             whether a higher value of the submetric is better
         """
-        return {"f1": True}
+        return {"f1": True, "precision": True, "recall": True}

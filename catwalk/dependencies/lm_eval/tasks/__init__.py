@@ -50,6 +50,9 @@ from . import blimp
 from . import asdiv
 from . import gsm8k
 from . import storycloze
+from . import eurlex
+from . import unfair_tos
+from . import casehold
 
 ########################################
 # Translation tasks
@@ -128,6 +131,10 @@ TASK_REGISTRY = {
     "arc_easy:mc": arc.ARCEasyMC,
     "arc_challenge": arc.ARCChallenge,
     "arc_challenge:mc": arc.ARCChallengeMC,
+    # Legal
+    "eurlex": eurlex.Eurlex,
+    "unfair_tos": unfair_tos.UnfairTos,
+    "case_hold:mc": casehold.CaseHoldMC,
     # "quac": quac.QuAC, # not implemented yet
     "logiqa": logiqa.LogiQA,
     "hellaswag": hellaswag.HellaSwag,

@@ -170,6 +170,7 @@ def get_tokenizer(cls: Type[T], model_name: str, **kwargs) -> T:
             kwargs['model_max_length'] = int(1e30)
         tokenizer = cls.from_pretrained(  # type: ignore
             model_name,
+            trust_remote_code=True, # Needed for some models, like Salesforce/xgen, ideally would be an option
             **kwargs,
         )
         _tokenizer_cache[cache_key] = tokenizer

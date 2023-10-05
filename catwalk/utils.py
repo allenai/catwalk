@@ -46,15 +46,16 @@ def sanitize(x: Any) -> Any:
 
 
 def guess_instance_id(instance, max_val_length=30, idx=None):
+    ids = {}
     for key in ['id', 'qid', 'q_id', 'line', 'identifier']:
         if key in instance:
-            return {key: instance[key]}
+            ids[key] = instance[key]
     for key, value in instance.items():
-        if isinstance(value, str) and len(value) <= max_val_length:
-            return {key: value}
-    if idx is not None:
-        return {"instance_idx": idx}
-    return {"id": "NA"}
+        if key.endswith('id') or '_id' in key:
+            ids[key] = value
+    if not ids:
+        ids['instance_idx'] = idx
+    return ids
 
 
 #Filter dict on list of keys

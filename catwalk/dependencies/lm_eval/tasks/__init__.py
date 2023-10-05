@@ -19,6 +19,8 @@ from . import swag
 from . import openbookqa
 from . import squad
 from . import naturalqs_short_open
+from . import scitldr
+from . import xsum
 from . import sat
 from . import arithmetic
 from . import lambada
@@ -144,6 +146,8 @@ TASK_REGISTRY = {
     "race": race.RACE,
     # "naturalqs": naturalqs.NaturalQs, # not implemented yet
     "naturalqs_short_open": naturalqs_short_open.NaturalQsShortOpen,
+    "scitldr": scitldr.SciTLDR,
+    "xsum": xsum.XSUM,
     "headqa": headqa.HeadQAEsDeprecated,  # for backwards compat - headqa used to default to es
     "headqa_es": headqa.HeadQAEs,
     "headqa_en": headqa.HeadQAEn,

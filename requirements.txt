@@ -19,6 +19,7 @@ tiktoken  # For Salesforce/xgen-* models
 protobuf<=3.20
 
 # For lm-eval
+bert_score             # For summarization tasks
 sacrebleu>=1.5.0
 scikit-learn>=0.24.1   # Eleuther uses this for metrics. Can we replace it with torchmetrics?
 pycountry>=20.7.3

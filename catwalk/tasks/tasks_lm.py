@@ -35,7 +35,10 @@ TASKS_LM: Dict[str, Task] = {
     "copa": EleutherTask("copa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_raw")),
     "wic": EleutherClassificationTask("wic", answer_options=["no", "yes"], metrics=rc_metrics(primary="acc_raw")),
     "wsc": EleutherClassificationTask("wsc", answer_options=["no", "yes"], metrics=rc_metrics(primary="acc_raw")),
+    # "drop": EleutherTask("drop").add_metrics(QA_METRICS),
     "naturalqs_short_open": EleutherTask("naturalqs_short_open", eleuther_metrics=True, model_args = {"max_gen_toks": 50}),
+    "scitldr": EleutherTask("scitldr", eleuther_metrics=True, model_args = {"max_gen_toks": 150}),
+    "xsum": EleutherTask("xsum", eleuther_metrics=True, model_args = {"max_gen_toks": 150}),
     # hendrycksTest (MMLU) (57 tasks)
     **create_mmlu_tasks(),
     # "lambada": EleutherTask("lambada_standard").add_metrics(PERPLEXITY_METRICS).add_metric("acc", MeanMetric),

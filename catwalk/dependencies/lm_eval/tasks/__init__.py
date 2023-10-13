@@ -19,6 +19,8 @@ from . import swag
 from . import openbookqa
 from . import squad
 from . import naturalqs_short_open
+from . import scitldr
+from . import xsum
 from . import sat
 from . import arithmetic
 from . import lambada
@@ -50,6 +52,9 @@ from . import blimp
 from . import asdiv
 from . import gsm8k
 from . import storycloze
+from . import eurlex
+from . import unfair_tos
+from . import casehold
 
 ########################################
 # Translation tasks
@@ -128,6 +133,10 @@ TASK_REGISTRY = {
     "arc_easy:mc": arc.ARCEasyMC,
     "arc_challenge": arc.ARCChallenge,
     "arc_challenge:mc": arc.ARCChallengeMC,
+    # Legal
+    "eurlex": eurlex.Eurlex,
+    "unfair_tos": unfair_tos.UnfairTos,
+    "case_hold:mc": casehold.CaseHoldMC,
     # "quac": quac.QuAC, # not implemented yet
     "logiqa": logiqa.LogiQA,
     "hellaswag": hellaswag.HellaSwag,
@@ -137,6 +146,8 @@ TASK_REGISTRY = {
     "race": race.RACE,
     # "naturalqs": naturalqs.NaturalQs, # not implemented yet
     "naturalqs_short_open": naturalqs_short_open.NaturalQsShortOpen,
+    "scitldr": scitldr.SciTLDR,
+    "xsum": xsum.XSUM,
     "headqa": headqa.HeadQAEsDeprecated,  # for backwards compat - headqa used to default to es
     "headqa_es": headqa.HeadQAEs,
     "headqa_en": headqa.HeadQAEn,

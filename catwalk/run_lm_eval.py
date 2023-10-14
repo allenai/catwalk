@@ -204,6 +204,8 @@ def main(args: argparse.Namespace):
                 res1['model_input'] = model_input
             per_instance.append(res1)
         output["per_instance"] = per_instance
+        if hasattr(task_obj, "process_extra_output"):
+            output = task_obj.process_extra_output(output)
         if per_instance:
             logger.info(f"First instance details for task {task_name}: {per_instance[0]}")
         verbose_output.append(output)

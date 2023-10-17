@@ -130,6 +130,10 @@ class GeneralHendrycksTest(MultipleChoiceTask):
         words = subject.split("_")
         return " ".join(words)
 
+    def unconditioned_prompt(self):
+        # Don't need unconditioned normalization here
+        return None
+
     def fewshot_context(self, doc, num_fewshot, **kwargs):
         subject = self.DATASET_NAME
         description = f"The following are multiple choice questions (with answers) about {self._format_subject(subject)}."

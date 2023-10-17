@@ -207,15 +207,20 @@ class LanguageModel(Model):
                     torch.tensor(context, dtype=torch.long),
                     torch.tensor(continuation, dtype=torch.long))})
 
+        verbose = hasattr(task, 'detailed_output') and task.detailed_output
         results = self._run_loglikelihood_tokens(cc_pairs, model, tokenizer, batch_size,
                                                  max_batch_tokens=max_batch_tokens,
-                                                 model_max_length=model_max_length)
+                                                 model_max_length=model_max_length,
+                                                 verbose=verbose)
 
         # collect the results
         for instance_index, doc in enumerate(doc_instances):
             cc_indices = instance_index_to_cc_indices[instance_index]
             results_for_instance = [results[i] for i in cc_indices]
             model_output = {"sum_logits": 0, "num_tokens": 0, "num_tokens_all": 0}
+            if verbose:
+                model_output['tokens'] = []
+                model_output['logits'] = []
             model_output["num_chars"] = len(doc)
             model_output["num_words"] = len(re.split(r"\s+", doc))
             model_output["num_bytes"] = len(doc.encode("utf-8"))
@@ -223,6 +228,9 @@ class LanguageModel(Model):
                 model_output["sum_logits"] += result["sum_logits"]
                 model_output["num_tokens"] += result["num_tokens"]
                 model_output["num_tokens_all"] += result["num_tokens_all"]
+                if verbose:
+                    model_output['tokens'] += result['tokens']
+                    model_output['logits'] += result['logits']
 
             res = {"model_output": model_output}
             if instance_index < num_recorded_inputs:
@@ -414,7 +422,8 @@ class DecoderOnlyLanguageModel(LanguageModel):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         max_batch_tokens: int = None,
-        model_max_length: Optional[int] = None
+        model_max_length: Optional[int] = None,
+        verbose=False,
     ) -> Sequence[Dict]:
 
         truncation_length = tokenizer.model_max_length
@@ -475,6 +484,10 @@ class DecoderOnlyLanguageModel(LanguageModel):
                         is_greedy = bool((greedy_tokens == instance_continuation.unsqueeze(0).to(model.device)).all())
                         results[i] = {"sum_logits": float(instance_logits.sum()), "num_tokens": len(instance_continuation),
                                      "num_tokens_all": input_length + 1, "is_greedy": is_greedy}
+                        if verbose:
+                            instance_tokens = [tokenizer.decode(x) for x in instance_continuation]
+                            results[i]['tokens'] = instance_tokens
+                            results[i]['logits'] = instance_logits.squeeze(-1).tolist()
         del lengths
         assert None not in results
         return results

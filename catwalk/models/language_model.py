@@ -368,8 +368,10 @@ class DecoderOnlyLanguageModel(LanguageModel):
             **kwargs)
 
     @staticmethod
-    def _prefix_with_space(s: str) -> str:
-        if not s.startswith(' '):
+    def _prefix_with_space(s: str, needed=True) -> str:
+        if not needed and s.startswith(' '):
+            return s[1:]
+        elif not s.startswith(' ') and needed:
             return f" {s}"
         else:
             return s
@@ -384,8 +386,14 @@ class DecoderOnlyLanguageModel(LanguageModel):
         model_max_length: Optional[int] = None
     ) -> Sequence[Dict]:
 
+        prefix_space_needed = True
+        # Hack to detect tokenizer which treats words at start of sentences as having a prefix space,
+        # e.g., Llama tokenizers
+        if tokenizer.tokenize("A")[0] == tokenizer.tokenize(" A")[-1]:
+            prefix_space_needed = False
         tokenized_contexts = tokenizer([t[0] for t in tuples], add_special_tokens=False)
-        tokenized_continuations = tokenizer([self._prefix_with_space(t[1]) for t in tuples], add_special_tokens=False)
+        tokenized_continuations = tokenizer([self._prefix_with_space(t[1], prefix_space_needed) for t in tuples],
+                                            add_special_tokens=False)
 
         # We don't need token_type_ids, and it trips up some models apparently (like LLaMA)
         if 'token_type_ids' in tokenized_contexts:

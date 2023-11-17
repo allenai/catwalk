@@ -369,7 +369,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
 
     @staticmethod
     def _prefix_with_space(s: str, needed=True) -> str:
-        if not s.startswith(' ') and not needed:
+        if not s.startswith(' ') and needed:
             return f" {s}"
         else:
             return s

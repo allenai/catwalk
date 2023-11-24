@@ -98,7 +98,7 @@ def get_rolling_token_windows(token_list, prefix_token, max_seq_len, context_len
 
     # Special handling for first window: predict all tokens
     first_seq_len = min(max_seq_len, len(token_list))
-    yield ([prefix_token] + token_list[: first_seq_len - 1], token_list[:first_seq_len])
+    yield (token_list[: first_seq_len - 1], token_list[1:first_seq_len])
     predicted += first_seq_len
 
     while predicted < len(token_list):

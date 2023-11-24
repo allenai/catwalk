@@ -91,7 +91,7 @@ def get_rolling_token_windows(token_list, prefix_token, max_seq_len, context_len
     """
     assert 1 <= context_len <= max_seq_len
     assert prefix_token == 50279
-    if not token_list:
+    if not token_list or len(token_list) < 2:
         return
     # +1 offset, going from input->preds
     pred_len = max_seq_len - context_len + 1

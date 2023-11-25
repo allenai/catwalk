@@ -195,7 +195,7 @@ class LanguageModel(Model):
                     make_disjoint_window,
                     get_rolling_token_windows(
                         token_list=tokenizer.encode(doc_instance, add_special_tokens=False),
-                        prefix_token=tokenizer.eos_token_id if tokenizer.name_or_path != 'allenai/eleuther-ai-gpt-neox-20b-pii-special' else 50279,
+                        prefix_token=50279,
                         max_seq_len=truncation_length,
                         context_len=1,
                     ),

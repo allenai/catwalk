@@ -13,7 +13,7 @@ torchmetrics==0.11.1
 more_itertools
 spacy>=3.0.0
 wget
-datasets>=2.1.0
+datasets>=2.14.6
 accelerate
 bettermap
 tiktoken  # For Salesforce/xgen-* models

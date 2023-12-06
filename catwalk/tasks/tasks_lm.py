@@ -63,4 +63,6 @@ TASKS_LM: Dict[str, Task] = {
     "mathqa": EleutherTask("mathqa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_per_token")),
     #"wsc273": EleutherTask("wsc273", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "winogrande": EleutherTask("winogrande", ranked_classification=True).add_metrics(rc_metrics(primary="acc_per_token")),
+    "social_iqa": EleutherTask("social_iqa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_uncond")),
+    "csqa": EleutherTask("csqa", ranked_classification=True).add_metrics(rc_metrics(primary="acc_uncond"))
 }

@@ -34,7 +34,7 @@ class RankClassificationModel(Model):
 
         pretrained_model_name_or_path : `str`
             The name of the transformer, for example `"gpt2-large"`
-        likelihood_averaging : `str`, optional (default = `token`)
+        likelihood_averaging : `str`, optional (default = `char`)
             The method for averaging the sum likelihood of the continuation. 'char' averages by 
             character length, 'token' averages by token length.
         model_kwargs:
@@ -64,8 +64,7 @@ class RankClassificationModel(Model):
         batch_size: int = 32,
         max_instances_in_memory: int = 32 * 1024,
         num_shots: int = 0,
-        fewshot_seed: Optional[int] = None,
-        num_recorded_inputs: Optional[int] = 0,  # Number of instances to log in detail
+        fewshot_seed: Optional[int] = None
     ) -> Iterator[Dict[str, Any]]:
         model = self._make_model(
             self.pretrained_model_name_or_path,
@@ -81,8 +80,7 @@ class RankClassificationModel(Model):
                 tokenizer,
                 batch_size=batch_size,
                 num_shots=num_shots,
-                fewshot_seed=fewshot_seed,
-                num_recorded_inputs=num_recorded_inputs,
+                fewshot_seed=fewshot_seed
             )
 
     def predict_chunk(
@@ -93,8 +91,7 @@ class RankClassificationModel(Model):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         num_shots: int = 0,
-        fewshot_seed: Optional[int] = None,
-        num_recorded_inputs: Optional[int] = 0, # Number of model inputs to log in detail
+        fewshot_seed: Optional[int] = None
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
@@ -124,12 +121,10 @@ class RankClassificationModel(Model):
             results_for_instance = [results[i] for i in tuple_indices]
             result_tensor = torch.tensor(results_for_instance)
             metric_args = (result_tensor, instance.correct_choice)
-            prediction = {metric_name: metric_args for metric_name in task.metrics.keys()}
-            if instance_index >= num_recorded_inputs:
-                yield prediction
-            else:
-                model_input = [tuples[i] for i in tuple_indices]
-                yield {"model_input": model_input, "prediction": prediction}
+            yield {
+                metric_name: metric_args
+                for metric_name in task.metrics.keys()
+            }
 
     def _run_loglikelihood(
         self,
@@ -313,11 +308,10 @@ class DecoderOnlyRCModel(RankClassificationModel):
         pretrained_model_name_or_path: str,
         *,
         make_copy: bool = False,
-        model_class: Any = AutoModelForCausalLM,
         **kwargs
     ) -> GPT2LMHeadModel:
         return cached_transformers.get(
-            model_class,
+            AutoModelForCausalLM,
             pretrained_model_name_or_path,
             make_copy=make_copy,
             **kwargs)

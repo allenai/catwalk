@@ -63,12 +63,12 @@ class LanguageModel(Model):
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32,
-        max_batch_tokens: int = None, # If set, max number of tokens in a batch
+        max_batch_tokens: Optional[int] = None, # If set, max number of tokens in a batch
         max_instances_in_memory: int = 32 * 1024,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
         model_max_length: Optional[int] = None, # Max input length model should support
-        num_recorded_inputs: Optional[int] = 0,  # Number of instances to log in detail
+        num_recorded_inputs: int = 0,  # Number of instances to log in detail
         unconditioned_prompt: Optional[str] = None, # Optional unconditioned prompt, e.g., "Answer:"
     ) -> Iterator[Dict[str, Any]]:
         model = self._make_model(
@@ -83,10 +83,10 @@ class LanguageModel(Model):
         if "eleuther_metrics" in task.metrics:
             predictor = self.predict_chunk_eleuther
         elif task.has_instance_conversion(InstanceFormat.RANK_CLASSIFICATION):
-            predictor = self.predict_chunk_rank_classification
+            predictor = self.predict_chunk_rank_classification  # type: ignore
         elif task.has_instance_conversion(InstanceFormat.ELEUTHER_DOC):
             # Assume perplexity tasks here, only for Eleuther tasks for now, but easy to add others
-            predictor = self.predict_chunk_perplexity
+            predictor = self.predict_chunk_perplexity  # type: ignore
         else:
             raise ValueError("Unknown task type for LM model")
 
@@ -112,11 +112,11 @@ class LanguageModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
-        max_batch_tokens: int = None,
+        max_batch_tokens: Optional[int] = None,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
         model_max_length: Optional[int] = None,
-        num_recorded_inputs: Optional[int] = 0,
+        num_recorded_inputs: int = 0,
         unconditioned_prompt: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
         instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
@@ -159,9 +159,9 @@ class LanguageModel(Model):
                     results_for_instance[idx]['sum_logits_uncond'] = unconditioned_results['sum_logits']
             res = {"model_output": results_for_instance, "correct_choice": instance.correct_choice}
             if instance_index < num_recorded_inputs:
-                res["model_input"] = [tuples[i] for i in tuple_indices]
+                res["model_input"] = [tuples[i] for i in tuple_indices]  # type: ignore
                 if unconditioned_prompt:
-                    res["unconditioned_input"] = [tuples[i + unconditioned_offset] for i in tuple_indices]
+                    res["unconditioned_input"] = [tuples[i + unconditioned_offset] for i in tuple_indices]  # type: ignore
             yield res
 
     def predict_chunk_perplexity(
@@ -171,11 +171,11 @@ class LanguageModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
-        max_batch_tokens: int = None,
+        max_batch_tokens: Optional[int] = None,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
         model_max_length: Optional[int] = None,
-        num_recorded_inputs: Optional[int] = 0,
+        num_recorded_inputs: int = 0,
         unconditioned_prompt: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
 
@@ -187,7 +187,7 @@ class LanguageModel(Model):
         if model_max_length:
             truncation_length = min(truncation_length, model_max_length)
         instance_index_to_cc_indices: Mapping[int, List[int]] = collections.defaultdict(list)
-        cc_pairs = []
+        cc_pairs: List = []
 
         for instance_index, doc_instance in enumerate(doc_instances):
             rolling_token_windows = list(
@@ -217,7 +217,7 @@ class LanguageModel(Model):
         for instance_index, doc in enumerate(doc_instances):
             cc_indices = instance_index_to_cc_indices[instance_index]
             results_for_instance = [results[i] for i in cc_indices]
-            model_output = {"sum_logits": 0, "num_tokens": 0, "num_tokens_all": 0}
+            model_output: Dict[str, Any] = {"sum_logits": 0, "num_tokens": 0, "num_tokens_all": 0}
             if verbose:
                 model_output['tokens'] = []
                 model_output['logits'] = []
@@ -232,7 +232,7 @@ class LanguageModel(Model):
                     model_output['tokens'] += result['tokens']
                     model_output['logits'] += result['logits']
 
-            res = {"model_output": model_output}
+            res: Dict[str, Any] = {"model_output": model_output}
             if instance_index < num_recorded_inputs:
                 res["model_input"] = []
                 for index in cc_indices:
@@ -251,12 +251,12 @@ class LanguageModel(Model):
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
         model_max_length: Optional[int] = None,
-        num_recorded_inputs: Optional[int] = 0,
+        num_recorded_inputs: int = 0,
         unconditioned_prompt: Optional[str] = None,
         **kwargs
     ) -> Iterator[Dict[str, Any]]:
-        instance_index_to_request_indices = collections.defaultdict(lambda: collections.defaultdict(list))
-        requests = collections.defaultdict(list)
+        instance_index_to_request_indices: collections.defaultdict = collections.defaultdict(lambda: collections.defaultdict(list))
+        requests: collections.defaultdict = collections.defaultdict(list)
 
         # get all the requests
         for instance_index, instance in enumerate(instances):
@@ -284,7 +284,7 @@ class LanguageModel(Model):
             extra_kw_args = task.model_args
         for request_type, requests_per_type in requests.items():
             results[request_type] = request_type_to_fn[request_type][0](
-                [tuple(r.args) for r in requests_per_type],
+                [tuple(r.args) for r in requests_per_type],  # type: ignore
                 model,
                 tokenizer,
                 model_max_length=model_max_length,
@@ -295,7 +295,7 @@ class LanguageModel(Model):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
             results_for_instance: List = []
             model_outputs_for_instance = []
-            model_inputs = {}
+            model_inputs: Dict[str, Any] = {}
             for request_type, request_indices in instance_index_to_request_indices[instance_index].items():
                 for i in request_indices:
                     result = results[request_type][i]
@@ -322,9 +322,9 @@ class LanguageModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
-        max_batch_tokens: int = None,
+        max_batch_tokens: Optional[int] = None,
         model_max_length: Optional[int] = None
-    ) -> Sequence[float]:
+    ) -> Sequence[Dict]:
         raise NotImplementedError
 
     def _run_loglikelihood_rolling(
@@ -333,19 +333,17 @@ class LanguageModel(Model):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
-        max_batch_tokens: int = None,
+        max_batch_tokens: Optional[int] = None,
         model_max_length: Optional[int] = None
-    ) -> Sequence[float]:
+    ) -> Sequence[Dict]:
         raise NotImplementedError
 
     def _run_greedy_until(
         self,
-        tuples: Sequence[Tuple[str, str]],
+        requests: Sequence[Tuple[str, str]],
         model: _Model,
         tokenizer: _Tokenizer,
-        batch_size: int = 32,
-        max_batch_tokens: int = None,
-        model_max_length: Optional[int] = None
+        **kwargs,
     ) -> Sequence[float]:
         raise NotImplementedError
 
@@ -382,7 +380,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
-        max_batch_tokens: int = None,
+        max_batch_tokens: Optional[int] = None,
         model_max_length: Optional[int] = None
     ) -> Sequence[Dict]:
 
@@ -425,11 +423,11 @@ class DecoderOnlyLanguageModel(LanguageModel):
 
     def _run_loglikelihood_tokens(
         self,
-        cc_pairs: Sequence[Tuple[torch.Tensor, torch.Tensor]],
+        cc_pairs: Sequence[Dict[str, Tuple[torch.Tensor, torch.Tensor]]],
         model: _Model,
         tokenizer: _Tokenizer,
         batch_size: int = 32,
-        max_batch_tokens: int = None,
+        max_batch_tokens: Optional[int] = None,
         model_max_length: Optional[int] = None,
         verbose=False,
     ) -> Sequence[Dict]:
@@ -446,7 +444,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
         ordered_indices = torch.argsort(lengths, descending=True)
 
         # actually do the processing
-        results: List[Optional[float]] = [None] * len(ordered_indices)
+        results: List = [None] * len(ordered_indices)
         last_index = 0
         with torch.inference_mode():
             with Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries") as ordered_indices_tqdm:
@@ -562,5 +560,3 @@ class DecoderOnlyLanguageModel(LanguageModel):
                             "num_generated_tokens": len(continuation_tensor)})
 
         return results
-
-

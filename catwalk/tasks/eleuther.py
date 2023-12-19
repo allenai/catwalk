@@ -30,7 +30,7 @@ class EleutherTask(Task, WithPromptsourceMixin):
         ranked_classification: bool = False,
         promptsource_task_spec: Optional[Tuple[str, str]] = None,
         eleuther_metrics: bool = False,  # Whether to directly use Eleuther metrics
-        model_args: dict = None, # Extra arguments to supply to model calls
+        model_args: Optional[Dict] = None, # Extra arguments to supply to model calls
     ):
         Task.__init__(self, version_override=version_override)
 

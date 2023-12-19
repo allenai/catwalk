@@ -49,7 +49,7 @@ class PerplexityMetrics():
         # Try to avoid double processing data
         if 'metrics' in data and 'ppl_token' in data['metrics']:
             return data['metrics']
-        logits = {}
+        logits: Dict[str, Any] = {}
         for scoring in self.scoring_types:
             logits[scoring] = []
         prediction = data['model_output']

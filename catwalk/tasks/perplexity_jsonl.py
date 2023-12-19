@@ -72,7 +72,7 @@ class PerplexityJsonLTask(Task):
         # Combine (and then delete) individual token/logits stats
         if not self.detailed_output:
             return output
-        token_stats = {}
+        token_stats: Dict = {}
         for instance in output['per_instance']:
             tokens = instance['prediction']['model_output']['tokens']
             logits = instance['prediction']['model_output']['logits']

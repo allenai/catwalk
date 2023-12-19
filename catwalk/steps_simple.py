@@ -3,18 +3,28 @@ from typing import (
     Any,
     Optional,
     Sequence,
+    Tuple,
 )
-
+from random import Random
 from catwalk.task import Task
-from catwalk.tasks import get_instances
 from catwalk.model import Model
+
+def get_instances(task: Task,
+                  split: str,
+                  limit: Optional[int] = None,
+                  random_subsample_seed: Optional[int] = None,
+                  ) -> Sequence[Dict[str, Any]]:
+    instances = task.get_split(split)
+    if limit is not None and len(instances) > limit:
+        instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
+    return instances
 
 class PredictStep():
     def run(
         self,
         model: Model,
         task: Task,
-        split: Optional[str] = None,
+        split: str,
         limit: Optional[int] = None,
         random_subsample_seed: Optional[int] = None,
         **kwargs
@@ -32,6 +42,6 @@ class CalculateMetricsStep():
         model: Model,
         task: Task,
         predictions: Sequence[Any]
-    ) -> Dict[str, float]:
+    ) -> Tuple[Dict[str, float], Sequence[Any]]:
         metrics = model.calculate_metrics(task, predictions)
         return metrics, predictions

@@ -588,15 +588,3 @@ def short_name_for_task_object(task: Task) -> Optional[str]:
         if id(task) == id(task_object):
             return task_name
     return None
-
-
-def get_instances(task: Union[str, Task],
-                  split: Optional[str] = None,
-                  limit: Optional[int] = None,
-                  random_subsample_seed: Optional[int] = None,
-                  ) -> Sequence[Dict[str, Any]]:
-    instances = task.get_split(split)
-    if limit is not None and len(instances) > limit:
-        instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
-    return instances
-

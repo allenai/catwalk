@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Any, Dict, Union, List
 
 import math
 import numpy as np
@@ -51,7 +51,7 @@ class RankedClassificationMetrics():
     def __init__(self, primary_metric="acc_per_token"):
         self.primary_metric = primary_metric
         self.scoring_types = ["raw", "per_token", "per_char", "uncond"]
-        self.state = {"count": 0, "total_probability_mass": 0,
+        self.state: Dict[str, Any] = {"count": 0, "total_probability_mass": 0,
                       "total_token_count": 0, "max_token_count": 0, "count_inputs": 0}
         for scoring in self.scoring_types:
             self.state[f'total_{scoring}'] = 0
@@ -61,7 +61,7 @@ class RankedClassificationMetrics():
         # Try to avoid double processing data (shouldn't happen)
         if 'metrics' in data and 'probability_mass' in data['metrics']:
             return data['metrics']
-        logits = {}
+        logits: Dict = {}
         for scoring in self.scoring_types:
             logits[scoring] = []
         for prediction in data['model_output']:
@@ -84,7 +84,7 @@ class RankedClassificationMetrics():
             acc = 1 if pred_index == gold_index else 0
             metrics[f"acc_{scoring}"] = acc
             metrics[f"predicted_index_{scoring}"] = pred_index
-        metrics['probability_mass'] = sum(math.exp(logit) for logit in logits['raw'])
+        metrics['probability_mass'] = sum(math.exp(logit) for logit in logits['raw'])  # type: ignore
         if self.primary_metric in metrics:
             metrics['acc'] = metrics[self.primary_metric]
         return metrics

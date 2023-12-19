@@ -7,7 +7,7 @@ from transformers import AutoModelForCausalLM, GPT2LMHeadModel
 from transformers.modeling_utils import Conv1D
 
 from catwalk import cached_transformers
-from catwalk.models import MetaICLModel
+from catwalk.models.metaicl import MetaICLModel
 
 
 class DecoderOnlyIA3Mixin:

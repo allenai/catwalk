@@ -17,6 +17,7 @@ def with_soft_prompt(
 ) -> Model:
     if isinstance(model, str):
         from catwalk.models import MODELS
+
         model = MODELS[model]
     model = copy.deepcopy(model)
 
@@ -30,7 +31,8 @@ def with_soft_prompt(
             prompt_length=prompt_length,
             only_prompt_is_trainable=only_prompt_is_trainable,
             initialize_from_top_embeddings=initialize_from_top_embeddings,
-            random_seed=random_seed)
+            random_seed=random_seed,
+        )
         return new_model
 
     setattr(model, model_factory_method_name, new_model_factory)

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Dict, TypeVar, Type, Any
+from typing import Any, Dict, Optional, Type, TypeVar
 
 import torch
 import transformers
@@ -20,20 +20,22 @@ class TransformerSpec:
     kwargs: Dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self):
-        return hash((
-            f"{self.cls.__module__}.{self.cls.__name__}",
-            self.model_name,
-            self.override_weights_file,
-            self.override_weights_strip_prefix,
-            self.load_weights,
-            det_hash(self.kwargs)
-        ))
+        return hash(
+            (
+                f"{self.cls.__module__}.{self.cls.__name__}",
+                self.model_name,
+                self.override_weights_file,
+                self.override_weights_strip_prefix,
+                self.load_weights,
+                det_hash(self.kwargs),
+            )
+        )
 
 
 _model_cache: Dict[TransformerSpec, transformers.PreTrainedModel] = {}
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def get(
@@ -76,18 +78,18 @@ def get(
         override_weights_file,
         override_weights_strip_prefix,
         load_weights,
-        kwargs
+        kwargs,
     )
     transformer = _model_cache.get(spec, None)
     if transformer is None:
         if not load_weights:
             config = transformers.AutoConfig.from_pretrained(model_name, **kwargs)
-            transformer = cls.from_config(config)   # type: ignore
+            transformer = cls.from_config(config)  # type: ignore
         elif override_weights_file is not None:
             override_weights_file = cached_path(override_weights_file)
             override_weights = torch.load(override_weights_file)
             if override_weights_strip_prefix is not None:
-                prefix = str(override_weights_strip_prefix)     # mypy insanity
+                prefix = str(override_weights_strip_prefix)  # mypy insanity
 
                 def strip_prefix(s: str) -> str:
                     if s.startswith(prefix):
@@ -96,24 +98,26 @@ def get(
                         return s
 
                 valid_keys = {
-                    k
-                    for k in override_weights.keys()
-                    if k.startswith(prefix)
+                    k for k in override_weights.keys() if k.startswith(prefix)
                 }
                 if len(valid_keys) > 0:
                     logger.info(
-                        "Loading %d tensors from %s", len(valid_keys), override_weights_file
+                        "Loading %d tensors from %s",
+                        len(valid_keys),
+                        override_weights_file,
                     )
                 else:
                     raise ValueError(
                         f"Specified prefix of '{prefix}' means no tensors "
                         f"will be loaded from {prefix}."
                     )
-                override_weights = {strip_prefix(k): override_weights[k] for k in valid_keys}
+                override_weights = {
+                    strip_prefix(k): override_weights[k] for k in valid_keys
+                }
 
             # load from config to avoid loading default weights
             config = transformers.AutoConfig.from_pretrained(model_name, **kwargs)
-            transformer = cls.from_config(config)   # type: ignore
+            transformer = cls.from_config(config)  # type: ignore
             # When DistributedDataParallel or DataParallel is used, the state dict of the
             # DistributedDataParallel/DataParallel wrapper prepends "module." to all parameters
             # of the actual model, since the actual model is stored within the module field.
@@ -145,11 +149,13 @@ class TokenizerSpec:
     kwargs: Dict[str, Any]
 
     def __hash__(self):
-        return hash((
-            f"{self.cls.__module__}.{self.cls.__name__}",
-            self.model_name,
-            det_hash(self.kwargs),
-        ))
+        return hash(
+            (
+                f"{self.cls.__module__}.{self.cls.__name__}",
+                self.model_name,
+                det_hash(self.kwargs),
+            )
+        )
 
 
 _tokenizer_cache: Dict[TokenizerSpec, transformers.PreTrainedTokenizer] = {}
@@ -161,16 +167,16 @@ def get_tokenizer(cls: Type[T], model_name: str, **kwargs) -> T:
     global _tokenizer_cache
     tokenizer = _tokenizer_cache.get(cache_key, None)
     if tokenizer is None:
-        # Currenty GPT2's fast tokenizer does NOT support adding a BOS token.                                                                                      
-        # This issue will be fixed soon, see: https://github.com/huggingface/tokenizers/pull/1005. so that the fast tokenizer works correctly.  
-        if model_name.startswith('facebook/opt'):
-            kwargs['use_fast'] = False
-        elif model_name.startswith('t5-'):
+        # Currenty GPT2's fast tokenizer does NOT support adding a BOS token.
+        # This issue will be fixed soon, see: https://github.com/huggingface/tokenizers/pull/1005. so that the fast tokenizer works correctly.
+        if model_name.startswith("facebook/opt"):
+            kwargs["use_fast"] = False
+        elif model_name.startswith("t5-"):
             # Workaround for another huggingface tokenizer bug.
-            kwargs['model_max_length'] = int(1e30)
+            kwargs["model_max_length"] = int(1e30)
         tokenizer = cls.from_pretrained(  # type: ignore
             model_name,
-            trust_remote_code=True, # Needed for some models, like Salesforce/xgen, ideally would be an option
+            trust_remote_code=True,  # Needed for some models, like Salesforce/xgen, ideally would be an option
             **kwargs,
         )
         _tokenizer_cache[cache_key] = tokenizer

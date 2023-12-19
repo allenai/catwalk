@@ -6,22 +6,23 @@ from tango.common.logging import initialize_logging
 from catwalk.steps import TabulateMetricsStep
 from catwalk.tasks import TASK_SETS
 
-
 _parser = argparse.ArgumentParser()
-_parser.add_argument('--model', type=str, required=True)
-_parser.add_argument('--task', type=str, nargs="+")
-_parser.add_argument('--split', type=str)
-_parser.add_argument('--batch_size', type=int, default=32)
-_parser.add_argument('--num_shots', type=int)
-_parser.add_argument('--fewshot_seed', type=int)
-_parser.add_argument('--limit', type=int)
+_parser.add_argument("--model", type=str, required=True)
+_parser.add_argument("--task", type=str, nargs="+")
+_parser.add_argument("--split", type=str)
+_parser.add_argument("--batch_size", type=int, default=32)
+_parser.add_argument("--num_shots", type=int)
+_parser.add_argument("--fewshot_seed", type=int)
+_parser.add_argument("--limit", type=int)
 _parser.add_argument(
-    '-d', '-w',
+    "-d",
+    "-w",
     type=str,
     default=None,
     metavar="workspace",
     dest="workspace",
-    help="the Tango workspace with the cache")
+    help="the Tango workspace with the cache",
+)
 
 
 def main(args: argparse.Namespace):
@@ -34,8 +35,7 @@ def main(args: argparse.Namespace):
 
     limit = args.limit if hasattr(args, "limit") else None
 
-    from catwalk.steps import CalculateMetricsStep
-    from catwalk.steps import PredictStep
+    from catwalk.steps import CalculateMetricsStep, PredictStep
 
     tasks = set()
     for task in args.task:
@@ -58,11 +58,11 @@ def main(args: argparse.Namespace):
             split=args.split,
             batch_size=args.batch_size,
             limit=limit,
-            **kwargs)
+            **kwargs
+        )
         metrics = CalculateMetricsStep(
-            model=args.model,
-            task=task,
-            predictions=predictions)
+            model=args.model, task=task, predictions=predictions
+        )
         metric_task_dict[task] = metrics
 
     table_step = TabulateMetricsStep(metrics=metric_task_dict)

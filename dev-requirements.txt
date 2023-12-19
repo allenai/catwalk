@@ -1,3 +1,5 @@
+isort
+black
 mypy
 
 # Needed for packaging and uploading to PyPi

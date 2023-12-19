@@ -3,7 +3,7 @@ import argparse
 from tango import Workspace
 from tango.common.logging import initialize_logging
 
-from catwalk.steps import TabulateMetricsStep, FinetuneStep
+from catwalk.steps import FinetuneStep, TabulateMetricsStep
 from catwalk.tasks import TASK_SETS
 
 
@@ -32,8 +32,7 @@ def main():
     else:
         workspace = Workspace.from_url(args.workspace)
 
-    from catwalk.steps import CalculateMetricsStep
-    from catwalk.steps import PredictStep
+    from catwalk.steps import CalculateMetricsStep, PredictStep
 
     tasks = set()
     for task in args.task:
@@ -47,12 +46,14 @@ def main():
         tasks=tasks,
         batch_size=args.batch_size,
         grad_accum=args.grad_acc,
-        val_metric_name=args.val_metric
+        val_metric_name=args.val_metric,
     )
 
     metric_task_dict = {}
     for task in tasks:
-        predictions = PredictStep(model=model_step, task=task, batch_size=args.batch_size)
+        predictions = PredictStep(
+            model=model_step, task=task, batch_size=args.batch_size
+        )
         metrics = CalculateMetricsStep(
             model=model_step, task=task, predictions=predictions
         )

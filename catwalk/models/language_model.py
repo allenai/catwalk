@@ -1,19 +1,28 @@
 import collections
 import re
-from typing import Dict, Any, List, Tuple, Sequence, Iterator, Union, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
 
 import more_itertools
 import torch
 from tango.common import Tqdm
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModelForCausalLM, T5ForConditionalGeneration, GPT2LMHeadModel, \
-    AutoTokenizer, GPT2Tokenizer, T5TokenizerFast
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    GPT2LMHeadModel,
+    GPT2Tokenizer,
+    T5ForConditionalGeneration,
+    T5TokenizerFast,
+)
 
 from catwalk import cached_transformers
+from catwalk.dependencies.lm_eval.utils import (
+    get_rolling_token_windows,
+    make_disjoint_window,
+)
 from catwalk.model import Model
-from catwalk.task import Task, InstanceFormat, RankClassificationInstance
-from catwalk.dependencies.lm_eval.utils import get_rolling_token_windows, make_disjoint_window
+from catwalk.task import InstanceFormat, RankClassificationInstance, Task
 
 _Model = Union[T5ForConditionalGeneration, GPT2LMHeadModel]
 _Tokenizer = Union[T5TokenizerFast, GPT2Tokenizer]
@@ -27,8 +36,8 @@ class LanguageModel(Model):
         pretrained_model_name_or_path: str,
         *,
         pretrained_tokenizer_name_or_path: Optional[str] = None,
-        likelihood_averaging: str = 'token',
-        **model_kwargs
+        likelihood_averaging: str = "token",
+        **model_kwargs,
     ):
         """
         # Parameters
@@ -36,12 +45,12 @@ class LanguageModel(Model):
         pretrained_model_name_or_path : `str`
             The name of the transformer, for example `"gpt2-large"`
         likelihood_averaging : `str`, optional (default = `token`)
-            The method for averaging the sum likelihood of the continuation. 'char' averages by 
+            The method for averaging the sum likelihood of the continuation. 'char' averages by
             character length, 'token' averages by token length.
         model_kwargs:
             Additional kwargs passed to the `_make_model` method.
         """
-        assert likelihood_averaging in {'char', 'token'}
+        assert likelihood_averaging in {"char", "token"}
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         if pretrained_tokenizer_name_or_path is None:
             pretrained_tokenizer_name_or_path = pretrained_model_name_or_path
@@ -51,11 +60,15 @@ class LanguageModel(Model):
         self.model_kwargs = model_kwargs
 
     @classmethod
-    def _make_model(cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs) -> _Model:
+    def _make_model(
+        cls, pretrained_model_name_or_path: str, *, make_copy: bool = False, **kwargs
+    ) -> _Model:
         raise NotImplementedError
 
     def _make_tokenizer(self) -> AutoTokenizer:
-        return cached_transformers.get_tokenizer(AutoTokenizer, self.pretrained_tokenizer_name_or_path)
+        return cached_transformers.get_tokenizer(
+            AutoTokenizer, self.pretrained_tokenizer_name_or_path
+        )
 
     def predict(  # type: ignore
         self,
@@ -63,18 +76,23 @@ class LanguageModel(Model):
         instances: Sequence[Dict[str, Any]],
         *,
         batch_size: int = 32,
-        max_batch_tokens: Optional[int] = None, # If set, max number of tokens in a batch
+        max_batch_tokens: Optional[
+            int
+        ] = None,  # If set, max number of tokens in a batch
         max_instances_in_memory: int = 32 * 1024,
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
-        model_max_length: Optional[int] = None, # Max input length model should support
+        model_max_length: Optional[int] = None,  # Max input length model should support
         num_recorded_inputs: int = 0,  # Number of instances to log in detail
-        unconditioned_prompt: Optional[str] = None, # Optional unconditioned prompt, e.g., "Answer:"
+        unconditioned_prompt: Optional[
+            str
+        ] = None,  # Optional unconditioned prompt, e.g., "Answer:"
     ) -> Iterator[Dict[str, Any]]:
         model = self._make_model(
             self.pretrained_model_name_or_path,
             device_map="auto" if torch.cuda.device_count() > 0 else None,
-            **self.model_kwargs).eval()
+            **self.model_kwargs,
+        ).eval()
         if hasattr(model, "tokenizer"):
             tokenizer = model.tokenizer
         else:
@@ -90,7 +108,9 @@ class LanguageModel(Model):
         else:
             raise ValueError("Unknown task type for LM model")
 
-        for instance_chunk in more_itertools.chunked(instances, max_instances_in_memory):
+        for instance_chunk in more_itertools.chunked(
+            instances, max_instances_in_memory
+        ):
             yield from predictor(
                 task,
                 instance_chunk,
@@ -102,7 +122,7 @@ class LanguageModel(Model):
                 fewshot_seed=fewshot_seed,
                 model_max_length=model_max_length,
                 num_recorded_inputs=num_recorded_inputs,
-                unconditioned_prompt=unconditioned_prompt
+                unconditioned_prompt=unconditioned_prompt,
             )
 
     def predict_chunk_rank_classification(
@@ -119,7 +139,9 @@ class LanguageModel(Model):
         num_recorded_inputs: int = 0,
         unconditioned_prompt: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
-        instance_index_to_tuple_indices: Mapping[int, List[int]] = collections.defaultdict(list)
+        instance_index_to_tuple_indices: Mapping[
+            int, List[int]
+        ] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
 
         rc_instances: List[RankClassificationInstance] = [
@@ -129,7 +151,9 @@ class LanguageModel(Model):
                 fewshot_instances=task.get_fewshot_instances(
                     num_shots,
                     random_seed=fewshot_seed if fewshot_seed is not None else i,
-                    exceptions=instance))
+                    exceptions=instance,
+                ),
+            )
             for i, instance in enumerate(instances)
         ]
 
@@ -145,9 +169,14 @@ class LanguageModel(Model):
                     tuples.append((unconditioned_prompt, instance_request[1]))
 
         # run the requests
-        results = self._run_loglikelihood(tuples, model, tokenizer, batch_size,
-                                          max_batch_tokens=max_batch_tokens,
-                                          model_max_length=model_max_length)
+        results = self._run_loglikelihood(
+            tuples,
+            model,
+            tokenizer,
+            batch_size,
+            max_batch_tokens=max_batch_tokens,
+            model_max_length=model_max_length,
+        )
 
         # collect the results
         for instance_index, instance in enumerate(rc_instances):
@@ -156,8 +185,13 @@ class LanguageModel(Model):
             if unconditioned_prompt:
                 for idx, i in enumerate(tuple_indices):
                     unconditioned_results = results[i + unconditioned_offset]
-                    results_for_instance[idx]['sum_logits_uncond'] = unconditioned_results['sum_logits']
-            res = {"model_output": results_for_instance, "correct_choice": instance.correct_choice}
+                    results_for_instance[idx][
+                        "sum_logits_uncond"
+                    ] = unconditioned_results["sum_logits"]
+            res = {
+                "model_output": results_for_instance,
+                "correct_choice": instance.correct_choice,
+            }
             if instance_index < num_recorded_inputs:
                 res["model_input"] = [tuples[i] for i in tuple_indices]  # type: ignore
                 if unconditioned_prompt:
@@ -178,7 +212,6 @@ class LanguageModel(Model):
         num_recorded_inputs: int = 0,
         unconditioned_prompt: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
-
         doc_instances: List[str] = [
             task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
             for i, instance in enumerate(instances)
@@ -186,7 +219,9 @@ class LanguageModel(Model):
         truncation_length = tokenizer.model_max_length
         if model_max_length:
             truncation_length = min(truncation_length, model_max_length)
-        instance_index_to_cc_indices: Mapping[int, List[int]] = collections.defaultdict(list)
+        instance_index_to_cc_indices: Mapping[int, List[int]] = collections.defaultdict(
+            list
+        )
         cc_pairs: List = []
 
         for instance_index, doc_instance in enumerate(doc_instances):
@@ -194,7 +229,9 @@ class LanguageModel(Model):
                 map(
                     make_disjoint_window,
                     get_rolling_token_windows(
-                        token_list=tokenizer.encode(doc_instance, add_special_tokens=False),
+                        token_list=tokenizer.encode(
+                            doc_instance, add_special_tokens=False
+                        ),
                         prefix_token=tokenizer.eos_token_id,
                         max_seq_len=truncation_length,
                         context_len=1,
@@ -203,24 +240,38 @@ class LanguageModel(Model):
             )
             for context, continuation in rolling_token_windows:
                 instance_index_to_cc_indices[instance_index].append(len(cc_pairs))
-                cc_pairs.append({"input_ids": (
-                    torch.tensor(context, dtype=torch.long),
-                    torch.tensor(continuation, dtype=torch.long))})
+                cc_pairs.append(
+                    {
+                        "input_ids": (
+                            torch.tensor(context, dtype=torch.long),
+                            torch.tensor(continuation, dtype=torch.long),
+                        )
+                    }
+                )
 
-        verbose = hasattr(task, 'detailed_output') and task.detailed_output
-        results = self._run_loglikelihood_tokens(cc_pairs, model, tokenizer, batch_size,
-                                                 max_batch_tokens=max_batch_tokens,
-                                                 model_max_length=model_max_length,
-                                                 verbose=verbose)
+        verbose = hasattr(task, "detailed_output") and task.detailed_output
+        results = self._run_loglikelihood_tokens(
+            cc_pairs,
+            model,
+            tokenizer,
+            batch_size,
+            max_batch_tokens=max_batch_tokens,
+            model_max_length=model_max_length,
+            verbose=verbose,
+        )
 
         # collect the results
         for instance_index, doc in enumerate(doc_instances):
             cc_indices = instance_index_to_cc_indices[instance_index]
             results_for_instance = [results[i] for i in cc_indices]
-            model_output: Dict[str, Any] = {"sum_logits": 0, "num_tokens": 0, "num_tokens_all": 0}
+            model_output: Dict[str, Any] = {
+                "sum_logits": 0,
+                "num_tokens": 0,
+                "num_tokens_all": 0,
+            }
             if verbose:
-                model_output['tokens'] = []
-                model_output['logits'] = []
+                model_output["tokens"] = []
+                model_output["logits"] = []
             model_output["num_chars"] = len(doc)
             model_output["num_words"] = len(re.split(r"\s+", doc))
             model_output["num_bytes"] = len(doc.encode("utf-8"))
@@ -229,14 +280,14 @@ class LanguageModel(Model):
                 model_output["num_tokens"] += result["num_tokens"]
                 model_output["num_tokens_all"] += result["num_tokens_all"]
                 if verbose:
-                    model_output['tokens'] += result['tokens']
-                    model_output['logits'] += result['logits']
+                    model_output["tokens"] += result["tokens"]
+                    model_output["logits"] += result["logits"]
 
             res: Dict[str, Any] = {"model_output": model_output}
             if instance_index < num_recorded_inputs:
                 res["model_input"] = []
                 for index in cc_indices:
-                    inp = [tokenizer.decode(x) for x in cc_pairs[index]['input_ids']]
+                    inp = [tokenizer.decode(x) for x in cc_pairs[index]["input_ids"]]
                     res["model_input"].append(inp)
             yield res
 
@@ -253,9 +304,11 @@ class LanguageModel(Model):
         model_max_length: Optional[int] = None,
         num_recorded_inputs: int = 0,
         unconditioned_prompt: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Iterator[Dict[str, Any]]:
-        instance_index_to_request_indices: collections.defaultdict = collections.defaultdict(lambda: collections.defaultdict(list))
+        instance_index_to_request_indices: collections.defaultdict = (
+            collections.defaultdict(lambda: collections.defaultdict(list))
+        )
         requests: collections.defaultdict = collections.defaultdict(list)
 
         # get all the requests
@@ -264,20 +317,31 @@ class LanguageModel(Model):
                 instance,
                 InstanceFormat.ELEUTHER_REQUESTS,
                 num_fewshot=num_shots,
-                fewshot_seed=fewshot_seed if fewshot_seed is not None else instance_index)
+                fewshot_seed=fewshot_seed
+                if fewshot_seed is not None
+                else instance_index,
+            )
             if not isinstance(instance_requests, (list, tuple)):
                 instance_requests = [instance_requests]
             for instance_request in instance_requests:
                 request_type = instance_request.request_type
-                instance_index_to_request_indices[instance_index][request_type].append(len(requests[request_type]))
+                instance_index_to_request_indices[instance_index][request_type].append(
+                    len(requests[request_type])
+                )
                 requests[request_type].append(instance_request)
 
         # run the requests
         results: Dict[str, Sequence] = {}
-        request_type_to_fn= {
-            "loglikelihood": (self._run_loglikelihood, lambda x: (x["sum_logits"], x['is_greedy'])),
-            "loglikelihood_rolling": (self._run_loglikelihood_rolling, lambda x: [x["sum_logits"]]),
-            "greedy_until": (self._run_greedy_until, lambda x: x["text"])
+        request_type_to_fn = {
+            "loglikelihood": (
+                self._run_loglikelihood,
+                lambda x: (x["sum_logits"], x["is_greedy"]),
+            ),
+            "loglikelihood_rolling": (
+                self._run_loglikelihood_rolling,
+                lambda x: [x["sum_logits"]],
+            ),
+            "greedy_until": (self._run_greedy_until, lambda x: x["text"]),
         }
         extra_kw_args = {}
         if hasattr(task, "model_args"):
@@ -289,14 +353,16 @@ class LanguageModel(Model):
                 tokenizer,
                 model_max_length=model_max_length,
                 **extra_kw_args,
-                **kwargs
+                **kwargs,
             )
         for instance_index, instance in enumerate(instances):
             doc = task.convert_instance(instance, InstanceFormat.ELEUTHER_DOC)
             results_for_instance: List = []
             model_outputs_for_instance = []
             model_inputs: Dict[str, Any] = {}
-            for request_type, request_indices in instance_index_to_request_indices[instance_index].items():
+            for request_type, request_indices in instance_index_to_request_indices[
+                instance_index
+            ].items():
                 for i in request_indices:
                     result = results[request_type][i]
                     # Look up the appropriate key
@@ -306,7 +372,9 @@ class LanguageModel(Model):
                     if instance_index < num_recorded_inputs:
                         if request_type not in model_inputs:
                             model_inputs[request_type] = []
-                        model_inputs[request_type].append(requests[request_type][i].args)
+                        model_inputs[request_type].append(
+                            requests[request_type][i].args
+                        )
 
             metrics = task.inner_task.process_results(doc, results_for_instance)
             res = {"model_output": model_outputs_for_instance, "metrics": metrics}
@@ -315,7 +383,6 @@ class LanguageModel(Model):
 
             yield res
 
-
     def _run_loglikelihood(
         self,
         tuples: Sequence[Tuple[str, str]],
@@ -323,7 +390,7 @@ class LanguageModel(Model):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         max_batch_tokens: Optional[int] = None,
-        model_max_length: Optional[int] = None
+        model_max_length: Optional[int] = None,
     ) -> Sequence[Dict]:
         raise NotImplementedError
 
@@ -334,7 +401,7 @@ class LanguageModel(Model):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         max_batch_tokens: Optional[int] = None,
-        model_max_length: Optional[int] = None
+        model_max_length: Optional[int] = None,
     ) -> Sequence[Dict]:
         raise NotImplementedError
 
@@ -357,19 +424,17 @@ class DecoderOnlyLanguageModel(LanguageModel):
         *,
         make_copy: bool = False,
         model_class: Any = AutoModelForCausalLM,
-        **kwargs
+        **kwargs,
     ) -> GPT2LMHeadModel:
         return cached_transformers.get(
-            model_class,
-            pretrained_model_name_or_path,
-            make_copy=make_copy,
-            **kwargs)
+            model_class, pretrained_model_name_or_path, make_copy=make_copy, **kwargs
+        )
 
     @staticmethod
     def _prefix_with_space(s: str, needed=True) -> str:
-        if not needed and s.startswith(' '):
+        if not needed and s.startswith(" "):
             return s[1:]
-        elif not s.startswith(' ') and needed:
+        elif not s.startswith(" ") and needed:
             return f" {s}"
         else:
             return s
@@ -381,22 +446,23 @@ class DecoderOnlyLanguageModel(LanguageModel):
         tokenizer: _Tokenizer,
         batch_size: int = 32,
         max_batch_tokens: Optional[int] = None,
-        model_max_length: Optional[int] = None
+        model_max_length: Optional[int] = None,
     ) -> Sequence[Dict]:
-
         prefix_space_needed = True
         # Hack to detect tokenizer which treats words at start of sentences as having a prefix space,
         # e.g., Llama tokenizers
         if tokenizer.tokenize("A")[0] == tokenizer.tokenize(" A")[-1]:
             prefix_space_needed = False
         tokenized_contexts = tokenizer([t[0] for t in tuples], add_special_tokens=False)
-        tokenized_continuations = tokenizer([self._prefix_with_space(t[1], prefix_space_needed) for t in tuples],
-                                            add_special_tokens=False)
+        tokenized_continuations = tokenizer(
+            [self._prefix_with_space(t[1], prefix_space_needed) for t in tuples],
+            add_special_tokens=False,
+        )
 
         # We don't need token_type_ids, and it trips up some models apparently (like LLaMA)
-        if 'token_type_ids' in tokenized_contexts:
-            del tokenized_contexts['token_type_ids']
-            del tokenized_continuations['token_type_ids']
+        if "token_type_ids" in tokenized_contexts:
+            del tokenized_contexts["token_type_ids"]
+            del tokenized_continuations["token_type_ids"]
         # transpose the token ids so we can access them one instance at a time
         cc_pairs: List[Dict[str, Tuple[torch.Tensor, torch.Tensor]]] = []
         assert tokenized_contexts.keys() == tokenized_continuations.keys()
@@ -411,13 +477,18 @@ class DecoderOnlyLanguageModel(LanguageModel):
                     context = [tokenizer.eos_token_id]
                 cc_pairs[i][field_name] = (
                     torch.tensor(context, dtype=torch.long),
-                    torch.tensor(continuation, dtype=torch.long)
+                    torch.tensor(continuation, dtype=torch.long),
                 )
-        results = self._run_loglikelihood_tokens(cc_pairs, model, tokenizer, batch_size,
-                                                 max_batch_tokens=max_batch_tokens,
-                                                 model_max_length=model_max_length)
+        results = self._run_loglikelihood_tokens(
+            cc_pairs,
+            model,
+            tokenizer,
+            batch_size,
+            max_batch_tokens=max_batch_tokens,
+            model_max_length=model_max_length,
+        )
         for i, result in enumerate(results):
-            result['num_chars'] = len(tuples[i][1])
+            result["num_chars"] = len(tuples[i][1])
 
         return results
 
@@ -431,32 +502,43 @@ class DecoderOnlyLanguageModel(LanguageModel):
         model_max_length: Optional[int] = None,
         verbose=False,
     ) -> Sequence[Dict]:
-
         truncation_length = tokenizer.model_max_length
         if model_max_length:
             truncation_length = min(truncation_length, model_max_length)
 
         # find out the order to process sequences in
-        lengths = torch.tensor([
-            len(cc_pair["input_ids"][0]) + len(cc_pair["input_ids"][1])
-            for cc_pair in cc_pairs
-        ], dtype=torch.int)
+        lengths = torch.tensor(
+            [
+                len(cc_pair["input_ids"][0]) + len(cc_pair["input_ids"][1])
+                for cc_pair in cc_pairs
+            ],
+            dtype=torch.int,
+        )
         ordered_indices = torch.argsort(lengths, descending=True)
 
         # actually do the processing
         results: List = [None] * len(ordered_indices)
         last_index = 0
         with torch.inference_mode():
-            with Tqdm.tqdm(ordered_indices, desc="Running log-likelihood queries") as ordered_indices_tqdm:
+            with Tqdm.tqdm(
+                ordered_indices, desc="Running log-likelihood queries"
+            ) as ordered_indices_tqdm:
                 while last_index < len(ordered_indices):
                     next_batch_size = batch_size
                     if max_batch_tokens:
-                        current_length = min(lengths[ordered_indices[last_index]].item(), truncation_length)
-                        next_batch_size = min(next_batch_size, max_batch_tokens // current_length)
+                        current_length = min(
+                            lengths[ordered_indices[last_index]].item(),
+                            truncation_length,
+                        )
+                        next_batch_size = min(
+                            next_batch_size, max_batch_tokens // current_length
+                        )
                         if next_batch_size < 1:
                             next_batch_size = 1
                     first_index = last_index
-                    last_index = min(first_index + next_batch_size, len(ordered_indices))
+                    last_index = min(
+                        first_index + next_batch_size, len(ordered_indices)
+                    )
                     ordered_indices_tqdm.update(last_index - first_index)
                     unpadded_batch = collections.defaultdict(list)
                     input_lengths = []
@@ -464,11 +546,13 @@ class DecoderOnlyLanguageModel(LanguageModel):
                     batch_continuations = []
                     batch_of_indices = ordered_indices[first_index:last_index]
                     for index in batch_of_indices:
-                        for field_name, (context_ids, continuation_ids) in cc_pairs[index].items():
+                        for field_name, (context_ids, continuation_ids) in cc_pairs[
+                            index
+                        ].items():
                             ids = torch.cat([context_ids, continuation_ids])
                             # Use truncation_length+1 since the last token is not in the input
-                            if len(ids) > (truncation_length+1):
-                                ids = ids[-(truncation_length+1):]
+                            if len(ids) > (truncation_length + 1):
+                                ids = ids[-(truncation_length + 1) :]
                             ids = ids[:-1]
                             unpadded_batch[field_name].append(ids)
 
@@ -477,23 +561,54 @@ class DecoderOnlyLanguageModel(LanguageModel):
                         batch_continuations.append(cc_pairs[index]["input_ids"][1])
 
                     padded_batch = {
-                        field_name: pad_sequence(tensors, batch_first=True).to(model.device)
+                        field_name: pad_sequence(tensors, batch_first=True).to(
+                            model.device
+                        )
                         for field_name, tensors in unpadded_batch.items()
                     }
 
                     batch_logits = log_softmax(model(**padded_batch)[0], dim=-1)
-                    z = zip(batch_of_indices, batch_logits, input_lengths, batch_contexts, batch_continuations)
-                    for i, instance_logits, input_length, instance_context, instance_continuation in z:
-                        instance_logits = instance_logits[input_length-len(instance_continuation):input_length]
-                        instance_logits = torch.gather(instance_logits, 1, instance_continuation.unsqueeze(-1).to(model.device))
+                    z = zip(
+                        batch_of_indices,
+                        batch_logits,
+                        input_lengths,
+                        batch_contexts,
+                        batch_continuations,
+                    )
+                    for (
+                        i,
+                        instance_logits,
+                        input_length,
+                        instance_context,
+                        instance_continuation,
+                    ) in z:
+                        instance_logits = instance_logits[
+                            input_length - len(instance_continuation) : input_length
+                        ]
+                        instance_logits = torch.gather(
+                            instance_logits,
+                            1,
+                            instance_continuation.unsqueeze(-1).to(model.device),
+                        )
                         greedy_tokens = instance_logits.argmax(dim=-1)
-                        is_greedy = bool((greedy_tokens == instance_continuation.unsqueeze(0).to(model.device)).all())
-                        results[i] = {"sum_logits": float(instance_logits.sum()), "num_tokens": len(instance_continuation),
-                                     "num_tokens_all": input_length + 1, "is_greedy": is_greedy}
+                        is_greedy = bool(
+                            (
+                                greedy_tokens
+                                == instance_continuation.unsqueeze(0).to(model.device)
+                            ).all()
+                        )
+                        results[i] = {
+                            "sum_logits": float(instance_logits.sum()),
+                            "num_tokens": len(instance_continuation),
+                            "num_tokens_all": input_length + 1,
+                            "is_greedy": is_greedy,
+                        }
                         if verbose:
-                            instance_tokens = [tokenizer.decode(x) for x in instance_continuation]
-                            results[i]['tokens'] = instance_tokens
-                            results[i]['logits'] = instance_logits.squeeze(-1).tolist()
+                            instance_tokens = [
+                                tokenizer.decode(x) for x in instance_continuation
+                            ]
+                            results[i]["tokens"] = instance_tokens
+                            results[i]["logits"] = instance_logits.squeeze(-1).tolist()
         del lengths
         assert None not in results
         return results
@@ -504,14 +619,11 @@ class DecoderOnlyLanguageModel(LanguageModel):
         model: GPT2LMHeadModel,
         tokenizer: GPT2Tokenizer,
         max_gen_toks: int = 100,
-        **kwargs
+        **kwargs,
     ) -> Sequence:
-
         tokenized_contexts = tokenizer([r[0] for r in requests])["input_ids"]
         # the stop generation phrases
-        untils_per_instance = [
-            r[1] for r in requests
-        ]
+        untils_per_instance = [r[1] for r in requests]
         if hasattr(model, "config") and hasattr(model.config, "n_positions"):
             model_max_length = model.config.n_positions
         else:
@@ -537,9 +649,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
 
             # truncate from left if no room for generation
             context_tensor = torch.tensor(
-                [
-                    tokenized_context[max_gen_toks - model_max_length :]
-                ]
+                [tokenized_context[max_gen_toks - model_max_length :]]
             ).to(model.device)
 
             full_text_tensor = model.generate(
@@ -547,7 +657,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
                 max_length=context_tensor.shape[1] + max_gen_toks,
                 eos_token_id=primary_until,
                 do_sample=False,
-                pad_token_id=primary_until, # temporary hack to suppress irrelevant warning until batch processing is added
+                pad_token_id=primary_until,  # temporary hack to suppress irrelevant warning until batch processing is added
             )
             continuation_tensor = full_text_tensor[0, context_tensor.shape[1] :]
             continuation = tokenizer.decode(continuation_tensor.tolist())
@@ -555,8 +665,13 @@ class DecoderOnlyLanguageModel(LanguageModel):
             # truncate by all the additional until phrases
             for term in untils:
                 continuation = continuation.split(term)[0]
-            results.append({"text": continuation, "raw_text": raw_continuation,
-                            "num_input_tokens": context_tensor.shape[1],
-                            "num_generated_tokens": len(continuation_tensor)})
+            results.append(
+                {
+                    "text": continuation,
+                    "raw_text": raw_continuation,
+                    "num_input_tokens": context_tensor.shape[1],
+                    "num_generated_tokens": len(continuation_tensor),
+                }
+            )
 
         return results

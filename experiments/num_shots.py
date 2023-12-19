@@ -3,7 +3,7 @@ import argparse
 from tango import Workspace
 from tango.common.logging import initialize_logging
 
-from catwalk.steps import PredictStep, CalculateMetricsStep
+from catwalk.steps import CalculateMetricsStep, PredictStep
 from catwalk.tasks import TASK_SETS
 
 SHOTS = [0, 1, 2, 4, 8, 16, 32]
@@ -13,7 +13,7 @@ DEFAULT_TASKS = {
     "arc_easy",
     "boolq",
     "copa",
-    #"headqa_en",       # Headqa is broken as of 2022-05-05
+    # "headqa_en",       # Headqa is broken as of 2022-05-05
     "hellaswag",
     "lambada",
     "logiqa",
@@ -43,19 +43,21 @@ def main():
     initialize_logging()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="eai::gpt2")
-    parser.add_argument('--task', type=str, nargs="+", default=DEFAULT_TASKS)
-    parser.add_argument('--split', type=str)
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--metric', type=str, nargs="+", default=['acc', 'f1'])
-    parser.add_argument('--limit', type=int)
+    parser.add_argument("--model", type=str, default="eai::gpt2")
+    parser.add_argument("--task", type=str, nargs="+", default=DEFAULT_TASKS)
+    parser.add_argument("--split", type=str)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--metric", type=str, nargs="+", default=["acc", "f1"])
+    parser.add_argument("--limit", type=int)
     parser.add_argument(
-        '-d', '-w',
+        "-d",
+        "-w",
         type=str,
         default=None,
         metavar="workspace",
         dest="workspace",
-        help="the Tango workspace with the cache")
+        help="the Tango workspace with the cache",
+    )
     args = parser.parse_args()
 
     if args.workspace is None:
@@ -80,12 +82,11 @@ def main():
                 task=task,
                 batch_size=args.batch_size,
                 limit=limit,
-                num_shots=num_shots
+                num_shots=num_shots,
             )
             metrics = CalculateMetricsStep(
-                model=args.model,
-                task=task,
-                predictions=predictions)
+                model=args.model, task=task, predictions=predictions
+            )
 
             result = metrics.result(workspace)
             for metric_name in args.metric:

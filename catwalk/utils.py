@@ -1,7 +1,9 @@
-from typing import Any
 import dataclasses
+from typing import Any
+
 import numpy
 import torch
+
 
 def sanitize(x: Any) -> Any:
     """
@@ -42,25 +44,26 @@ def sanitize(x: Any) -> Any:
         raise ValueError(
             f"Cannot sanitize {x} of type {type(x)}. "
             "If this is your own custom class, add a `to_json(self)` method "
-            "that returns a JSON-like object.")
+            "that returns a JSON-like object."
+        )
 
 
 def guess_instance_id(instance, max_val_length=30, idx=None):
     ids = {}
-    for key in ['id', 'qid', 'q_id', 'line', 'identifier']:
+    for key in ["id", "qid", "q_id", "line", "identifier"]:
         if key in instance:
             ids[key] = instance[key]
     for key, value in instance.items():
-        if key.endswith('id') or '_id' in key:
+        if key.endswith("id") or "_id" in key:
             ids[key] = value
     if not ids:
-        ids['instance_idx'] = idx
+        ids["instance_idx"] = idx
     return ids
 
 
-#Filter dict on list of keys
+# Filter dict on list of keys
 def filter_dict_keys(dictionary, key_list, remove_none=False):
-    res = {k:v for k,v in dictionary.items() if k in key_list}
+    res = {k: v for k, v in dictionary.items() if k in key_list}
     if remove_none:
         res = {k: v for k, v in res.items() if v is not None}
     return res

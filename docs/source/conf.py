@@ -117,11 +117,11 @@ html_theme_options = {
 # The following is a workaround for a bug where Sphinx 5.3.0 tries to find a reference that isn't used anywhere.
 #
 def on_missing_reference(app, env, node, contnode):
-    if node['reftarget'] == 'metric kwargs':
+    if node["reftarget"] == "metric kwargs":
         return contnode
     else:
         return None
 
 
 def setup(app):
-    app.connect('missing-reference', on_missing_reference)
+    app.connect("missing-reference", on_missing_reference)

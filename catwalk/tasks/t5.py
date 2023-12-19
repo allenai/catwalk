@@ -1,4 +1,4 @@
-from typing import Set, Optional, Dict, Tuple, Any, List
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from catwalk.task import InstanceConversion
 

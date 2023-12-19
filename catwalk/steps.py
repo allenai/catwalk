@@ -1,37 +1,30 @@
 import math
-from typing import (
-    Union,
-    Dict,
-    Any,
-    Optional,
-    Sequence,
-    Iterable,
-    List,
-)
 from collections import defaultdict
 from random import Random
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 
 import tango
+import torch
 import transformers.optimization
-from tango import Step, JsonFormat
-from tango.common import Lazy, DatasetDict
+from tango import JsonFormat, Step
+from tango.common import DatasetDict, Lazy
 from tango.common.exceptions import ConfigurationError
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
 from tango.integrations.torch import (
+    DataLoader,
+    StopEarlyCallback,
     TorchFormat,
     TorchTrainingEngine,
-    DataLoader, TrainingEngine, TrainConfig, StopEarlyCallback,
+    TrainConfig,
+    TrainingEngine,
 )
 from tango.integrations.torch.model import Model as TangoModel
-import torch
 
-from catwalk.task import Task, WithAnswerOptionsMixin
-from catwalk.tasks import TASKS
-from catwalk.tasks import short_name_for_task_object
 from catwalk.model import Model
-from catwalk.models import MODELS
-from catwalk.models import short_name_for_model_object
+from catwalk.models import MODELS, short_name_for_model_object
+from catwalk.task import Task, WithAnswerOptionsMixin
+from catwalk.tasks import TASKS, short_name_for_task_object
 
 
 @Step.register("catwalk::predict")
@@ -56,7 +49,7 @@ class PredictStep(Step):
         split: Optional[str] = None,
         limit: Optional[int] = None,
         random_subsample_seed: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> Sequence[Any]:
         if isinstance(model, str):
             model = MODELS[model]
@@ -68,8 +61,12 @@ class PredictStep(Step):
         results = SqliteSparseSequence(self.work_dir_for_run / "result.sqlite")
         instances = task.get_split(split)
         if limit is not None and len(instances) > limit:
-            instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
-        instances = instances[len(results):]
+            instances = (
+                instances[:limit]
+                if random_subsample_seed is None
+                else Random(random_subsample_seed).sample(instances, limit)
+            )
+        instances = instances[len(results) :]
         for result in model.predict(task, instances, **kwargs):
             results.append(result)
         return results
@@ -91,7 +88,7 @@ class CalculateMetricsStep(Step):
         self,
         model: Union[str, Model],
         task: Union[str, Task],
-        predictions: Sequence[Any]
+        predictions: Sequence[Any],
     ) -> Dict[str, float]:
         if isinstance(model, str):
             model = MODELS[model]
@@ -107,14 +104,14 @@ class FinetuneStep(Step):
     FORMAT = TorchFormat
 
     SKIP_ID_ARGUMENTS = {"wandb_entity", "wandb_project"}
-    SKIP_DEFAULT_ARGUMENTS = {
-        "early_stopping_patience": None
-    }
+    SKIP_DEFAULT_ARGUMENTS = {"early_stopping_patience": None}
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
             kwargs["model"] = MODELS[kwargs["model"]]
-        kwargs["tasks"] = [TASKS[task] if isinstance(task, str) else task for task in kwargs["tasks"]]
+        kwargs["tasks"] = [
+            TASKS[task] if isinstance(task, str) else task for task in kwargs["tasks"]
+        ]
 
         return kwargs
 
@@ -129,8 +126,7 @@ class FinetuneStep(Step):
         val_metric_name: str = "loss",
         minimize_val_metric: bool = True,
         training_engine: Lazy[TrainingEngine] = Lazy(
-            TorchTrainingEngine,
-            optimizer=Lazy(torch.optim.AdamW, lr=1e-5)
+            TorchTrainingEngine, optimizer=Lazy(torch.optim.AdamW, lr=1e-5)
         ),
         model_wrapper: Optional[Lazy[TangoModel]] = None,
         random_seed: int = 42,
@@ -142,7 +138,7 @@ class FinetuneStep(Step):
         validation_split: Optional[str] = "validation",
         wandb_entity: Optional[str] = None,
         wandb_project: Optional[str] = None,
-        early_stopping_patience: Optional[int] = None
+        early_stopping_patience: Optional[int] = None,
     ) -> Model:  # type: ignore
         if isinstance(model, str):
             model = MODELS[model]
@@ -153,11 +149,15 @@ class FinetuneStep(Step):
         devices: List[int]
         if torch.cuda.is_available() and torch.cuda.device_count() >= device_count:
             devices = list(range(device_count))
-            self.logger.info("Training on %d GPU%s", device_count, "s" if device_count > 1 else "")
+            self.logger.info(
+                "Training on %d GPU%s", device_count, "s" if device_count > 1 else ""
+            )
         else:
             devices = [-1] * device_count
             self.logger.info(
-                "Training on CPU with %d worker%s", device_count, "s" if device_count > 1 else ""
+                "Training on CPU with %d worker%s",
+                device_count,
+                "s" if device_count > 1 else "",
             )
 
         if devices and len(devices) > 1:
@@ -191,7 +191,7 @@ class FinetuneStep(Step):
             is_distributed=is_distributed,
             world_size=num_workers,
             distributed_port=distributed_port,
-            devices=devices
+            devices=devices,
         )
 
         # construct dataset from the tasks
@@ -215,13 +215,14 @@ class FinetuneStep(Step):
             if isinstance(task, WithAnswerOptionsMixin):
                 trainable_model_kwargs["num_classification_labels"] = max(
                     trainable_model_kwargs.get("num_classification_labels", 0),
-                    len(task.answer_options))
+                    len(task.answer_options),
+                )
         trainable_model = model.trainable_copy(**trainable_model_kwargs)
         data_loader = Lazy(
             DataLoader,
             collate_fn=trainable_model.collate_for_training,
             batch_size=batch_size,
-            shuffle=True
+            shuffle=True,
         )
 
         if model_wrapper is None:
@@ -232,9 +233,15 @@ class FinetuneStep(Step):
         callbacks = []
         if wandb_entity is not None or wandb_project is not None:
             if wandb_entity is None or wandb_project is None:
-                raise ConfigurationError("You have to set wandb_entity and wandp_project together.")
+                raise ConfigurationError(
+                    "You have to set wandb_entity and wandp_project together."
+                )
             from tango.integrations.wandb.torch_train_callback import WandbTrainCallback
-            tags = [short_name_for_task_object(task) for task in tasks_in_a_special_variable_because_mypy_is_insane]
+
+            tags = [
+                short_name_for_task_object(task)
+                for task in tasks_in_a_special_variable_because_mypy_is_insane
+            ]
             tags.append(short_name_for_model_object(model))
             tags.append(f"seed={random_seed}")
             callbacks.append(
@@ -242,7 +249,7 @@ class FinetuneStep(Step):
                     WandbTrainCallback,
                     project=wandb_project,
                     entity=wandb_entity,
-                    tags=[t for t in tags if t is not None]
+                    tags=[t for t in tags if t is not None],
                 )
             )
         if early_stopping_patience is not None:
@@ -251,23 +258,27 @@ class FinetuneStep(Step):
         # Hack a default LR scheduler into the training engine
         if train_steps is None:
             if train_epochs is None:
-                raise ConfigurationError("You have to set either train_steps or train_epochs.")
+                raise ConfigurationError(
+                    "You have to set either train_steps or train_epochs."
+                )
             train_steps = train_epochs * math.ceil(
                 len(splits["train"]) / (device_count * grad_accum * batch_size)
             )
         if (training_engine._constructor == TorchTrainingEngine) or (
-            training_engine._constructor == TrainingEngine and training_engine._params.get("type") == "torch"
+            training_engine._constructor == TrainingEngine
+            and training_engine._params.get("type") == "torch"
         ):
             if "lr_scheduler" not in training_engine._constructor_extras:
                 training_engine._constructor_extras["lr_scheduler"] = Lazy(
                     transformers.optimization.get_linear_schedule_with_warmup,
                     num_warmup_steps=200,
-                    num_training_steps=train_steps
+                    num_training_steps=train_steps,
                 )
 
         if is_distributed:
             import torch.multiprocessing as mp
             from tango.common.util import get_extra_imported_modules
+
             mp.spawn(
                 tango.integrations.torch.train._train,
                 args=(
@@ -292,7 +303,7 @@ class FinetuneStep(Step):
                 training_engine,
                 dataset_dict,
                 data_loader,
-                callbacks=callbacks
+                callbacks=callbacks,
             )
 
         # Load best checkpoint before returning model.
@@ -312,17 +323,25 @@ class TabulateMetricsStep(Step):
     VERSION = "001"
     FORMAT = TextFormat
 
-    def run(self, metrics: Dict[str, Dict[str, float]], format: str = "text") -> Iterable[str]:
+    def run(
+        self, metrics: Dict[str, Dict[str, float]], format: str = "text"
+    ) -> Iterable[str]:
         flattend_metrics: Dict[str, Dict[str, float]] = defaultdict(dict)
         for task_name, task_metrics in metrics.items():
             for metric_name, metric_value in task_metrics.items():
                 # if metric_value is a dict, then it's a nested metric
                 if isinstance(metric_value, dict):
                     for nested_metric_name, nested_metric_value in metric_value.items():
-                        flattend_metrics[task_name][f"{metric_name}.{nested_metric_name}"] = nested_metric_value.item() if isinstance(nested_metric_value, torch.Tensor) else nested_metric_value
+                        flattend_metrics[task_name][
+                            f"{metric_name}.{nested_metric_name}"
+                        ] = (
+                            nested_metric_value.item()
+                            if isinstance(nested_metric_value, torch.Tensor)
+                            else nested_metric_value
+                        )
                 else:
                     flattend_metrics[task_name][metric_name] = metric_value
-            
+
         if format == "text":
             for task_name, task_metrics in flattend_metrics.items():
                 for metric_name, metric_value in task_metrics.items():
@@ -331,4 +350,3 @@ class TabulateMetricsStep(Step):
             raise NotImplementedError()
         else:
             raise AttributeError("At the moment, only the 'text' format is supported.")
-        

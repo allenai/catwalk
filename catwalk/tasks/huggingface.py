@@ -1,16 +1,18 @@
 import functools
-from dataclasses import dataclass
 import random
-from typing import Optional, Sequence, Dict, Any, List, Union, Mapping, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import datasets
 from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceFormat, InstanceConversion
+from catwalk.task import InstanceConversion, InstanceFormat, Task
 from catwalk.tasks.promptsource import WithPromptsourceMixin
 
 
-def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str, missing_ok: bool = False) -> Any:
+def get_from_dict(
+    d: Union[Mapping[str, Any], Sequence[Any]], field: str, missing_ok: bool = False
+) -> Any:
     components = field.split(".", 1)
     if len(components) == 0:
         raise ValueError("get_from_dict() called with empty string.")
@@ -60,7 +62,7 @@ class HFDatasetsTask(Task, WithPromptsourceMixin):
         dataset_path: str,
         dataset_name: Optional[str] = None,
         *,
-        version_override: Optional[str] = None
+        version_override: Optional[str] = None,
     ):
         Task.__init__(self, version_override=version_override)
         self.dataset_path = dataset_path
@@ -71,7 +73,9 @@ class HFDatasetsTask(Task, WithPromptsourceMixin):
 
     @functools.lru_cache
     def has_split(self, split: str) -> bool:
-        return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
+        return split in datasets.get_dataset_split_names(
+            self.dataset_path, self.dataset_name
+        )
 
     @functools.lru_cache
     def dataset(self, split: str):
@@ -95,18 +99,19 @@ class HFQAInstance:
 
 def hfqa_conversion(
     *,
-    context_field: str="context",
-    question_field: str="question",
-    answers_field: str="answers",
-    id_field: str="id",
+    context_field: str = "context",
+    question_field: str = "question",
+    answers_field: str = "answers",
+    id_field: str = "id",
 ) -> InstanceConversion:
     def convert(instance: Dict[str, Any]) -> HFQAInstance:
         return HFQAInstance(
             id=get_from_dict(instance, id_field),
             context=get_from_dict(instance, context_field),
             question=get_from_dict(instance, question_field).strip(),
-            answers=get_from_dict(instance, answers_field))
-        
+            answers=get_from_dict(instance, answers_field),
+        )
+
     return convert
 
 
@@ -118,7 +123,9 @@ class HFMCInstance:
     correct_answer_index: Optional[int]
 
 
-def normalize_answers(answer: Any, answer_mappings: Optional[Dict[str, int]] = None) -> int:
+def normalize_answers(
+    answer: Any, answer_mappings: Optional[Dict[str, int]] = None
+) -> int:
     if answer_mappings is None:
         if isinstance(answer, int):
             return answer
@@ -126,12 +133,14 @@ def normalize_answers(answer: Any, answer_mappings: Optional[Dict[str, int]] = N
             if len(answer) == 1:
                 answer = answer.lower()
                 answer_index = ord(answer[0])
-                if ord('a') <= answer_index <= ord('z'):
-                    return answer_index - ord('a')
+                if ord("a") <= answer_index <= ord("z"):
+                    return answer_index - ord("a")
                 # We don't automatically convert str to int because sometimes they are 1-based and sometimes
                 # they are 0-based.
             raise ValueError(f"Don't know how to make an index from answer '{answer}'.")
-        raise ValueError(f"Don't know how to make an index from answer of type {answer.__class__}.")
+        raise ValueError(
+            f"Don't know how to make an index from answer of type {answer.__class__}."
+        )
     else:
         return answer_mappings[answer]
 
@@ -145,12 +154,15 @@ def hfmc_convert(
     correct_answer_index_field: Optional[str] = None,
     correct_answer_field: Optional[str] = None,
     id_field: Optional[str] = None,
-    answer_mappings: Optional[Dict[str, int]] = None
+    answer_mappings: Optional[Dict[str, int]] = None,
 ) -> HFMCInstance:
     if isinstance(answer_choices_fields, str):
         answer_choices = get_from_dict(instance, answer_choices_fields)
     else:
-        answer_choices = [get_from_dict(instance, field, missing_ok=True) for field in answer_choices_fields]
+        answer_choices = [
+            get_from_dict(instance, field, missing_ok=True)
+            for field in answer_choices_fields
+        ]
         answer_choices = [a for a in answer_choices if a is not None]
         assert len(answer_choices) > 0
     answer_choices = [a.strip() for a in answer_choices]
@@ -162,7 +174,7 @@ def hfmc_convert(
     correct_answer_index: Optional[int]
     if correct_answer_index_field is not None:
         correct_answer = get_from_dict(instance, correct_answer_index_field)
-        if correct_answer != '':
+        if correct_answer != "":
             correct_answer_index = normalize_answers(correct_answer, answer_mappings)
         else:
             correct_answer_index = None
@@ -170,13 +182,17 @@ def hfmc_convert(
         correct_answer_index = answer_choices_fields.index(correct_answer_field)
         # When the correct answer is always given in a field, we have to shuffle the answer options. Otherwise the
         # answer is always the same.
-        rng = random.Random(sum(ord(c) for c in question))  # same question always gets the same order
+        rng = random.Random(
+            sum(ord(c) for c in question)
+        )  # same question always gets the same order
         order = list(range(len(answer_choices)))
         rng.shuffle(order)
         answer_choices = [answer_choices[i] for i in order]
         correct_answer_index = order.index(correct_answer_index)
     else:
-        raise RuntimeError("When constructing an hfmc conversion, you have to specify either correct_answer_index_field or correct_answer_field.")
+        raise RuntimeError(
+            "When constructing an hfmc conversion, you have to specify either correct_answer_index_field or correct_answer_field."
+        )
     if correct_answer_index == -1:
         correct_answer_index = None
 
@@ -184,7 +200,8 @@ def hfmc_convert(
         id=str(get_from_dict(instance, id_field)) if id_field else None,
         question=question,
         answer_choices=answer_choices,
-        correct_answer_index=correct_answer_index)
+        correct_answer_index=correct_answer_index,
+    )
 
 
 def hfmc_conversion(
@@ -213,8 +230,11 @@ def hfclassification_convert(
     label = int(get_from_dict(instance, label_field))
     return HFClassificationInstance(
         id=str(get_from_dict(instance, id_field)) if id_field else None,
-        text=premise if hypothesis_field is None else (premise, get_from_dict(instance, hypothesis_field)),
-        label=label if label >= 0 else None)
+        text=premise
+        if hypothesis_field is None
+        else (premise, get_from_dict(instance, hypothesis_field)),
+        label=label if label >= 0 else None,
+    )
 
 
 def hfclassification_conversion(

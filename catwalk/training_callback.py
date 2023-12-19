@@ -1,8 +1,8 @@
-from typing import Optional, cast, List
+from typing import List, Optional, cast
 
 from tango.integrations.torch import TrainCallback
 
-from catwalk import Task, Model
+from catwalk import Model, Task
 from catwalk.tasks import short_name_for_task_object
 
 
@@ -13,7 +13,7 @@ class CatwalkEvaluationCallback(TrainCallback):
         tasks: List[Task],
         eval_limit: Optional[int],
         eval_split: str = "validation",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.tasks = tasks
@@ -30,13 +30,15 @@ class CatwalkEvaluationCallback(TrainCallback):
             for task in self.tasks:
                 instances = task.get_split(self.eval_split)
                 if self.eval_limit is not None:
-                    instances = instances[:self.eval_limit]
+                    instances = instances[: self.eval_limit]
                 predictions = catwalk_model.predict(task, instances)
                 metrics = catwalk_model.calculate_metrics(task, list(predictions))
                 metrics_string = []
                 for metric_name, metric_value in metrics.items():
                     try:
-                        metric_value_string = ", ".join(f"{v:.3f}" for v in metric_value)
+                        metric_value_string = ", ".join(
+                            f"{v:.3f}" for v in metric_value
+                        )
                     except TypeError as e:
                         if "object is not iterable" in str(e):
                             metric_value_string = f"{metric_value:.3f}"

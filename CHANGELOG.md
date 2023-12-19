@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.0.0rc0](https://github.com/allenai/catwalk/releases/tag/v1.0.0rc0) - 2023-12-19
+
 ### Added
 
 - Support for OPT-175B (AI2 only)

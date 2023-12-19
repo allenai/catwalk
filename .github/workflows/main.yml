@@ -41,8 +41,8 @@ jobs:
 
           - name: Style
             run: |
-              isort --check .
-              black --check .
+              isort --check catwalk
+              black --check catwalk
 
         include:
           - task:

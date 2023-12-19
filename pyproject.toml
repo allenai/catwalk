@@ -4,6 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.isort]
 skip = ["catwalk/dependencies"]
+profile = "black"
+multi_line_output = 3
 
 [tool.black]
 exclude = "catwalk/dependencies/*"

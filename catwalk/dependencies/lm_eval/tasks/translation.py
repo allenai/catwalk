@@ -9,13 +9,14 @@ https://github.com/mjpost/sacrebleu/blob/master/sacrebleu/dataset.py
 
 Homepage: https://github.com/mjpost/sacrebleu/blob/master/sacrebleu/dataset.py
 """
-import pycountry
 from pprint import pprint
-from sacrebleu import sacrebleu
-from catwalk.dependencies.lm_eval import metrics
-from catwalk.dependencies.lm_eval.base import Task, rf
 from typing import List
 
+import iso639
+from sacrebleu import sacrebleu
+
+from catwalk.dependencies.lm_eval import metrics
+from catwalk.dependencies.lm_eval.base import Task, rf
 
 _CITATION = """
 @inproceedings{post-2018-call,
@@ -217,6 +218,4 @@ class GeneralTranslationTask(Task):
 
 
 def code_to_language(code):
-    # key is alpha_2 or alpha_3 depending on the code length
-    language_tuple = pycountry.languages.get(**{f"alpha_{len(code)}": code})
-    return language_tuple.name
+    return iso639.to_name(code)

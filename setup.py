@@ -74,7 +74,7 @@ setup(
         "catwalk": [
             "py.typed",
             "dependencies/promptsource/templates/*/*.yaml",
-            "dependencies/promptsource/templates/*/*/*.yaml"
+            "dependencies/promptsource/templates/*/*/*.yaml",
         ]
     },
     install_requires=parse_requirements_file("requirements.txt"),

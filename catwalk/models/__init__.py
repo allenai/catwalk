@@ -4,12 +4,16 @@ from catwalk.model import Model
 from catwalk.models.eleuther import EAIGPT, EAIT5
 from catwalk.models.gpt import GPTModel
 from catwalk.models.huggingface import HFAutoModel
-from catwalk.models.rank_classification import EncoderDecoderRCModel, DecoderOnlyRCModel
-from catwalk.models.t5 import T5Model, T5ModelFromPretrained
-from catwalk.models.metaicl import MetaICLModel
 from catwalk.models.ia3 import IA3MetaICLModel
-from catwalk.models.promptsource import PromptsourceEncoderDecoderRCModel, PromptsourceDecoderOnlyRCModel
+from catwalk.models.language_model import DecoderOnlyLanguageModel
+from catwalk.models.metaicl import MetaICLModel
+from catwalk.models.promptsource import (
+    PromptsourceDecoderOnlyRCModel,
+    PromptsourceEncoderDecoderRCModel,
+)
+from catwalk.models.rank_classification import DecoderOnlyRCModel, EncoderDecoderRCModel
 from catwalk.models.soft_prompt import with_soft_prompt
+from catwalk.models.t5 import T5Model, T5ModelFromPretrained
 
 _ENCODER_DECODER_MODELS = {
     "t5-small",
@@ -44,7 +48,7 @@ _ENCODER_DECODER_MODELS = {
     "bigscience/T0_single_prompt",
     "bigscience/T0_original_task_only",
     "bigscience/T0-3B",
-    "ThomasNLG/CT0-11B"
+    "ThomasNLG/CT0-11B",
 }
 
 _DECODER_ONLY_MODELS = {
@@ -89,7 +93,9 @@ MODELS: Dict[str, Model] = {
     "roberta-base": HFAutoModel("roberta-base"),
     "roberta-large": HFAutoModel("roberta-large"),
     "tiny-bert": HFAutoModel("prajjwal1/bert-tiny"),
-    "distilbert-base-cased-distilled-squad": HFAutoModel("distilbert-base-cased-distilled-squad"),
+    "distilbert-base-cased-distilled-squad": HFAutoModel(
+        "distilbert-base-cased-distilled-squad"
+    ),
     "deberta-v3-base": HFAutoModel("microsoft/deberta-v3-base"),
     "deberta-v3-small": HFAutoModel("microsoft/deberta-v3-small"),
     "deberta-v3-large": HFAutoModel("microsoft/deberta-v3-large"),
@@ -104,17 +110,25 @@ for hf_name in _ENCODER_DECODER_MODELS:
     MODELS[f"rc::{name}"] = EncoderDecoderRCModel(hf_name)
     MODELS[f"promptsource::{name}"] = PromptsourceEncoderDecoderRCModel(hf_name)
 
+
+def add_decoder_only_model(name, hf_name, **kwargs):
+    MODELS[name] = GPTModel(hf_name, **kwargs)
+    MODELS[f"eai::{name}"] = EAIGPT(hf_name, **kwargs)
+    MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name, **kwargs)
+    MODELS[f"lm::{name}"] = DecoderOnlyLanguageModel(hf_name, **kwargs)
+    MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name, **kwargs)
+    MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name, **kwargs)
+
+
 for hf_name in _DECODER_ONLY_MODELS:
     name = _shorten_hf_name(hf_name)
-    MODELS[name] = GPTModel(hf_name)
-    MODELS[f"eai::{name}"] = EAIGPT(hf_name)
-    MODELS[f"rc::{name}"] = DecoderOnlyRCModel(hf_name)
-    MODELS[f"metaicl::{name}"] = MetaICLModel(hf_name)
-    MODELS[f"promptsource::{name}"] = PromptsourceDecoderOnlyRCModel(hf_name)
+    add_decoder_only_model(name, hf_name)
+
 
 MODELS["rc::opt-175b"] = DecoderOnlyRCModel(
     "/net/nfs.cirrascale/allennlp/opt/opt-175b-huggingface",
-    pretrained_tokenizer_name_or_path="facebook/opt-66b")
+    pretrained_tokenizer_name_or_path="facebook/opt-66b",
+)
 
 
 def short_name_for_model_object(model: Model) -> Optional[str]:

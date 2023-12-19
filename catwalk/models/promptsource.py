@@ -1,19 +1,23 @@
 import collections
 import functools
 import logging
-from typing import Sequence, Dict, Any, Iterator, Mapping, Tuple, List, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
 import bettermap
 import torch
 import torchmetrics
 from tango.common import Tqdm
 
-from catwalk.models.rank_classification import RankClassificationModel, _Model, _Tokenizer, EncoderDecoderRCModel, \
-    DecoderOnlyRCModel
-from catwalk.task import RankClassificationInstance, InstanceFormat, Task
-from catwalk.tasks.promptsource import WithPromptsourceMixin
 from catwalk.model import tensor_args, unsqueeze_args
-
+from catwalk.models.rank_classification import (
+    DecoderOnlyRCModel,
+    EncoderDecoderRCModel,
+    RankClassificationModel,
+    _Model,
+    _Tokenizer,
+)
+from catwalk.task import InstanceFormat, RankClassificationInstance, Task
+from catwalk.tasks.promptsource import WithPromptsourceMixin
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +35,9 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
         num_shots: int = 0,
         fewshot_seed: Optional[int] = None,
     ) -> Iterator[Dict[str, Any]]:
-        instance_index_to_tuple_indices: Mapping[Tuple[int, str], List[int]] = collections.defaultdict(list)
+        instance_index_to_tuple_indices: Mapping[
+            Tuple[int, str], List[int]
+        ] = collections.defaultdict(list)
         tuples: List[Tuple[str, str]] = []
 
         # Applying promptsource is slow, so we do it in parallel.
@@ -43,16 +49,20 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
                 fewshot_instances=task.get_fewshot_instances(
                     num_shots,
                     random_seed=fewshot_seed if fewshot_seed is not None else i,
-                    exceptions=instance))
+                    exceptions=instance,
+                ),
+            )
 
         map_fn = functools.partial(bettermap.map_in_chunks, chunk_size=64)
-        #map_fn = map        # for debugging
+        # map_fn = map        # for debugging
         with Tqdm.tqdm(
             map_fn(convert_instance, range(len(instances))),
             total=len(instances),
-            desc="Converting instances"
+            desc="Converting instances",
         ) as converted_instances_tqdm:
-            rc_instances: List[Dict[str, RankClassificationInstance]] = list(converted_instances_tqdm)
+            rc_instances: List[Dict[str, RankClassificationInstance]] = list(
+                converted_instances_tqdm
+            )
 
         # Remove prompts that have no gold answer, since we can't evaluate them.
         for instance_dict in rc_instances:
@@ -66,7 +76,9 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
         for instance_index, instance_dict in enumerate(rc_instances):
             for prompt_name, rc_instance in instance_dict.items():
                 for instance_request in rc_instance.choices:
-                    instance_index_to_tuple_indices[(instance_index, prompt_name)].append(len(tuples))
+                    instance_index_to_tuple_indices[
+                        (instance_index, prompt_name)
+                    ].append(len(tuples))
                     tuples.append(instance_request)
 
         # run the requests
@@ -76,7 +88,9 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
         for instance_index, instance_dict in enumerate(rc_instances):
             result = {}
             for prompt_name, rc_instance in instance_dict.items():
-                tuple_indices = instance_index_to_tuple_indices[(instance_index, prompt_name)]
+                tuple_indices = instance_index_to_tuple_indices[
+                    (instance_index, prompt_name)
+                ]
                 results_for_instance_and_prompt = [results[i] for i in tuple_indices]
                 result_tensor = torch.tensor(results_for_instance_and_prompt)
                 metric_args = (result_tensor, rc_instance.correct_choice)
@@ -84,14 +98,17 @@ class PromptsourceEncoderDecoderRCModel(EncoderDecoderRCModel):
                 result[prompt_name + "_acc"] = metric_args
             yield result
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+    def calculate_metrics(
+        self, task: Task, predictions: Sequence[Dict[str, Any]]
+    ) -> Dict[str, torch.Tensor]:
         assert isinstance(task, WithPromptsourceMixin)
         templates = task.promptsource_templates
         assert templates is not None
         metrics = {}
         for template_name in templates.all_template_names:
-            metrics[template_name.strip().replace(" ", "_") + "_acc"] = \
-                torchmetrics.Accuracy(num_classes=None)
+            metrics[
+                template_name.strip().replace(" ", "_") + "_acc"
+            ] = torchmetrics.Accuracy(num_classes=None)
 
         metrics_seen = set()
         with Tqdm.tqdm(predictions, desc="Calculating metrics") as predictions_tqdm:

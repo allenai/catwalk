@@ -30,7 +30,7 @@ def test_gpt2_performance(task: str):
     predictions = PredictStep(model=model, task=task, limit=100)
     metrics = CalculateMetricsStep(model=model, task=task, predictions=predictions)
     results = metrics.result()
-    assert results['relative_improvement'] > 0
+    assert results["relative_improvement"] > 0
 
 
 def test_lambada_gpt():
@@ -39,7 +39,7 @@ def test_lambada_gpt():
     predictions = PredictStep(model=model, task=task, limit=10)
     metrics = CalculateMetricsStep(model=model, task=task, predictions=predictions)
     results = metrics.result()
-    assert results['acc'] >= 0.4
+    assert results["acc"] >= 0.4
 
 
 def test_perplexity_gpt():
@@ -48,6 +48,6 @@ def test_perplexity_gpt():
     predictions = PredictStep(model=model, task=task, limit=10)
     metrics = CalculateMetricsStep(model=model, task=task, predictions=predictions)
     results = metrics.result()
-    assert results['word_perplexity'] < 40
-    assert results['byte_perplexity'] < 2.5
-    assert results['bits_per_byte'] < 1.5
+    assert results["word_perplexity"] < 40
+    assert results["byte_perplexity"] < 2.5
+    assert results["bits_per_byte"] < 1.5

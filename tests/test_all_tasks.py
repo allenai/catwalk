@@ -59,7 +59,9 @@ def test_task(task_name: str):
                     kwargs["fewshot_instances"] = task.get_fewshot_instances(
                         2, exceptions=instance
                     )
-            except ValueError:  # This task doesn't support fewshot for the chosen split.
+            except (
+                ValueError
+            ):  # This task doesn't support fewshot for the chosen split.
                 kwargs = {}
             assert conversion(instance, **kwargs) is not None
 

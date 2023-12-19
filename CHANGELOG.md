@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for OPT-175B (AI2 only)
+- New detailed metrics for ranked classification in `RankedClassificationMetrics`.
+- New task for perplexity scoring over a set of jsonl files.
+- New model type "lm:" for general types of tasks handled by decoder-only language models.
+- `run_lm_eval.py` script.
 
 ### Fixed
 

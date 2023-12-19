@@ -39,6 +39,11 @@ jobs:
           - name: Type check
             run: mypy .
 
+          - name: Style
+            run: |
+              isort --check catwalk
+              black --check catwalk
+
         include:
           - task:
               name: Docs

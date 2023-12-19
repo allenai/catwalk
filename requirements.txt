@@ -1,25 +1,31 @@
-ai2-tango[torch,transformers,fairscale,beaker,wandb]>=1.1
-#ai2-tango[torch,transformers,fairscale,beaker,wandb] @ git+https://github.com/allenai/tango.git@main
+torch>=2.0
+ai2-tango[torch,transformers,fairscale,beaker,wandb,gs]>=1.3
+
+# Sometimes you want to insist on the latest tango.
+# Uncomment the following if you do.
+# ai2-tango[torch,transformers,fairscale,beaker,wandb,gs] @ git+https://github.com/allenai/tango.git@main
 
 # Sometimes you want to insist on the latest beaker-py.
 # Uncomment the following if you do.
-#beaker-py @ git+https://github.com/allenai/beaker-py.git@main
+# beaker-py @ git+https://github.com/allenai/beaker-py.git@main
 
 torchmetrics==0.11.1
 more_itertools
 spacy>=3.0.0
 wget
-datasets>=2.1.0
+datasets>=2.14.6
 accelerate
 bettermap
+tiktoken  # For Salesforce/xgen-* models
 
 # For the P3 datasets, which we get from huggingface datasets
 protobuf<=3.20
 
 # For lm-eval
+bert_score             # For summarization tasks
 sacrebleu>=1.5.0
 scikit-learn>=0.24.1   # Eleuther uses this for metrics. Can we replace it with torchmetrics?
-pycountry>=20.7.3
+iso639>=0.1.4
 rouge-score>=0.0.4  # Can we replace this with torchmetrics?
 # The Eleuther test harness depends on these even at runtime, but does not declare them.
 mypy_extensions

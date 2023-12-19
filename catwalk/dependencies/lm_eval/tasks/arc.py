@@ -74,6 +74,40 @@ class ARCEasy(MultipleChoiceTask):
         return doc["query"]
 
 
+class ARCEasyMC(ARCEasy):
+    # Include answer choices in prompt, answer is just the single letter A, B, ... E.g.,
+    # Question: Which is the best electrical conductor?
+    # Choices:
+    #  A. metal spoon
+    #  B. paper cup
+    # Answer: A
+    def _process_doc(self, doc):
+        # NOTE: Some `doc["answerKey"]`s are in numeric string format being one
+        # of {'1', '2', '3', '4', '5'}. We map them back to letters.
+        num_to_letter = {"1": "A", "2": "B", "3": "C", "4": "D", "5": "E"}
+        doc["answerKey"] = num_to_letter.get(doc["answerKey"], doc["answerKey"])
+        num_choices = len(doc["choices"]['text'])
+        choice_labels = ["A", "B", "C", "D", "E"][:num_choices]
+        # We put each answer choice on separate line with prefix space, to avoid ambiguity in tokenization
+        choices_text = [f"\n {label}. {text}" for label, text in zip(choice_labels, doc["choices"]["text"])]
+        choices_text = "".join(choices_text)
+        out_doc = {
+            "id": doc["id"],
+            "query": "Question: " + doc["question"] + "\nChoices:" + choices_text + "\nAnswer:",
+            "choices": choice_labels,
+            "gold": ["A", "B", "C", "D", "E"].index(doc["answerKey"]),
+        }
+        return out_doc
+
+    def unconditioned_prompt(self):
+        # Don't need unconditioned normalization here
+        return None
+
+
 class ARCChallenge(ARCEasy):
+    DATASET_PATH = "ai2_arc"
+    DATASET_NAME = "ARC-Challenge"
+
+class ARCChallengeMC(ARCEasyMC):
     DATASET_PATH = "ai2_arc"
     DATASET_NAME = "ARC-Challenge"

@@ -1,14 +1,13 @@
 import inspect
 from abc import ABC
 from copy import deepcopy
-from typing import Sequence, Dict, Any, Iterator, Tuple, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import torch
 from tango.common import Registrable, Tqdm
 from tango.common.det_hash import DetHashWithVersion
 
 from catwalk.task import Task
-
 
 Instance = Dict[str, Any]
 
@@ -41,35 +40,55 @@ def unsqueeze_args(args: Tuple[Any]) -> Tuple[Any, ...]:
     return tuple(fixed_args)
 
 
-_TorchmetricsResult = Union[torch.Tensor, Dict[str, '_TorchmetricsResult']]
-_CatwalkResult = Union[float, Dict[str, '_CatwalkResult']]
+_TorchmetricsResult = Union[torch.Tensor, Dict[str, "_TorchmetricsResult"]]
+_CatwalkResult = Union[float, Dict[str, "_CatwalkResult"]]
 
 
 def recursive_tolist(args: _TorchmetricsResult) -> _CatwalkResult:
     if isinstance(args, dict):
-        return { key: recursive_tolist(value) for key, value in args.items() }
+        return {key: recursive_tolist(value) for key, value in args.items()}
     else:
-        return args.tolist()
+        if hasattr(args, "tolist"):
+            return args.tolist()
+        return args
 
 
 class Model(Registrable, DetHashWithVersion, ABC):
     VERSION = "002lst"
 
-    def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Dict[str, Any]]:
+    def predict(
+        self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs
+    ) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError()
 
-    def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+    def calculate_metrics(
+        self, task: Task, predictions: Sequence[Dict[str, Any]]
+    ) -> Dict[str, torch.Tensor]:
         metrics = task.make_metrics()
         with Tqdm.tqdm(predictions, desc="Calculating metrics") as predictions_tqdm:
             for prediction in predictions_tqdm:
-                for metric_name, metric_args in prediction.items():
-                    try:
-                        metric = metrics[metric_name]
-                    except KeyError:
-                        continue
-                    metric_args = tensor_args(metric_args)
-                    metric_args = unsqueeze_args(metric_args)
-                    metric.update(*metric_args)
+                # For models proving model_output (LM models), the metric is called directly
+                if "model_output" in prediction:
+                    prediction["metrics"] = prediction.get("metrics", {})
+                    for metric_name, metric in metrics.items():
+                        # We'll update the prediction with its individual metrics if need be
+                        try:
+                            prediction["metrics"].update(metric.get_metrics(prediction))
+                        except:
+                            # TODO Fix this when needed
+                            raise ValueError(
+                                f"Metric {metric_name} doesn't support get_metrics"
+                            )
+                        metric.update(prediction)
+                else:
+                    for metric_name, metric_args in prediction.items():
+                        try:
+                            metric = metrics[metric_name]
+                        except KeyError:
+                            continue
+                        metric_args = tensor_args(metric_args)
+                        metric_args = unsqueeze_args(metric_args)
+                        metric.update(*metric_args)
         return {
             metric_name: recursive_tolist(metric.compute())
             for metric_name, metric in metrics.items()

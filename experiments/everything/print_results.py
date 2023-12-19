@@ -8,15 +8,17 @@ def main():
     initialize_logging(log_level="WARNING")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run', '-r', type=str, required=True)
-    parser.add_argument('--step', '-s', type=str, default="tabulate")
+    parser.add_argument("--run", "-r", type=str, required=True)
+    parser.add_argument("--step", "-s", type=str, default="tabulate")
     parser.add_argument(
-        '-d', '-w',
+        "-d",
+        "-w",
         type=str,
         default="beaker://ai2/task-complexity",
         metavar="workspace",
         dest="workspace",
-        help="the Tango workspace with the cache")
+        help="the Tango workspace with the cache",
+    )
     args = parser.parse_args()
 
     workspace = Workspace.from_url(args.workspace)

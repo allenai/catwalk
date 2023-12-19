@@ -3,7 +3,18 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from random import Random
-from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Iterable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import torchmetrics
 from mypy_extensions import KwArg
@@ -12,7 +23,6 @@ from tango.common import Registrable, det_hash
 import catwalk.metrics
 from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
-
 
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
@@ -24,12 +34,13 @@ QA_METRICS = {
     "squad_metrics": torchmetrics.SQuAD,
 }
 
-
 try:
     from functools import cache as memoize  # type: ignore
 except ImportError:
-    def memoize(user_function, /):      # type: ignore
+
+    def memoize(user_function, /):  # type: ignore
         import functools
+
         return functools.lru_cache(maxsize=None)(user_function)
 
 
@@ -37,7 +48,29 @@ except ImportError:
 def mc_metrics(num_classes: int):
     return {
         "acc": catwalk.metrics.AccuracyMetric,
-        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        "relative_improvement": partial(
+            catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes
+        ),
+    }
+
+
+@memoize
+def rc_metrics(primary="acc_per_token"):
+    return {
+        # This is a special type of metric which uses full prediction dict, not tensors
+        "rc_metrics": partial(
+            catwalk.metrics.RankedClassificationMetrics, primary_metric=primary
+        )
+    }
+
+
+@memoize
+def ppl_metrics(primary="ppl_token"):
+    return {
+        # This is a special type of metric which uses full prediction dict, not tensors
+        "ppl_metrics": partial(
+            catwalk.metrics.PerplexityMetrics, primary_metric=primary
+        )
     }
 
 
@@ -45,7 +78,9 @@ def mc_metrics(num_classes: int):
 def classification_metrics(num_classes: int):
     return {
         "acc": catwalk.metrics.AccuracyMetric,
-        "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        "relative_improvement": partial(
+            catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes
+        ),
     }
 
 
@@ -73,7 +108,9 @@ class RankClassificationInstance:
     correct_choice: Optional[int]
 
 
-InstanceConversion = Union[Callable[[Dict[str, Any]], Any], Callable[[Dict[str, Any], KwArg()], Any]]
+InstanceConversion = Union[
+    Callable[[Dict[str, Any]], Any], Callable[[Dict[str, Any], KwArg()], Any]
+]
 
 
 class Task(Registrable, ABC):
@@ -116,15 +153,14 @@ class Task(Registrable, ABC):
         raise ValueError("This task has no split to take fewshot instances from.")
 
     def make_metrics(self) -> Dict[str, torchmetrics.Metric]:
-        return {
-            name: metric_fn()
-            for name, metric_fn in self.metrics.items()
-        }
+        return {name: metric_fn() for name, metric_fn in self.metrics.items()}
 
     def has_instance_conversion(self, format: InstanceFormat) -> bool:
         return format in self.instance_conversions
 
-    def convert_instance(self, instance: Dict[str, Any], format: InstanceFormat, **kwargs):
+    def convert_instance(
+        self, instance: Dict[str, Any], format: InstanceFormat, **kwargs
+    ):
         return self.instance_conversions[format](instance, **kwargs)
 
     def get_fewshot_instances(
@@ -132,7 +168,7 @@ class Task(Registrable, ABC):
         num_shots: int,
         *,
         exceptions: Union[None, Dict[str, Any], Iterable[Dict[str, Any]]] = None,
-        random_seed: int = 18830087
+        random_seed: int = 18830087,
     ) -> Sequence[Dict[str, Any]]:
         if num_shots <= 0:
             return []
@@ -171,7 +207,9 @@ class Task(Registrable, ABC):
             self.add_metric(name, metric_fn)
         return self
 
-    def add_instance_conversion(self, format: InstanceFormat, conversion: InstanceConversion):
+    def add_instance_conversion(
+        self, format: InstanceFormat, conversion: InstanceConversion
+    ):
         self.instance_conversions[format] = conversion
         return self
 

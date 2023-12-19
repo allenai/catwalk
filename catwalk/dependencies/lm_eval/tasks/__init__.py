@@ -18,7 +18,9 @@ from . import hellaswag
 from . import swag
 from . import openbookqa
 from . import squad
-from . import naturalqs
+from . import naturalqs_short_open
+from . import scitldr
+from . import xsum
 from . import sat
 from . import arithmetic
 from . import lambada
@@ -50,6 +52,11 @@ from . import blimp
 from . import asdiv
 from . import gsm8k
 from . import storycloze
+from . import eurlex
+from . import unfair_tos
+from . import casehold
+from . import siqa
+from . import csqa
 
 ########################################
 # Translation tasks
@@ -125,7 +132,13 @@ TASK_REGISTRY = {
     "qa4mre_2013": qa4mre.QA4MRE_2013,
     "triviaqa": triviaqa.TriviaQA,
     "arc_easy": arc.ARCEasy,
+    "arc_easy:mc": arc.ARCEasyMC,
     "arc_challenge": arc.ARCChallenge,
+    "arc_challenge:mc": arc.ARCChallengeMC,
+    # Legal
+    "eurlex": eurlex.Eurlex,
+    "unfair_tos": unfair_tos.UnfairTos,
+    "case_hold:mc": casehold.CaseHoldMC,
     # "quac": quac.QuAC, # not implemented yet
     "logiqa": logiqa.LogiQA,
     "hellaswag": hellaswag.HellaSwag,
@@ -134,6 +147,9 @@ TASK_REGISTRY = {
     "squad2": squad.SQuAD2,
     "race": race.RACE,
     # "naturalqs": naturalqs.NaturalQs, # not implemented yet
+    "naturalqs_short_open": naturalqs_short_open.NaturalQsShortOpen,
+    "scitldr": scitldr.SciTLDR,
+    "xsum": xsum.XSUM,
     "headqa": headqa.HeadQAEsDeprecated,  # for backwards compat - headqa used to default to es
     "headqa_es": headqa.HeadQAEs,
     "headqa_en": headqa.HeadQAEn,
@@ -281,6 +297,8 @@ TASK_REGISTRY = {
     "blimp_wh_vs_that_no_gap_long_distance": blimp.BlimpWhVsThatNoGapLongDistance,
     "blimp_wh_vs_that_with_gap": blimp.BlimpWhVsThatWithGap,
     "blimp_wh_vs_that_with_gap_long_distance": blimp.BlimpWhVsThatWithGapLongDistance,
+    "social_iqa": siqa.SocialIQA,
+    "csqa": csqa.CommonsenseQA,
     # Requires manual download of data.
     # "storycloze_2016": storycloze.StoryCloze2016,
     # "storycloze_2018": storycloze.StoryCloze2018,

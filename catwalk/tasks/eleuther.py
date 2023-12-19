@@ -199,10 +199,6 @@ class EleutherTask(Task, WithPromptsourceMixin):
 
 @Task.register("eleuther::classification")
 class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
-    """
-    Eleuther classification task
-    """
-
     def __init__(
         self,
         eleuther_task: Union[str, Callable[[], EAITask]],
@@ -211,10 +207,6 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         version_override: Optional[str] = None,
         metrics=None,
     ):
-        """
-        Eleuther classification task
-        """
-
         EleutherTask.__init__(
             self,
             eleuther_task,

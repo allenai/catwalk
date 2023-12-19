@@ -388,6 +388,7 @@ class EleutherMMLUTask(EleutherTask):
         :param fewshot_instances: the number of few-show instances to include
         :return: the instance in :class:`~catwalk.task.RankClassificationInstance` format
         """
+
         if fewshot_instances is None:
             fewshot_instances = []
 

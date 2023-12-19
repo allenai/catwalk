@@ -430,6 +430,7 @@ def create_mmlu_tasks():
     :return: {task_name: task}
         e.g. {hendrycksTest-abstract_algebra: Task, hendrycksTest-anatomy: Task}
     """
+
     return {
         f"mmlu_{sub}": create_eleuther_mmlu_task(f"hendrycksTest-{sub}")
         for sub in SUBJECTS

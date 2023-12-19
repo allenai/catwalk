@@ -176,6 +176,7 @@ class EleutherTask(Task, WithPromptsourceMixin):
         :param fewshot_instances: the number of few-show instances to include
         :return: the instance in :class:`~catwalk.task.RankClassificationInstance` format
         """
+
         if fewshot_instances is None:
             fewshot_instances = []
         prefix = ""
@@ -198,6 +199,10 @@ class EleutherTask(Task, WithPromptsourceMixin):
 
 @Task.register("eleuther::classification")
 class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
+    """
+    Eleuther classification task
+    """
+
     def __init__(
         self,
         eleuther_task: Union[str, Callable[[], EAITask]],
@@ -206,6 +211,10 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         version_override: Optional[str] = None,
         metrics=None,
     ):
+        """
+        Eleuther classification task
+        """
+
         EleutherTask.__init__(
             self,
             eleuther_task,
@@ -237,6 +246,7 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         :param kwargs: extra arguments that are ignored
         :return: the instance in :class:`~catwalk.task.RankClassificationInstance` format
         """
+
         if fewshot_instances is None:
             fewshot_instances = []
         prefix = ""

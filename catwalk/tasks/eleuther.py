@@ -433,10 +433,12 @@ def create_mmlu_tasks():
         e.g. {hendrycksTest-abstract_algebra: Task, hendrycksTest-anatomy: Task}
     """
 
-    return {
-        f"mmlu_{sub}": create_eleuther_mmlu_task(f"hendrycksTest-{sub}")
-        for sub in SUBJECTS
-    }
+    res = {}
+    for sub in SUBJECTS:
+        res[f"mmlu_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTest-{sub}")
+        res[f"mmlu_rc_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTestRC-{sub}")
+        res[f"mmlu_choice_rc_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTestChoiceRC-{sub}")
+    return res
 
 
 def create_eleuther_mmlu_task(subject):

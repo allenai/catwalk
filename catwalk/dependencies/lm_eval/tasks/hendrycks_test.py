@@ -138,6 +138,8 @@ class GeneralHendrycksTest(MultipleChoiceTask):
         return " ".join(words)
 
     def unconditioned_prompt(self):
+        if self.choice_labels is None:
+            return "Answer:"
         # Don't need unconditioned normalization here
         return None
 

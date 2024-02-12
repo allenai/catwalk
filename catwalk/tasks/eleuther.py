@@ -436,12 +436,12 @@ def create_mmlu_tasks():
     res = {}
     for sub in SUBJECTS:
         res[f"mmlu_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTest-{sub}")
-        res[f"mmlu_rc_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTestRC-{sub}")
+        res[f"mmlu_rc_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTestRC-{sub}", primary_metric="acc_uncond")
         res[f"mmlu_choice_rc_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTestChoiceRC-{sub}")
     return res
 
 
-def create_eleuther_mmlu_task(subject):
+def create_eleuther_mmlu_task(subject, primary_metric="acc_raw"):
     return EleutherMMLUTask(subject, ranked_classification=True).add_metrics(
         rc_metrics(primary="acc_raw")
     )

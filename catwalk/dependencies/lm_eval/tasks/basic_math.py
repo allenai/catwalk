@@ -35,7 +35,7 @@ class BasicMath(MultipleChoiceTask):
     def _process_doc(self, doc):
         out_doc = {
             "id": doc["id"],
-            "query": "Question: " + doc["question"] + "\nAnswer:",
+            "query": "Calculate " + doc["question"],
             "choices": doc["choices"]["text"],
             "gold": ["A", "B", "C", "D", "E"].index(doc["answerKey"]),
         }

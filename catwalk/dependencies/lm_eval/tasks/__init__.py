@@ -57,6 +57,7 @@ from . import unfair_tos
 from . import casehold
 from . import siqa
 from . import csqa
+from . import basic_math
 
 ########################################
 # Translation tasks
@@ -299,6 +300,7 @@ TASK_REGISTRY = {
     "blimp_wh_vs_that_with_gap_long_distance": blimp.BlimpWhVsThatWithGapLongDistance,
     "social_iqa": siqa.SocialIQA,
     "csqa": csqa.CommonsenseQA,
+    "basic_math": basic_math.BasicMath,
     # Requires manual download of data.
     # "storycloze_2016": storycloze.StoryCloze2016,
     # "storycloze_2018": storycloze.StoryCloze2018,

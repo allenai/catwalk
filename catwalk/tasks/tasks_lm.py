@@ -150,4 +150,7 @@ TASKS_LM: Dict[str, Task] = {
     "csqa": EleutherTask("csqa", ranked_classification=True).add_metrics(
         rc_metrics(primary="acc_uncond")
     ),
+    "basic_math": EleutherTask("basic_math", ranked_classification=True).add_metrics(
+        rc_metrics(primary="acc_per_token")
+    ),
 }

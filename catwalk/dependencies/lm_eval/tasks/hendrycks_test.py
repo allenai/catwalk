@@ -2,11 +2,11 @@
 Measuring Massive Multitask Language Understanding
 https://arxiv.org/pdf/2009.03300.pdf
 
-The Hendryck's Test is a benchmark that measured a text model’s multitask accuracy.
+The Hendryck's Test is a benchmark that measured a text model's multitask accuracy.
 The test covers 57 tasks including elementary mathematics, US history, computer
 science, law, and more. To attain high accuracy on this test, models must possess
 extensive world knowledge and problem solving ability. By comprehensively evaluating
-the breadth and depth of a model’s academic and professional understanding,
+the breadth and depth of a model's academic and professional understanding,
 Hendryck's Test can be used to analyze models across many tasks and to identify
 important shortcomings.
 
@@ -85,19 +85,35 @@ SUBJECTS = [
     "world_religions",
 ]
 
+prompt_formats = [
+    "full_answer",
+    "alpha_period",
+    "alpha_comma",
+    "alpha_colon",
+    "alpha_paren",
+    "alpha",
+    "num_period",
+    "num_comma",
+    "num_colon",
+    "num_paren",
+    "num",
+]
+
 
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of subjects
     :return: {task_name: task}
         e.g. {hendrycksTest-abstract_algebra: Task, hendrycksTest-anatomy: Task}
     """
-    return {f"hendrycksTest-{sub}": create_task(sub) for sub in SUBJECTS}
+    res = {f"hendrycksTest-{sub}": create_task(sub) for sub in SUBJECTS}
+    res.update({f"hendrycksTest-{sub}-{prompt_format}": create_task(sub, prompt_format=prompt_format) for sub in SUBJECTS for prompt_format in prompt_formats})
+    return res
 
 
-def create_task(subject):
+def create_task(subject, prompt_format=None):
     class HendrycksTest(GeneralHendrycksTest):
         def __init__(self):
-            super().__init__(subject)
+            super().__init__(subject, prompt_format=prompt_format)
 
     return HendrycksTest
 
@@ -107,8 +123,20 @@ class GeneralHendrycksTest(MultipleChoiceTask):
     DATASET_PATH = "cais/mmlu"
     DATASET_NAME = None
 
-    def __init__(self, subject):
+    def __init__(self, subject, prompt_format=None):
+        # prompt_format = full_answer: predict full answer rather than label
+        # prompt_format = alpha_period: alphabetical answer choices with period (eg A.)
+        # prompt_format = alpha_comma: alphabetical answer choices with comma (eg A,)
+        # prompt_format = alpha_colon: alphabetical answer choices with colon (eg A:)
+        # prompt_format = alpha_paren: alphabetical answer choices with close paren (eg A))
+        # prompt_format = alpha: alphabetical answer choices without a delimiter (eg A)
+        # prompt_format = num_period: numerical answer choices with period (eg 1.)
+        # prompt_format = num_comma: numerical answer choices with comma (eg 1,)
+        # prompt_format = num_colon: numerical answer choices with colon (eg 1:)
+        # prompt_format = num_paren: numerical answer choices with close paren (eg 1))
+        # prompt_format = num: numerical answer choices without a delimiter (eg 1)
         self.DATASET_NAME = subject
+        self.prompt_format = prompt_format
         super().__init__()
 
     def has_training_docs(self):
@@ -141,6 +169,32 @@ class GeneralHendrycksTest(MultipleChoiceTask):
         return super().fewshot_context(doc=doc, num_fewshot=num_fewshot, **kwargs)
 
     def _process_doc(self, doc):
+        def format_choices(keys, choices):
+            if "num" in self.prompt_format:
+                keys = list(range(1, len(choices) + 1))
+            if self.prompt_format == "full_answer":
+                return [f" * {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "alpha_period":
+                return [f" {key}. {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "alpha_comma":
+                return [f" {key}, {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "alpha_colon":
+                return [f" {key}: {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "alpha_paren":
+                return [f" {key}) {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "alpha":
+                return [f" {key} {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "num_period":
+                return [f" {key}. {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "num_comma":
+                return [f" {key}, {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "num_colon":
+                return [f" {key}: {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "num_paren":
+                return [f" {key}) {choice}\n" for key, choice in zip(keys, choices)]
+            if self.prompt_format == "num":
+                return [f" {key} {choice}\n" for key, choice in zip(keys, choices)]
+            raise ValueError(f"Invalid prompt format: {self.prompt_format}")
         def format_example(doc, keys):
             """
             <prompt>
@@ -154,9 +208,7 @@ class GeneralHendrycksTest(MultipleChoiceTask):
             # Eleuther code base. We made this change to ensure that the token associated with the
             # answer choices here exactly matches the answer token used for evaluation.
             question = doc["question"].strip()
-            choices = "".join(
-                [f" {key}. {choice}\n" for key, choice in zip(keys, doc["choices"])]
-            )
+            choices = "".join(format_choices(keys, doc["choices"]))
             prompt = f"{question}\n{choices}Answer:"
             return prompt
 

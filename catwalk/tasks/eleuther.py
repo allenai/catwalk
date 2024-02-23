@@ -7,7 +7,7 @@ from tango.common.sequences import MappedSequence
 
 from catwalk.dependencies.lm_eval.base import Task as EAITask
 from catwalk.dependencies.lm_eval.tasks import get_task as get_eai_task
-from catwalk.dependencies.lm_eval.tasks.hendrycks_test import SUBJECTS
+from catwalk.dependencies.lm_eval.tasks.hendrycks_test import SUBJECTS, prompt_formats
 from catwalk.metrics import EleutherMetrics
 from catwalk.task import (
     InstanceFormat,
@@ -432,11 +432,14 @@ def create_mmlu_tasks():
     :return: {task_name: task}
         e.g. {hendrycksTest-abstract_algebra: Task, hendrycksTest-anatomy: Task}
     """
-
-    return {
-        f"mmlu_{sub}": create_eleuther_mmlu_task(f"hendrycksTest-{sub}")
-        for sub in SUBJECTS
-    }
+    res = {}
+    for sub in SUBJECTS:
+        res[f"mmlu_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTest-{sub}")
+        for prompt_format in prompt_formats:
+            res[f"mmlu_{prompt_format}_{sub}"] = create_eleuther_mmlu_task(
+                f"hendrycksTest-{prompt_format}-{sub}"
+            )
+    return res
 
 
 def create_eleuther_mmlu_task(subject):

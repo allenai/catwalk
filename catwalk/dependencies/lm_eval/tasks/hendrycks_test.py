@@ -170,8 +170,6 @@ class GeneralHendrycksTest(MultipleChoiceTask):
 
     def _process_doc(self, doc):
         def format_choices(keys, choices):
-            if "num" in self.prompt_format:
-                keys = list(range(1, len(choices) + 1))
             if self.prompt_format == "full_answer":
                 return [f" * {choice}\n" for key, choice in zip(keys, choices)]
             if self.prompt_format == "alpha_period":
@@ -208,6 +206,10 @@ class GeneralHendrycksTest(MultipleChoiceTask):
             # Eleuther code base. We made this change to ensure that the token associated with the
             # answer choices here exactly matches the answer token used for evaluation.
             question = doc["question"].strip()
+            gold = doc["answer"]
+            if "num" in self.prompt_format:
+                keys = [str(i) for i in range(1, len(doc["choices"]) + 1)]
+                gold = keys[doc["answer"]]
             choices = "".join(format_choices(keys, doc["choices"]))
             prompt = f"{question}\n{choices}Answer:"
             return prompt
@@ -216,7 +218,7 @@ class GeneralHendrycksTest(MultipleChoiceTask):
         return {
             "query": format_example(doc, keys),
             "choices": keys,
-            "gold": doc["answer"],
+            "gold": doc,
         }
 
     def fewshot_examples(self, k, rnd):

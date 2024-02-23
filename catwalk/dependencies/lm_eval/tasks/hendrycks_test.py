@@ -204,19 +204,19 @@ class GeneralHendrycksTest(MultipleChoiceTask):
             # Eleuther code base. We made this change to ensure that the token associated with the
             # answer choices here exactly matches the answer token used for evaluation.
             question = doc["question"].strip()
-            gold = doc["answer"]
-            if "num" in self.prompt_format:
-                keys = [str(i) for i in range(1, len(doc["choices"]) + 1)]
-                gold = keys[doc["answer"]]
             choices = "".join(format_choices(keys, doc["choices"]))
             prompt = f"{question}\n{choices}Answer:"
             return prompt
 
         keys = ["A", "B", "C", "D"]
+        gold = doc["answer"]
+        if "num" in self.prompt_format:
+            keys = [str(i) for i in range(1, len(doc["choices"]) + 1)]
+            gold = keys[doc["answer"]]
         return {
             "query": format_example(doc, keys),
             "choices": keys,
-            "gold": doc,
+            "gold": gold,
         }
 
     def fewshot_examples(self, k, rnd):

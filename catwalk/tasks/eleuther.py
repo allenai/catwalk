@@ -434,7 +434,6 @@ def create_mmlu_tasks():
     """
     res = {}
     for sub in SUBJECTS:
-        res[f"mmlu_{sub}"] = create_eleuther_mmlu_task(f"hendrycksTest-{sub}")
         for prompt_format in prompt_formats:
             res[f"mmlu_{prompt_format}_{sub}"] = create_eleuther_mmlu_task(
                 f"hendrycksTest-{prompt_format}-{sub}"

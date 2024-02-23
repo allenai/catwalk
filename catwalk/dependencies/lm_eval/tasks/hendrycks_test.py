@@ -105,9 +105,7 @@ def create_all_tasks():
     :return: {task_name: task}
         e.g. {hendrycksTest-abstract_algebra: Task, hendrycksTest-anatomy: Task}
     """
-    res = {f"hendrycksTest-{sub}": create_task(sub) for sub in SUBJECTS}
-    res.update({f"hendrycksTest-{sub}-{prompt_format}": create_task(sub, prompt_format=prompt_format) for sub in SUBJECTS for prompt_format in prompt_formats})
-    return res
+    return {f"hendrycksTest-{prompt_format}-{sub}": create_task(sub, prompt_format=prompt_format) for sub in SUBJECTS for prompt_format in prompt_formats}
 
 
 def create_task(subject, prompt_format=None):

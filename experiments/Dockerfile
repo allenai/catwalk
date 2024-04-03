@@ -11,6 +11,8 @@ RUN conda install gh --channel conda-forge
 
 RUN conda run -n base pip install --upgrade pip
 
+RUN pip install -U pip setuptools wheel
+
 COPY requirements.txt requirements.txt
 
 RUN conda run -n base pip install -r requirements.txt

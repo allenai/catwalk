@@ -644,6 +644,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
             # if any of the stop phrases are single tokens we can use that for early termination
             primary_until = None
             for tokenized_until in tokenizer(untils)["input_ids"]:
+                print('NYA', tokenized_until)
                 if len(tokenized_until) == 1:
                     primary_until = tokenized_until[0]
 

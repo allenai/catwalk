@@ -644,11 +644,9 @@ class DecoderOnlyLanguageModel(LanguageModel):
             # if any of the stop phrases are single tokens we can use that for early termination
             primary_until = None
             for tokenized_until in tokenizer(untils)["input_ids"]:
-                import logging
-                log = logging.getLogger(__name__)
-                log.debug(f"tokenized_until: {tokenized_until}")
                 if len(tokenized_until) == 1:
                     primary_until = tokenized_until[0]
+            primary_until = primary_until or tokenizer.eos_token_id
 
             # truncate from left if no room for generation
             context_tensor = torch.tensor(

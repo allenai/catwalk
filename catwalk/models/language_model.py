@@ -646,7 +646,6 @@ class DecoderOnlyLanguageModel(LanguageModel):
             for tokenized_until in tokenizer(untils)["input_ids"]:
                 if len(tokenized_until) == 1:
                     primary_until = tokenized_until[0]
-            primary_until = primary_until or tokenizer.eos_token_id
 
             # truncate from left if no room for generation
             context_tensor = torch.tensor(

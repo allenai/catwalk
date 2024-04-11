@@ -651,10 +651,10 @@ class DecoderOnlyLanguageModel(LanguageModel):
             context_tensor = torch.tensor(
                 [tokenized_context[max_gen_toks - model_max_length :]]
             ).to(model.device)
-
+            print('TEST', primary_until)
             full_text_tensor = model.generate(
                 context_tensor,
-                max_length=context_tensor.shape[1] + max_gen_toks,
+                max_length=context_tensor.shape[1] + max_gen_toks - 10,
                 eos_token_id=primary_until,
                 do_sample=False,
                 pad_token_id=primary_until,  # temporary hack to suppress irrelevant warning until batch processing is added

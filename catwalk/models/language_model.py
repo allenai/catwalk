@@ -651,7 +651,7 @@ class DecoderOnlyLanguageModel(LanguageModel):
             context_tensor = torch.tensor(
                 [tokenized_context[max_gen_toks - model_max_length :]]
             ).to(model.device)
-            primary_until = primary_until or 2
+            primary_until = primary_until or tokenizer.eos_token_id
             full_text_tensor = model.generate(
                 context_tensor,
                 max_length=context_tensor.shape[1] + max_gen_toks,

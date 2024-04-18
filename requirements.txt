@@ -1,9 +1,9 @@
 torch>=2.0
-ai2-tango[torch,transformers,fairscale,beaker,wandb,gs]>=1.3
+# ai2-tango[torch,transformers,fairscale,beaker,wandb,gs]>=1.3
 
 # Sometimes you want to insist on the latest tango.
 # Uncomment the following if you do.
-# ai2-tango[torch,transformers,fairscale,beaker,wandb,gs] @ git+https://github.com/allenai/tango.git@main
+ai2-tango[torch,transformers,fairscale,beaker,wandb,gs] @ git+https://github.com/allenai/tango.git@dh-torch-version
 
 # Sometimes you want to insist on the latest beaker-py.
 # Uncomment the following if you do.

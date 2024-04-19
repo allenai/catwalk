@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Added `torch.no_grad()` around model calls in `language_model.py`
+- Prevent crashes with more robust stop token for `greedy_until` in `language_model.py`
+
 ## [v1.0.0rc0](https://github.com/allenai/catwalk/releases/tag/v1.0.0rc0) - 2023-12-19
 
 ### Added

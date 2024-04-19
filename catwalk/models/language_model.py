@@ -567,7 +567,8 @@ class DecoderOnlyLanguageModel(LanguageModel):
                         for field_name, tensors in unpadded_batch.items()
                     }
 
-                    batch_logits = log_softmax(model(**padded_batch)[0], dim=-1)
+                    with torch.no_grad():
+                        batch_logits = log_softmax(model(**padded_batch)[0], dim=-1)
                     z = zip(
                         batch_of_indices,
                         batch_logits,
@@ -642,8 +643,8 @@ class DecoderOnlyLanguageModel(LanguageModel):
             if isinstance(untils, str):
                 untils = [untils]
             # if any of the stop phrases are single tokens we can use that for early termination
-            primary_until = None
-            for tokenized_until in tokenizer(untils)["input_ids"]:
+            primary_until = tokenizer.eos_token_id
+            for tokenized_until in tokenizer(untils, add_special_tokens=False)["input_ids"]:
                 if len(tokenized_until) == 1:
                     primary_until = tokenized_until[0]
 
@@ -652,13 +653,14 @@ class DecoderOnlyLanguageModel(LanguageModel):
                 [tokenized_context[max_gen_toks - model_max_length :]]
             ).to(model.device)
 
-            full_text_tensor = model.generate(
-                context_tensor,
-                max_length=context_tensor.shape[1] + max_gen_toks,
-                eos_token_id=primary_until,
-                do_sample=False,
-                pad_token_id=primary_until,  # temporary hack to suppress irrelevant warning until batch processing is added
-            )
+            with torch.no_grad():
+                full_text_tensor = model.generate(
+                    context_tensor,
+                    max_length=context_tensor.shape[1] + max_gen_toks,
+                    eos_token_id=primary_until,
+                    do_sample=False,
+                    pad_token_id=primary_until,  # temporary hack to suppress irrelevant warning until batch processing is added
+                )
             continuation_tensor = full_text_tensor[0, context_tensor.shape[1] :]
             continuation = tokenizer.decode(continuation_tensor.tolist())
             raw_continuation = continuation

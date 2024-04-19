@@ -643,8 +643,8 @@ class DecoderOnlyLanguageModel(LanguageModel):
             if isinstance(untils, str):
                 untils = [untils]
             # if any of the stop phrases are single tokens we can use that for early termination
-            primary_until = None
-            for tokenized_until in tokenizer(untils)["input_ids"]:
+            primary_until = tokenizer.eos_token_id
+            for tokenized_until in tokenizer(untils, add_special_tokens=False)["input_ids"]:
                 if len(tokenized_until) == 1:
                     primary_until = tokenized_until[0]
 

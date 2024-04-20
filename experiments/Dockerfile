@@ -12,6 +12,8 @@ RUN conda install gh --channel conda-forge
 RUN conda run -n base pip install --upgrade pip
 
 RUN conda run -n base pip install --upgrade setuptools wheel
+RUN conda run -n base pip install Cython==0.29.36
+RUN conda run -n base pip install spacy==3.0.6 --no-build-isolation
 
 COPY requirements.txt requirements.txt
 

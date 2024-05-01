@@ -46,7 +46,7 @@ _HOMEPAGE = "https://nlp.cs.washington.edu/triviaqa/"
 
 _LICENSE = "Apache License 2.0"
 
-_URLS = "http://eaidata.bmk.sh/data/triviaqa-unfiltered.tar.gz"
+_URLS = "https://nlp.cs.washington.edu/triviaqa/data/triviaqa-unfiltered.tar.gz"
 
 
 class Triviaqa(datasets.GeneratorBasedBuilder):
